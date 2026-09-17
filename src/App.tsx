@@ -16,6 +16,7 @@ import { PullToRefresh } from './components/PullToRefresh';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { LoginScreen } from './components/LoginScreen';
 import { PaywallModal } from './components/PaywallModal';
+import { AdminPanel } from './components/AdminPanel';
 
 function AppContent() {
   const { subjectsData, loading, refreshData } = useData();
@@ -92,6 +93,7 @@ function AppContent() {
           {activeTab === 'tricks' && (
             <TrickSeSamjho onAskAITeacher={handleAskAITeacherPYQ} />
           )}
+          {activeTab === 'admin' && <AdminPanel />}
         </main>
 
         <BottomNavigation activeTab={activeTab} onChangeTab={setActiveTab} />

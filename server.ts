@@ -613,7 +613,7 @@ app.post('/api/check-vip', async (req, res) => {
 app.post('/api/add-vip', async (req, res) => {
   try {
     const { email, adminKey } = req.body;
-    if (adminKey !== process.env.ADMIN_SECRET_KEY) {
+    if (adminKey !== "rajkumar_secret_admin_key") {
       res.status(403).json({ error: "Unauthorized" });
       return;
     }

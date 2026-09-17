@@ -51,14 +51,28 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   useEffect(() => {
     if (user && user.email) {
+      // 1. Client-side instant check (failsafe)
+      const isClientVIP = unlockedStudents.some(email => email.toLowerCase() === user.email.toLowerCase());
+      if (isClientVIP) {
+        setIsVIP(true);
+        return;
+      }
+
+      // 2. Server-side check
       fetch('/api/check-vip', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: user.email })
       })
-      .then(r => r.json())
+      .then(r => {
+        if (!r.ok) throw new Error("API not found or error");
+        return r.json();
+      })
       .then(data => setIsVIP(data.isVIP))
-      .catch(e => console.error("VIP check failed", e));
+      .catch(e => {
+        console.error("VIP check failed", e);
+        setIsVIP(false);
+      });
     } else {
       setIsVIP(false);
     }

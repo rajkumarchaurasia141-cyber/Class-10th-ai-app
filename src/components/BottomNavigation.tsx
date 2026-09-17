@@ -1,6 +1,7 @@
 import React from 'react';
-import { Home, BookOpen, History, GraduationCap, Lightbulb } from 'lucide-react';
+import { Home, BookOpen, History, GraduationCap, Lightbulb, ShieldCheck } from 'lucide-react';
 import { ActiveMainTab } from '../types';
+import { useAuth } from '../context/AuthContext';
 
 interface BottomNavigationProps {
   activeTab: ActiveMainTab;
@@ -8,6 +9,8 @@ interface BottomNavigationProps {
 }
 
 export const BottomNavigation: React.FC<BottomNavigationProps> = ({ activeTab, onChangeTab }) => {
+  const { user } = useAuth();
+  
   const tabs = [
     {
       id: 'home' as ActiveMainTab,
@@ -40,8 +43,17 @@ export const BottomNavigation: React.FC<BottomNavigationProps> = ({ activeTab, o
       label: 'Tricks',
       hindiLabel: 'ट्रिक से समझो',
       icon: Lightbulb,
-    },
+    }
   ];
+
+  if (user?.email === 'rajkumarchaurasia141@gmail.com') {
+    tabs.push({
+      id: 'admin' as ActiveMainTab,
+      label: 'Admin',
+      hindiLabel: 'पैनल',
+      icon: ShieldCheck,
+    });
+  }
 
   return (
     <nav
@@ -49,17 +61,16 @@ export const BottomNavigation: React.FC<BottomNavigationProps> = ({ activeTab, o
       aria-label="मुख्य नेविगेशन"
       className="fixed bottom-0 left-0 right-0 z-50 bg-stone-900/95 backdrop-blur-xl border-t border-stone-800/80 shadow-2xl transition-all"
     >
-      <div className="max-w-md md:max-w-xl mx-auto px-2 py-1.5 flex items-center justify-around">
+      <div className="max-w-md md:max-w-xl mx-auto px-1 py-1.5 flex items-center justify-around">
         {tabs.map((tab) => {
           const Icon = tab.icon;
           const isActive = activeTab === tab.id;
-
           return (
             <button
               key={tab.id}
               id={`bottom-nav-${tab.id}`}
               onClick={() => onChangeTab(tab.id)}
-              className={`relative flex flex-col items-center justify-center py-1 px-2.5 rounded-xl transition-all duration-200 cursor-pointer min-w-[58px] min-h-[46px] ${
+              className={`relative flex flex-col items-center justify-center py-1 px-1.5 sm:px-2.5 rounded-xl transition-all duration-200 cursor-pointer min-w-[50px] sm:min-w-[58px] min-h-[46px] ${
                 isActive
                   ? 'text-amber-400 font-semibold'
                   : 'text-stone-400 hover:text-stone-200 hover:bg-stone-800/40'
@@ -69,26 +80,26 @@ export const BottomNavigation: React.FC<BottomNavigationProps> = ({ activeTab, o
               {isActive && (
                 <span className="absolute inset-0 bg-amber-500/10 rounded-xl border border-amber-500/25 animate-fade-in" />
               )}
-
+              
               {/* Icon Container with Badge */}
               <div className="relative">
                 <Icon
-                  className={`w-5 h-5 transition-transform duration-200 ${
+                  className={`w-4 h-4 sm:w-5 sm:h-5 transition-transform duration-200 ${
                     isActive ? 'scale-110 stroke-[2.25]' : 'stroke-[1.75]'
                   }`}
                 />
                 {tab.badge && (
-                  <span className="absolute -top-1.5 -right-3 text-[9px] font-bold px-1 py-0.2 rounded-full bg-amber-500 text-stone-950 scale-90 whitespace-nowrap shadow-sm">
+                  <span className="absolute -top-1.5 -right-3 text-[8px] sm:text-[9px] font-bold px-1 py-0.2 rounded-full bg-amber-500 text-stone-950 scale-90 whitespace-nowrap shadow-sm">
                     {tab.badge}
                   </span>
                 )}
               </div>
-
+              
               {/* Label */}
-              <span className="text-[11px] mt-0.5 tracking-tight leading-none whitespace-nowrap">
+              <span className="text-[10px] sm:text-[11px] mt-0.5 tracking-tight leading-none whitespace-nowrap">
                 {tab.label}
               </span>
-              <span className="text-[9px] text-stone-500 font-normal leading-tight hidden xs:block">
+              <span className="text-[8px] sm:text-[9px] text-stone-500 font-normal leading-tight hidden xs:block">
                 {tab.hindiLabel}
               </span>
             </button>

@@ -73,7 +73,7 @@ export interface VVIQuestionItem {
   tips?: string;
 }
 
-export type ActiveMainTab = 'home' | 'subjects' | 'pyq' | 'ai-teacher' | 'tricks' | 'math-solutions';
+export type ActiveMainTab = 'home' | 'subjects' | 'pyq' | 'ai-teacher' | 'tricks' | 'math-solutions' | 'admin';
 
 export interface MathExerciseQuestion {
   id: string;
