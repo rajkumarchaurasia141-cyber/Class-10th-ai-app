@@ -1,4 +1,4 @@
-const CACHE_NAME = 'padhega-bihar-v4';
+const CACHE_NAME = 'padhega-bihar-v5';
 const urlsToCache = [
   '/',
   '/index.html',

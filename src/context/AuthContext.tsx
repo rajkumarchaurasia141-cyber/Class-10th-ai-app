@@ -12,6 +12,7 @@ interface AuthContextType {
   logout: () => void;
   showPaywall: boolean;
   setShowPaywall: (show: boolean) => void;
+  refreshVIP: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -47,39 +48,45 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     localStorage.removeItem('pb_user');
   };
 
+  
   const [isVIP, setIsVIP] = useState(false);
 
-  useEffect(() => {
+  const refreshVIP = async () => {
     if (user && user.email) {
-      // 1. Client-side instant check (failsafe)
-      const isClientVIP = unlockedStudents.some(email => email.toLowerCase() === user.email.toLowerCase());
+      const cleanEmail = user.email.trim().toLowerCase();
+      // 1. Client-side instant check
+      const isClientVIP = unlockedStudents.some(email => email.trim().toLowerCase() === cleanEmail);
       if (isClientVIP) {
         setIsVIP(true);
         return;
       }
 
       // 2. Server-side check
-      fetch('/api/check-vip', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: user.email })
-      })
-      .then(r => {
-        if (!r.ok) throw new Error("API not found or error");
-        return r.json();
-      })
-      .then(data => setIsVIP(data.isVIP))
-      .catch(e => {
+      try {
+        const res = await fetch('/api/check-vip', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email: cleanEmail })
+        });
+        if (!res.ok) throw new Error("API error");
+        const data = await res.json();
+        setIsVIP(data.isVIP);
+      } catch (e) {
         console.error("VIP check failed", e);
         setIsVIP(false);
-      });
+      }
     } else {
       setIsVIP(false);
     }
+  };
+
+  useEffect(() => {
+    refreshVIP();
   }, [user]);
 
+
   return (
-    <AuthContext.Provider value={{ user, isVIP, login, logout, showPaywall, setShowPaywall }}>
+    <AuthContext.Provider value={{ user, isVIP, login, logout, showPaywall, setShowPaywall, refreshVIP }}>
       {children}
     </AuthContext.Provider>
   );

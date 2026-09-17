@@ -20,7 +20,7 @@ import { AdminPanel } from './components/AdminPanel';
 
 function AppContent() {
   const { subjectsData, loading, refreshData } = useData();
-  const { user } = useAuth();
+  const { user, refreshVIP } = useAuth();
   const [activeTab, setActiveTab] = useState<ActiveMainTab>('home');
   const [selectedSubjectId, setSelectedSubjectId] = useState<SubjectId>('maths');
   const [aiTeacherSubject, setAiTeacherSubject] = useState<string>('गणित (Maths)');
@@ -51,7 +51,7 @@ function AppContent() {
   }
 
   return (
-    <PullToRefresh onRefresh={refreshData}>
+    <PullToRefresh onRefresh={async () => { await refreshData(); await refreshVIP(); }}>
       <div className="min-h-screen bg-stone-950 text-stone-100 flex flex-col selection:bg-amber-500/30 selection:text-amber-200 relative">
         <Header
           activeTab={activeTab}

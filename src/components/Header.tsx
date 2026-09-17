@@ -1,5 +1,6 @@
 import React from 'react';
 import {
+  LogOut,
   GraduationCap,
   Bell,
   Search,
@@ -10,18 +11,23 @@ import {
   Lightbulb,
 } from 'lucide-react';
 import { ActiveMainTab } from '../types';
+import { useAuth } from '../context/AuthContext';
 
 interface HeaderProps {
   activeTab: ActiveMainTab;
   setActiveTab: (tab: ActiveMainTab) => void;
-  onOpenTips: () => void;
-  onOpenInstall: () => void;
+  onOpenTips?: () => void;
+  onOpenInstall?: () => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
   activeTab,
   setActiveTab,
+  onOpenTips,
+  onOpenInstall,
 }) => {
+  const { logout, user } = useAuth();
+  
   const mainTabs = [
     { id: 'home' as ActiveMainTab, label: 'Home', icon: Home },
     { id: 'subjects' as ActiveMainTab, label: 'Subjects', icon: BookOpen },
@@ -47,7 +53,7 @@ export const Header: React.FC<HeaderProps> = ({
             </div>
             <div className="flex flex-col">
               <span className="text-[11px] text-stone-400 font-medium tracking-wide">
-                नमस्ते, छात्र! 👋
+                नमस्ते, {user?.name?.split(' ')[0] || 'छात्र'}! 👋
               </span>
               <h1 className="text-base sm:text-lg font-bold text-white tracking-tight leading-tight" style={{ fontFamily: "'Playfair Display', serif" }}>
                 Padhega Bihar <span className="text-amber-400">- 10th</span>
@@ -69,11 +75,21 @@ export const Header: React.FC<HeaderProps> = ({
             <button className="sm:hidden w-9 h-9 flex items-center justify-center rounded-full bg-stone-900 border border-stone-800 text-stone-300 hover:text-white transition-colors">
               <Search className="w-4 h-4" />
             </button>
+
             <button className="relative w-9 h-9 flex items-center justify-center rounded-full bg-stone-900 border border-stone-800 text-stone-300 hover:text-white transition-colors">
               <Bell className="w-4 h-4" />
               <span className="absolute top-2 right-2.5 w-1.5 h-1.5 bg-rose-500 rounded-full"></span>
             </button>
+
+            <button 
+              onClick={logout}
+              className="relative w-9 h-9 flex items-center justify-center rounded-full bg-stone-900 border border-stone-800 text-stone-300 hover:text-red-400 hover:border-red-500/50 transition-colors"
+              title="Logout"
+            >
+              <LogOut className="w-4 h-4" />
+            </button>
           </div>
+
         </div>
 
         {/* Desktop / Tablet Navigation Tabs */}
