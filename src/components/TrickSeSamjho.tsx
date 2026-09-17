@@ -10,6 +10,8 @@ import {
   Layers,
   Zap,
 } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
+import { Lock } from 'lucide-react';
 import { SubjectId, ChapterTrickItem } from '../types';
 import { NCERT_TRICKS } from '../data/ncertTricks';
 
@@ -22,6 +24,7 @@ export const TrickSeSamjho: React.FC<TrickSeSamjhoProps> = ({ onAskAITeacher }) 
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const { isVIP, setShowPaywall } = useAuth();
 
   const subjects = [
     { id: 'all', label: 'सभी विषय' },

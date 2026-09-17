@@ -13,9 +13,13 @@ import { ActiveMainTab, SubjectId } from './types';
 import { GraduationCap, ShieldCheck } from 'lucide-react';
 import { DataProvider, useData } from './context/DataContext';
 import { PullToRefresh } from './components/PullToRefresh';
+import { AuthProvider, useAuth } from './context/AuthContext';
+import { LoginScreen } from './components/LoginScreen';
+import { PaywallModal } from './components/PaywallModal';
 
 function AppContent() {
   const { subjectsData, loading, refreshData } = useData();
+  const { user } = useAuth();
   const [activeTab, setActiveTab] = useState<ActiveMainTab>('home');
   const [selectedSubjectId, setSelectedSubjectId] = useState<SubjectId>('maths');
   const [aiTeacherSubject, setAiTeacherSubject] = useState<string>('गणित (Maths)');
@@ -37,13 +41,17 @@ function AppContent() {
     setActiveTab('ai-teacher');
   };
 
+  if (!user) {
+    return <LoginScreen />;
+  }
+
   if (loading && Object.keys(subjectsData).length === 0) {
     return <div className="min-h-screen bg-stone-950 text-stone-100 flex items-center justify-center">Loading database...</div>;
   }
 
   return (
     <PullToRefresh onRefresh={refreshData}>
-      <div className="min-h-screen bg-stone-950 text-stone-100 flex flex-col selection:bg-amber-500/30 selection:text-amber-200">
+      <div className="min-h-screen bg-stone-950 text-stone-100 flex flex-col selection:bg-amber-500/30 selection:text-amber-200 relative">
         <Header
           activeTab={activeTab}
           setActiveTab={setActiveTab}
@@ -90,6 +98,8 @@ function AppContent() {
         
         {isTipsModalOpen && <StudyTipsModal isOpen={isTipsModalOpen} onClose={() => setIsTipsModalOpen(false)} />}
         {isInstallModalOpen && <InstallAppModal isOpen={isInstallModalOpen} onClose={() => setIsInstallModalOpen(false)} />}
+        
+        <PaywallModal />
       </div>
     </PullToRefresh>
   );
@@ -97,8 +107,10 @@ function AppContent() {
 
 export default function App() {
   return (
-    <DataProvider>
-      <AppContent />
-    </DataProvider>
+    <AuthProvider>
+      <DataProvider>
+        <AppContent />
+      </DataProvider>
+    </AuthProvider>
   );
 }

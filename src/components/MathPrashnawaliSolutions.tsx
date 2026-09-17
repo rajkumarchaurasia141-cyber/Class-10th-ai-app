@@ -15,6 +15,8 @@ import {
   Layers,
   ArrowRight,
 } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
+import { Lock } from 'lucide-react';
 import { ALL_MATH_CHAPTER_SOLUTIONS, searchMathPrashnawali } from '../data/mathSolutionsIndex';
 import { MathChapterExercises, MathPrashnawali, MathExerciseQuestion } from '../types';
 
@@ -27,6 +29,7 @@ export const MathPrashnawaliSolutions: React.FC<MathPrashnawaliSolutionsProps> =
   onAskAITeacher,
   initialChapterNumber = 1,
 }) => {
+  const { isVIP, setShowPaywall } = useAuth();
   const [selectedChapterNumber, setSelectedChapterNumber] = useState<number>(initialChapterNumber);
   const [selectedExerciseNumber, setSelectedExerciseNumber] = useState<string>('1.1');
   const [searchQuery, setSearchQuery] = useState<string>('');
@@ -46,6 +49,10 @@ export const MathPrashnawaliSolutions: React.FC<MathPrashnawaliSolutionsProps> =
 
   // Handle Chapter selection
   const handleSelectChapter = (chapterNum: number) => {
+    if (chapterNum > 1 && !isVIP) {
+      setShowPaywall(true);
+      return;
+    }
     setSelectedChapterNumber(chapterNum);
     const chapter = ALL_MATH_CHAPTER_SOLUTIONS.find((c) => c.chapterNumber === chapterNum);
     if (chapter && chapter.exercises.length > 0) {
@@ -270,7 +277,7 @@ export const MathPrashnawaliSolutions: React.FC<MathPrashnawaliSolutionsProps> =
                   <button
                     key={ch.chapterNumber}
                     onClick={() => handleSelectChapter(ch.chapterNumber)}
-                    className={`p-2.5 rounded-xl border text-left transition-all flex flex-col justify-between ${
+                    className={`p-2.5 rounded-xl border text-left transition-all flex flex-col justify-between relative ${
                       isSelected
                         ? 'border-emerald-500 bg-emerald-50 dark:bg-emerald-950/30 text-emerald-950 dark:text-emerald-100 shadow-sm ring-1 ring-emerald-500'
                         : 'border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-zinc-700 dark:text-zinc-300 hover:border-zinc-300 dark:hover:border-zinc-700'

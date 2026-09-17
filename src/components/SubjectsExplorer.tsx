@@ -21,6 +21,8 @@ import {
   ZoomIn,
   ZoomOut
 } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
+import { Lock } from 'lucide-react';
 import { SubjectId, ActiveMainTab } from '../types';
 import { Class10ChapterData } from '../data/class10SubjectData';
 import { useData } from '../context/DataContext';
@@ -40,6 +42,7 @@ export const SubjectsExplorer: React.FC<SubjectsExplorerProps> = ({
   onNavigateToAITeacher,
 }) => {
   const [selectedChapterNo, setSelectedChapterNo] = useState<number>(1);
+  const { isVIP, setShowPaywall } = useAuth();
   const [activeChapterTab, setActiveChapterTab] = useState<ChapterTab>('notes');
   const [copiedNote, setCopiedNote] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -95,6 +98,10 @@ export const SubjectsExplorer: React.FC<SubjectsExplorerProps> = ({
   };
 
   const handleSelectChapter = (chNo: number) => {
+    if (chNo > 1 && !isVIP) {
+      setShowPaywall(true);
+      return;
+    }
     setSelectedChapterNo(chNo);
     setMcqAnswers({});
     setRevealedAnswers({});
@@ -201,16 +208,21 @@ export const SubjectsExplorer: React.FC<SubjectsExplorerProps> = ({
                     : 'bg-stone-950/70 text-stone-300 border-stone-800 hover:border-stone-700 hover:text-white'
                 }`}
               >
-                <div className="flex items-center gap-1.5">
-                  <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-stone-800 text-stone-400 font-semibold">
-                    अध्याय {ch.chapter_no}
-                  </span>
-                  <span className="text-[10px] text-amber-400/90 font-medium">
-                    [{ch.subCategory}]
-                  </span>
+                <div className="flex items-center justify-between gap-1.5 w-full">
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-stone-800 text-stone-400 font-semibold">
+                      अध्याय {ch.chapter_no}
+                    </span>
+                    <span className="text-[10px] text-amber-400/90 font-medium">
+                      [{ch.subCategory}]
+                    </span>
+                  </div>
+                  {ch.chapter_no > 1 && !isVIP && (
+                    <Lock className="w-3.5 h-3.5 text-stone-500 shrink-0" />
+                  )}
                 </div>
-                <div className="mt-1 font-semibold truncate max-w-[200px]">
-                  {ch.chapter_name_hindi}
+                <div className="mt-1 font-semibold truncate max-w-[200px] flex items-center justify-between">
+                  <span>{ch.chapter_name_hindi}</span>
                 </div>
               </button>
             );

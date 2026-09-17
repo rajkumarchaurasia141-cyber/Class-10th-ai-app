@@ -13,6 +13,8 @@ import {
   Check,
   Award,
 } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
+import { Lock } from 'lucide-react';
 import { SubjectId, ActiveMainTab } from '../types';
 import { BSEB_PYQ_DATA, PYQItem } from '../data/bsebPYQ';
 
@@ -26,6 +28,7 @@ export const Pichhle10SaalPYQ: React.FC<Pichhle10SaalPYQProps> = ({ onAskAITeach
   const [selectedType, setSelectedType] = useState<'all' | 'mcq' | 'short' | 'long'>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const { isVIP, setShowPaywall } = useAuth();
 
   const years: (number | 'all')[] = [
     'all',
@@ -214,6 +217,11 @@ export const Pichhle10SaalPYQ: React.FC<Pichhle10SaalPYQProps> = ({ onAskAITeach
           </div>
         ) : (
           filteredPYQs.map((item) => {
+            // Determine if chapter > 1 based on text
+            const chapterMatch = item.chapter.match(/\d+/);
+            const chapterNo = chapterMatch ? parseInt(chapterMatch[0], 10) : 1;
+            const isLocked = chapterNo > 1 && !isVIP;
+
             return (
               <div
                 key={item.id}
@@ -241,6 +249,22 @@ export const Pichhle10SaalPYQ: React.FC<Pichhle10SaalPYQProps> = ({ onAskAITeach
                   </div>
                 </div>
 
+                {isLocked ? (
+                  <div className="py-6 flex flex-col items-center justify-center text-center bg-stone-950 rounded-xl border border-stone-800">
+                    <div className="w-12 h-12 bg-amber-500/10 rounded-full flex items-center justify-center mb-3">
+                      <Lock className="w-6 h-6 text-amber-500" />
+                    </div>
+                    <h3 className="font-bold text-white mb-1">यह PYQ लॉक्ड है</h3>
+                    <p className="text-xs text-stone-400 mb-4 max-w-xs">पिछले वर्षों के सभी प्रश्न देखने के लिए टॉपर बैच ज्वाइन करें।</p>
+                    <button 
+                      onClick={() => setShowPaywall(true)}
+                      className="px-4 py-2 bg-amber-500 hover:bg-amber-400 text-stone-950 font-bold rounded-lg text-xs"
+                    >
+                      अनलॉक करें 🔓
+                    </button>
+                  </div>
+                ) : (
+                  <>
                 {/* Question */}
                 <div>
                   <h3 className="text-sm sm:text-base font-bold text-white leading-relaxed">
@@ -316,6 +340,8 @@ export const Pichhle10SaalPYQ: React.FC<Pichhle10SaalPYQProps> = ({ onAskAITeach
                     <span>AI Teacher से इस प्रश्न को और समझें</span>
                   </button>
                 </div>
+              </>
+                )}
               </div>
             );
           })

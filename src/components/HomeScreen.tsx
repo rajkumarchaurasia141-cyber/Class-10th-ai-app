@@ -26,12 +26,39 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
 }) => {
   // Auto-Sliding Banner State
   const [currentSlide, setCurrentSlide] = useState(0);
+  const [customBannerImage, setCustomBannerImage] = useState<string | null>("https://i.ibb.co/qF4jJdbN/Whats-App-Image-2025-03-05-at-00-58-15-e204c965.jpg");
+
+  useEffect(() => {
+    try {
+      const savedImage = localStorage.getItem('custom_banner_image');
+      if (savedImage) {
+        setCustomBannerImage(savedImage);
+      }
+    } catch (e) {
+      console.error("Error reading from localStorage", e);
+    }
+  }, []);
+
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const base64String = reader.result as string;
+        setCustomBannerImage(base64String);
+        localStorage.setItem('custom_banner_image', base64String);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
   const banners = [
     {
       title: "बिहार बोर्ड 10वीं टॉपर बैच 2026",
       subtitle: "संपूर्ण तैयारी",
       bg: "bg-gradient-to-r from-blue-600 to-indigo-600",
-      image: "🎓"
+      image: "🎓",
+      customImgUrl: "https://i.ibb.co/qF4jJdbN/Whats-App-Image-2025-03-05-at-00-58-15-e204c965.jpg" // Using your actual photo link here
     },
     {
       title: "चैप्टर-वाइज 50 MCQs डेली टेस्ट सीरीज़",
@@ -76,7 +103,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
             key={index}
             className={`absolute inset-0 w-full h-full transition-opacity duration-700 ease-in-out ${index === currentSlide ? 'opacity-100 z-10' : 'opacity-0 z-0'} ${banner.bg} p-6 flex items-center justify-between`}
           >
-            <div className="flex flex-col justify-center h-full max-w-[70%]">
+            <div className="flex flex-col justify-center h-full max-w-[65%] sm:max-w-[70%] z-20">
               <span className="inline-block px-2 py-1 rounded bg-black/20 text-white text-[10px] font-bold w-max mb-2 uppercase tracking-wide">
                 {banner.subtitle}
               </span>
@@ -84,9 +111,34 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
                 {banner.title}
               </h2>
             </div>
-            <div className="text-6xl sm:text-7xl opacity-90 drop-shadow-lg scale-110">
-              {banner.image}
-            </div>
+            {index === 0 ? (
+              <div className="relative z-20 mr-4">
+                <input 
+                  type="file" 
+                  accept="image/*" 
+                  id="banner-upload" 
+                  className="hidden" 
+                  onChange={handleImageUpload} 
+                />
+                <label htmlFor="banner-upload" className="cursor-pointer group/img relative block">
+                  {customBannerImage ? (
+                    <img src={customBannerImage} alt="Profile" className="h-24 w-24 sm:h-32 sm:w-32 object-cover rounded-full border-4 border-white/20 shadow-xl" />
+                  ) : (
+                    <div className="h-24 w-24 sm:h-32 sm:w-32 rounded-full border-4 border-white/20 shadow-xl bg-white/10 backdrop-blur-sm flex flex-col items-center justify-center hover:bg-white/20 transition-colors">
+                      <Camera className="w-6 h-6 sm:w-8 sm:h-8 text-white/80 mb-1" />
+                      <span className="text-[10px] sm:text-xs text-white/80 font-medium">Add Photo</span>
+                    </div>
+                  )}
+                  <div className="absolute inset-0 rounded-full bg-black/40 flex items-center justify-center opacity-0 group-hover/img:opacity-100 transition-opacity">
+                    <span className="text-white text-xs font-bold">Change</span>
+                  </div>
+                </label>
+              </div>
+            ) : (
+              <div className="text-6xl sm:text-7xl opacity-90 drop-shadow-lg scale-110">
+                {banner.image}
+              </div>
+            )}
           </div>
         ))}
         {/* Banner Indicators */}
