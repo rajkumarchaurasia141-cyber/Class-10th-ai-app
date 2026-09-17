@@ -85,6 +85,10 @@ export const SubjectsExplorer: React.FC<SubjectsExplorerProps> = ({
   };
 
   const currentSubject = subjectsData[selectedSubjectId] || subjectsData['maths'] || Object.values(subjectsData)[0];
+
+  if (!currentSubject) {
+    return <div className="p-4 text-center text-stone-400">Loading subjects data...</div>;
+  }
   const chapters = currentSubject?.chapters || [];
   const currentChapter: Class10ChapterData =
     chapters.find((c: any) => c.chapter_no === selectedChapterNo) || chapters[0];

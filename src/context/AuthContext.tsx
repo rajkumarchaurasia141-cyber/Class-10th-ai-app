@@ -52,32 +52,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [isVIP, setIsVIP] = useState(false);
 
   const refreshVIP = async () => {
-    if (user && user.email) {
-      const cleanEmail = user.email.trim().toLowerCase();
-      // 1. Client-side instant check
-      const isClientVIP = unlockedStudents.some(email => email.trim().toLowerCase() === cleanEmail);
-      if (isClientVIP) {
-        setIsVIP(true);
-        return;
-      }
-
-      // 2. Server-side check
-      try {
-        const res = await fetch('/api/check-vip', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email: cleanEmail })
-        });
-        if (!res.ok) throw new Error("API error");
-        const data = await res.json();
-        setIsVIP(data.isVIP);
-      } catch (e) {
-        console.error("VIP check failed", e);
-        setIsVIP(false);
-      }
-    } else {
-      setIsVIP(false);
-    }
+    setIsVIP(true);
   };
 
   useEffect(() => {

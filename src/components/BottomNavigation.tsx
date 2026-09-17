@@ -46,15 +46,7 @@ export const BottomNavigation: React.FC<BottomNavigationProps> = ({ activeTab, o
     }
   ];
 
-  if (user?.email === 'rajkumarchaurasia141@gmail.com') {
-    tabs.push({
-      id: 'admin' as ActiveMainTab,
-      label: 'Admin',
-      hindiLabel: 'पैनल',
-      icon: ShieldCheck,
-    });
-  }
-
+  
   return (
     <nav
       id="bottom-navigation-bar"
