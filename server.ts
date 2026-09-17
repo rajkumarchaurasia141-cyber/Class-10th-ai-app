@@ -3,6 +3,9 @@ import path from "path";
 import dotenv from "dotenv";
 import { GoogleGenAI } from "@google/genai";
 import { createServer as createViteServer } from "vite";
+import { initializeApp } from 'firebase/app';
+import { getFirestore, doc, getDoc, setDoc } from 'firebase/firestore';
+import fs from 'fs';
 
 dotenv.config();
 
@@ -555,6 +558,79 @@ JSON प्रारूप:
     res.status(500).json({ error: error?.message || "टेस्ट पेपर तैयार करने में समस्या आई।" });
   }
 });
+
+
+// --- VIP Validation System ---
+let db: any = null;
+try {
+  const fbConfig = JSON.parse(fs.readFileSync(path.join(process.cwd(), 'firebase-applet-config.json'), 'utf8'));
+  const fbApp = initializeApp(fbConfig);
+  db = getFirestore(fbApp, fbConfig.firestoreDatabaseId);
+} catch (e) {
+  console.error("Firebase config missing or invalid", e);
+}
+
+app.post('/api/check-vip', async (req, res) => {
+  try {
+    const { email } = req.body;
+    if (!email) {
+      res.json({ isVIP: false });
+      return;
+    }
+    
+    // Hardcoded instant fallback list
+    const hardcodedVips = [
+      "rajkumarchaurasia576@gmail.com",
+      "rajkumarchaurasia760@gmail.com"
+    ];
+    
+    if (hardcodedVips.includes(email.toLowerCase())) {
+      res.json({ isVIP: true });
+      return;
+    }
+
+    if (!db) {
+      res.json({ isVIP: false });
+      return;
+    }
+    
+    // Check Firestore
+    const docRef = doc(db, 'vips', email.toLowerCase());
+    const snapshot = await getDoc(docRef);
+    if (snapshot.exists() && snapshot.data().isVIP === true) {
+      res.json({ isVIP: true });
+      return;
+    }
+    
+    res.json({ isVIP: false });
+  } catch (err) {
+    console.error("Error checking VIP:", err);
+    res.json({ isVIP: false });
+  }
+});
+
+// Admin endpoint to add VIP
+app.post('/api/add-vip', async (req, res) => {
+  try {
+    const { email, adminKey } = req.body;
+    if (adminKey !== process.env.ADMIN_SECRET_KEY) {
+      res.status(403).json({ error: "Unauthorized" });
+      return;
+    }
+    if (!email || !db) {
+      res.status(400).json({ error: "Bad request or DB not configured" });
+      return;
+    }
+    
+    const docRef = doc(db, 'vips', email.toLowerCase());
+    await setDoc(docRef, { email: email.toLowerCase(), isVIP: true, createdAt: new Date() });
+    res.json({ success: true, message: `${email} has been unlocked!` });
+  } catch (err) {
+    console.error("Error adding VIP:", err);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
 
 // Vite middleware in dev, static files in production
 async function startServer() {
