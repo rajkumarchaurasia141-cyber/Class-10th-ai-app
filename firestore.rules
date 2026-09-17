@@ -1,0 +1,14 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /subjects/{subjectId} {
+      allow read: if true;
+      allow write: if true; // In a real app, restrict this. Leaving open for the user to add via script/console
+      
+      match /chapters/{chapterId} {
+        allow read: if true;
+        allow write: if true;
+      }
+    }
+  }
+}

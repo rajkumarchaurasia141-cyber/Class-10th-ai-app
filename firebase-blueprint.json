@@ -1,0 +1,29 @@
+{
+  "collections": {
+    "subjects": {
+      "documentId": "subjectId (e.g., maths, science)",
+      "fields": {
+        "id": "string",
+        "name": "string",
+        "icon": "string",
+        "color": "string"
+      },
+      "subcollections": {
+        "chapters": {
+          "documentId": "chapterId (e.g., ch_1, ch_2)",
+          "fields": {
+            "chapter_no": "number",
+            "title": "string",
+            "hindi_title": "string",
+            "description": "string",
+            "topics": "array of strings",
+            "deep_notes": "array of objects (title, content, type)",
+            "pyqs": "array of objects (year, question, answer)",
+            "mcqs": "array of objects (question, options, answer_index, explanation)",
+            "exercises": "array of objects (exercise, solutions)"
+          }
+        }
+      }
+    }
+  }
+}
