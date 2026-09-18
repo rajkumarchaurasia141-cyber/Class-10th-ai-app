@@ -1,18 +1,56 @@
-import React, { useState } from 'react';
-import { MessageCircle, Send, Sparkles, User, Bot, PhoneCall, HelpCircle, CheckCircle2 } from 'lucide-react';
+import React, { useState, useRef, useEffect } from 'react';
+import { MessageCircle, Send, Sparkles, User, Bot, PhoneCall, HelpCircle, CheckCircle2, RotateCcw } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { getAccurateDoubtAnswer } from '../utils/doubtKnowledgeEngine';
+
+function FormattedBotMessage({ text }: { text: string }) {
+  const lines = text.split('\n');
+  return (
+    <div className="space-y-1">
+      {lines.map((line, lIdx) => {
+        if (!line.trim()) {
+          return <div key={lIdx} className="h-1.5" />;
+        }
+        const parts = line.split(/(\*\*.*?\*\*)/g);
+        return (
+          <p key={lIdx} className="leading-relaxed">
+            {parts.map((part, pIdx) => {
+              if (part.startsWith('**') && part.endsWith('**')) {
+                return (
+                  <strong key={pIdx} className="font-bold text-stone-900">
+                    {part.slice(2, -2)}
+                  </strong>
+                );
+              }
+              return <span key={pIdx}>{part}</span>;
+            })}
+          </p>
+        );
+      })}
+    </div>
+  );
+}
 
 export function DoubtChatView({ onOpenVip }: { onOpenVip: () => void }) {
   const { user, isVIP } = useAuth();
+  const messagesEndRef = useRef<HTMLDivElement>(null);
   const [messages, setMessages] = useState<Array<{ sender: 'user' | 'bot' | 'teacher'; text: string; time: string }>>([
     {
       sender: 'bot',
-      text: `नमस्ते ${user?.name || 'विद्यार्थी'}! मैं आपका 10th BSEB डाउट असिस्टेंट हूँ। आप किसी भी विषय (संस्कृत, विज्ञान, गणित, सामाजिक विज्ञान, हिंदी) का कोई भी प्रश्न या संदेह यहाँ पूछ सकते हैं।`,
+      text: `नमस्ते ${user?.name || 'विद्यार्थी'}! मैं आपका 10th BSEB डाउट असिस्टेंट हूँ। आप किसी भी विषय (संस्कृत, विज्ञान, गणित, सामाजिक विज्ञान, हिंदी, अंग्रेजी) का कोई भी प्रश्न या संदेह यहाँ पूछ सकते हैं।`,
       time: 'अभी'
     }
   ]);
   const [input, setInput] = useState('');
   const [isTyping, setIsTyping] = useState(false);
+
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  };
+
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages, isTyping]);
 
   const quickQuestions = [
     'मङ्गलम् पाठ के रचनाकार कौन हैं?',
@@ -21,7 +59,7 @@ export function DoubtChatView({ onOpenVip }: { onOpenVip: () => void }) {
     'द्विघात समीकरण का सूत्र बताएं'
   ];
 
-  const handleSend = (textToSend?: string) => {
+  const handleSend = async (textToSend?: string) => {
     const q = (textToSend || input).trim();
     if (!q) return;
 
@@ -31,25 +69,42 @@ export function DoubtChatView({ onOpenVip }: { onOpenVip: () => void }) {
       time: new Date().toLocaleTimeString('hi-IN', { hour: '2-digit', minute: '2-digit' })
     };
 
-    setMessages((prev) => [...prev, userMsg]);
+    const newMessages = [...messages, userMsg];
+    setMessages(newMessages);
     if (!textToSend) setInput('');
     setIsTyping(true);
 
-    setTimeout(() => {
-      let reply = 'यह एक बहुत अच्छा प्रश्न है! ';
-      const lower = q.toLowerCase();
+    try {
+      const res = await fetch('/api/ask-doubt', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          question: q,
+          history: newMessages.slice(-4)
+        })
+      });
 
-      if (lower.includes('मङ्गलम्') || lower.includes('रचनाकार') || lower.includes('वेदव्यास')) {
-        reply += 'मङ्गलम् पाठ के रचनाकार महर्षि वेदव्यास हैं। इसमें 4 उपनिषदों से कुल 5 मंत्र संकलित किए गए हैं।';
-      } else if (lower.includes('सत्यमेव जयते') || lower.includes('उपनिषद')) {
-        reply += '"सत्यमेव जयते नानृतं..." मुण्डकोपनिषद् से लिया गया है। इसका अर्थ है कि सत्य की ही जीत होती है, असत्य की नहीं।';
-      } else if (lower.includes('परावर्तन') || lower.includes('प्रकाश')) {
-        reply += 'प्रकाश के परावर्तन के 2 नियम हैं:\n1. आपतित किरण, परावर्तित किरण और अभिलंब तीनों एक ही तल में होते हैं।\n2. आपतन कोण (i) सदैव परावर्तन कोण (r) के बराबर होता है (∠i = ∠r)।';
-      } else if (lower.includes('द्विघात') || lower.includes('सूत्र')) {
-        reply += 'द्विघात समीकरण ax² + bx + c = 0 का मूल ज्ञात करने का सूत्र है: x = [-b ± √(b² - 4ac)] / 2a। यहाँ विविक्तकर D = b² - 4ac है।';
-      } else {
-        reply += `आपके प्रश्न "${q}" का उत्तर हमारे विषय विशेषज्ञों ने तैयार कर रखा है। आप ऐप के "Course" टैब में जाकर संबंधित पाठ के विस्तृत नोट्स व प्रश्नोत्तर भी पढ़ सकते हैं।`;
+      if (res.ok) {
+        const data = await res.json();
+        if (data && data.answer) {
+          setMessages((prev) => [
+            ...prev,
+            {
+              sender: 'bot' as const,
+              text: data.answer,
+              time: new Date().toLocaleTimeString('hi-IN', { hour: '2-digit', minute: '2-digit' })
+            }
+          ]);
+          setIsTyping(false);
+          return;
+        }
       }
+      throw new Error('Fallback required');
+    } catch (err) {
+      // Local knowledge engine fallback so user always gets an accurate answer
+      const reply = getAccurateDoubtAnswer(q);
 
       setMessages((prev) => [
         ...prev,
@@ -60,7 +115,7 @@ export function DoubtChatView({ onOpenVip }: { onOpenVip: () => void }) {
         }
       ]);
       setIsTyping(false);
-    }, 800);
+    }
   };
 
   return (
@@ -105,7 +160,11 @@ export function DoubtChatView({ onOpenVip }: { onOpenVip: () => void }) {
                   : 'bg-white text-stone-800 border border-slate-200 rounded-bl-none'
               }`}
             >
-              <p className="whitespace-pre-line">{m.text}</p>
+              {m.sender === 'user' ? (
+                <p className="whitespace-pre-line">{m.text}</p>
+              ) : (
+                <FormattedBotMessage text={m.text} />
+              )}
             </div>
             <span className="text-[9px] text-stone-400 mt-1 px-1">{m.time}</span>
           </div>
@@ -119,6 +178,7 @@ export function DoubtChatView({ onOpenVip }: { onOpenVip: () => void }) {
             <span className="text-[10px] ml-1">शिक्षक उत्तर लिख रहे हैं...</span>
           </div>
         )}
+        <div ref={messagesEndRef} />
       </div>
 
       {/* Quick Questions Pills */}

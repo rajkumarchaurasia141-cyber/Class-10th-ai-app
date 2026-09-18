@@ -21,6 +21,7 @@ import { NcertBooksModal } from './NcertBooksModal';
 import { SocialMediaModal } from './SocialMediaModal';
 import { FreeTestModal } from './FreeTestModal';
 import { FreeNotesModal } from './FreeNotesModal';
+import { PaidTestHubModal } from './PaidTestHubModal';
 
 interface HomeScreenProps {
   onSelect: (subjectId: string) => void;
@@ -38,31 +39,33 @@ export function HomeScreen({ onSelect, onNavigateTab }: HomeScreenProps) {
   const [showSocial, setShowSocial] = useState(false);
   const [showFreeTest, setShowFreeTest] = useState(false);
   const [showFreeNotes, setShowFreeNotes] = useState(false);
+  const [showPaidTest, setShowPaidTest] = useState(false);
 
   const handleFeatureNavigate = (id: string) => {
     switch (id) {
       case 'course':
-        // Scroll to subjects or open subjects view
-        const el = document.getElementById('all-subjects-section');
-        if (el) el.scrollIntoView({ behavior: 'smooth' });
+        if (onNavigateTab) {
+          onNavigateTab('my_courses');
+        } else {
+          const el = document.getElementById('all-subjects-section');
+          if (el) el.scrollIntoView({ behavior: 'smooth' });
+        }
         break;
       case 'free_courses':
         // Open first subject demo
         onSelect('sanskrit');
         break;
       case 'paid_notes':
-        if (!isVIP) {
+        if (onNavigateTab) {
+          onNavigateTab('my_courses');
+        } else if (!isVIP) {
           setShowPaywall(true);
         } else {
           onSelect('sanskrit');
         }
         break;
       case 'paid_test':
-        if (!isVIP) {
-          setShowPaywall(true);
-        } else {
-          onSelect('sanskrit');
-        }
+        setShowPaidTest(true);
         break;
       case 'ncert_book':
         setShowNcert(true);
@@ -205,6 +208,13 @@ export function HomeScreen({ onSelect, onNavigateTab }: HomeScreenProps) {
           onClose={() => setShowFreeNotes(false)} 
           onOpenVip={() => setShowPaywall(true)} 
           onOpenSubject={(id) => onSelect(id)} 
+        />
+      )}
+      {showPaidTest && (
+        <PaidTestHubModal 
+          onClose={() => setShowPaidTest(false)} 
+          onOpenVip={() => setShowPaywall(true)} 
+          isVIP={isVIP}
         />
       )}
     </div>

@@ -87,13 +87,13 @@ export const AuthProvider = ({ children }: any) => {
         setIsVIP(false);
         setVipDetails(null);
       }, (err) => {
-        console.error("VIP listener error:", err);
+        console.warn("VIP listener notice:", err?.message || String(err));
         setIsVIP(false);
         setVipDetails(null);
       });
       return () => unsub();
-    } catch (e) {
-      console.error("VIP snapshot setup error:", e);
+    } catch (e: any) {
+      console.warn("VIP snapshot setup notice:", e?.message || String(e));
     }
   }, [user?.email]);
 
@@ -120,8 +120,8 @@ export const AuthProvider = ({ children }: any) => {
         email: cleanEmail,
         lastLogin: new Date().toISOString()
       }, { merge: true });
-    } catch (e) {
-      console.error("Student record save error:", e);
+    } catch (e: any) {
+      console.warn("Student record save notice:", e?.message || String(e));
     }
 
     localStorage.setItem('bseb_user', JSON.stringify(userData));

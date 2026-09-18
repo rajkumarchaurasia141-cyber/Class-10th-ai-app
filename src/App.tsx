@@ -16,50 +16,7 @@ import { NcertBooksModal } from './components/NcertBooksModal';
 import { DownloadsNotesView } from './components/DownloadsNotesView';
 import { DoubtChatView } from './components/DoubtChatView';
 import { ProfileView } from './components/ProfileView';
-import { BookText, ChevronRight } from 'lucide-react';
-
-function MyCoursesList({ onSelect }: { onSelect: (id: string) => void }) {
-  const { subjects, loading } = useData();
-  const subList = Object.values(subjects);
-
-  if (loading) return <div className="p-8 text-center text-stone-500">कोर्स लोड हो रहे हैं...</div>;
-
-  return (
-    <div className="p-4 max-w-lg mx-auto space-y-4 pb-20">
-      <div className="bg-gradient-to-r from-red-700 to-amber-700 text-white p-4 rounded-3xl shadow-sm">
-        <h2 className="text-lg font-black">कक्षा 10वीं - टॉपर बैच (BSEB 2027)</h2>
-        <p className="text-xs text-amber-100 mt-0.5">एनसीईआरटी आधारित सम्पूर्ण 6 विषय</p>
-      </div>
-
-      <div className="space-y-2.5">
-        {subList.map((sub: any) => (
-          <div
-            key={sub.id}
-            onClick={() => onSelect(sub.id)}
-            className="bg-white hover:bg-slate-50 border border-slate-200/90 rounded-2xl p-4 transition-all shadow-xs hover:shadow-md cursor-pointer flex items-center justify-between group"
-          >
-            <div className="flex items-center gap-3">
-              <div className="w-12 h-12 rounded-2xl bg-red-50 text-red-700 flex items-center justify-center font-bold border border-red-100 group-hover:scale-105 transition-transform shrink-0">
-                <BookText className="w-6 h-6" />
-              </div>
-              <div>
-                <h4 className="font-extrabold text-stone-900 text-sm group-hover:text-red-700 transition-colors">
-                  {sub.subject_name_hindi || sub.subject_name || sub.id}
-                </h4>
-                <p className="text-xs text-stone-500">
-                  {sub.chapters?.length || 0} सम्पूर्ण अध्याय • नोट्स, टिप्स & 50 MCQs
-                </p>
-              </div>
-            </div>
-            <div className="w-8 h-8 rounded-full bg-slate-100 group-hover:bg-red-50 text-stone-400 group-hover:text-red-700 flex items-center justify-center transition-colors">
-              <ChevronRight className="w-4 h-4" />
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
+import { MyCoursesView } from './components/MyCoursesView';
 
 function MainApp() {
   const { user, isAdmin, isVIP, vipDetails } = useAuth();
@@ -137,11 +94,12 @@ function MainApp() {
           )}
 
           {activeTab === 'my_courses' && (
-            <MyCoursesList 
-              onSelect={(id: string) => { 
+            <MyCoursesView 
+              onSelectSubject={(id: string) => { 
                 setSelectedSubject(id); 
                 setActiveTab('explorer'); 
               }} 
+              onOpenVip={() => setShowVipModal(true)}
             />
           )}
 

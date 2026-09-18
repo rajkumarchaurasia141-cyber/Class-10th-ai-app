@@ -69,7 +69,7 @@ export function AdminStudentsList() {
       setStudents(list);
       setLoading(false);
     }, (err) => {
-      console.error('Students fetch error:', err);
+      console.warn('Students fetch notice:', err?.message || String(err));
       setLoading(false);
     });
 
@@ -81,7 +81,7 @@ export function AdminStudentsList() {
       });
       setVips(map);
     }, (err) => {
-      console.error('Vip users fetch error:', err);
+      console.warn('Vip users fetch notice:', err?.message || String(err));
     });
 
     return () => {

@@ -31,3 +31,18 @@ export interface Subject {
   icon?: string;
   chapters: Chapter[];
 }
+
+export interface PaidPdfNote {
+  id: string;
+  subjectId: string;
+  subjectName: string;
+  chapterNo?: number;
+  chapterName?: string;
+  title: string;
+  description?: string;
+  pdfUrl: string;
+  totalPages?: number;
+  fileSize?: string;
+  isPaid?: boolean;
+  uploadedAt?: string;
+}

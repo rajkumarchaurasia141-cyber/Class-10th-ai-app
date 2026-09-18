@@ -171,11 +171,11 @@ export function FeatureGrid({ onNavigate }: FeatureGridProps) {
     },
     {
       id: 'social',
-      title: 'Social Media',
-      subtitle: 'व्हाट्सएप & टेलीग्राम',
+      title: 'Social & Help',
+      subtitle: 'YouTube, WhatsApp, हेल्प',
       badge: 'JOIN',
-      badgeColor: 'bg-pink-600 text-white',
-      bgIcon: 'bg-gradient-to-br from-pink-500 to-rose-600',
+      badgeColor: 'bg-red-600 text-white',
+      bgIcon: 'bg-gradient-to-br from-red-500 to-rose-600',
       icon: Share2,
       renderIcon: () => (
         <div className="w-12 h-12 rounded-2xl bg-pink-50 border border-pink-100 flex items-center justify-center relative shadow-sm group-hover:scale-105 transition-transform">

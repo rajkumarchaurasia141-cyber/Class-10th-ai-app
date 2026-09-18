@@ -143,10 +143,10 @@ export function AppDrawer({ isOpen, onClose, onNavigate, onOpenVip }: AppDrawerP
               onClick={() => { onNavigate('social'); onClose(); }}
               className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-stone-700 hover:bg-red-50 hover:text-red-700 font-semibold transition-colors cursor-pointer text-left"
             >
-              <div className="w-8 h-8 rounded-lg bg-purple-100 text-purple-600 flex items-center justify-center">
-                <MessageCircle className="w-4 h-4" />
+              <div className="w-8 h-8 rounded-lg bg-rose-100 text-rose-600 flex items-center justify-center">
+                <Share2 className="w-4 h-4" />
               </div>
-              <span>व्हाट्सएप व टेलीग्राम ग्रुप</span>
+              <span>सोशल मीडिया & हेल्पलाइन</span>
             </button>
           </div>
 
@@ -172,7 +172,7 @@ export function AppDrawer({ isOpen, onClose, onNavigate, onOpenVip }: AppDrawerP
             className="flex items-center gap-1.5 hover:text-red-700 font-semibold cursor-pointer"
           >
             <PhoneCall className="w-3.5 h-3.5 text-red-600" />
-            <span>हेल्पलाइन</span>
+            <span>हेल्पलाइन: 9241511070</span>
           </button>
           <button 
             onClick={logout}

@@ -79,8 +79,8 @@ export function PaywallModal({ onClose }: { onClose: () => void }) {
         setCopiedPhone(true);
         setTimeout(() => setCopiedPhone(false), 2500);
       }
-    } catch (err) {
-      console.error('Copy failed', err);
+    } catch (err: any) {
+      console.warn('Copy notice:', err?.message || String(err));
     }
   };
 
@@ -171,7 +171,7 @@ export function PaywallModal({ onClose }: { onClose: () => void }) {
 
       setUploadSuccess(true);
     } catch (err: any) {
-      console.error('Error uploading payment screenshot:', err);
+      console.warn('Payment screenshot upload notice:', err?.message || String(err));
       setUploadError('स्क्रीनशॉट अपलोड करने में समस्या आई: ' + (err?.message || 'पुनः प्रयास करें'));
     } finally {
       setUploading(false);

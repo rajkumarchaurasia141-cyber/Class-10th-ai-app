@@ -67,13 +67,13 @@ export function AdminPaymentRequests() {
         setRequests(items);
         setLoading(false);
       }, (err) => {
-        console.error('Error fetching payment requests:', err);
+        console.warn('Payment requests fetch notice:', err?.message || String(err));
         setLoading(false);
       });
 
       return () => unsub();
-    } catch (e) {
-      console.error(e);
+    } catch (e: any) {
+      console.warn('Payment requests setup notice:', e?.message || String(e));
       setLoading(false);
     }
   }, []);
@@ -124,8 +124,8 @@ export function AdminPaymentRequests() {
         setSelectedImage(prev => prev ? { ...prev, status: 'approved' } : null);
       }
     } catch (err: any) {
-      console.error('Approve failed:', err);
-      alert('स्वीकृति में त्रुटि: ' + err?.message);
+      console.warn('Approve failed notice:', err?.message || String(err));
+      alert('स्वीकृति में त्रुटि: ' + (err?.message || 'पुनः प्रयास करें'));
     } finally {
       setProcessingId(null);
     }

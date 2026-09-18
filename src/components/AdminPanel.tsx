@@ -25,6 +25,7 @@ import { defaultSubjectsData } from '../data/defaultCurriculum';
 import { MCQItem, QAItem } from '../types';
 import { AdminPaymentRequests } from './AdminPaymentRequests';
 import { AdminStudentsList } from './AdminStudentsList';
+import { AdminPdfNotesManager } from './AdminPdfNotesManager';
 import { calculateVipExpiry } from '../utils/vipHelper';
 
 const PRESET_SUBJECTS = [
@@ -37,7 +38,7 @@ const PRESET_SUBJECTS = [
 
 export function AdminPanel({ onBack }: any) {
   const { refreshData } = useData();
-  const [activeTab, setActiveTab] = useState<'requests' | 'students' | 'vip' | 'content' | 'sync'>('requests');
+  const [activeTab, setActiveTab] = useState<'requests' | 'students' | 'vip' | 'content' | 'pdf_notes' | 'sync'>('requests');
   const [pendingRequestsCount, setPendingRequestsCount] = useState<number>(0);
 
   useEffect(() => {
@@ -48,10 +49,12 @@ export function AdminPanel({ onBack }: any) {
           if (d.data()?.status === 'pending') count++;
         });
         setPendingRequestsCount(count);
+      }, (err) => {
+        console.warn("Payment requests notice:", err?.message || String(err));
       });
       return () => unsub();
-    } catch (e) {
-      console.error(e);
+    } catch (e: any) {
+      console.warn("Admin payment snapshot error:", e?.message || String(e));
     }
   }, []);
   
@@ -279,7 +282,8 @@ export function AdminPanel({ onBack }: any) {
 
         for (const ch of subObj.chapters) {
           const chRef = doc(db, 'subjects', sId, 'chapters', `ch${ch.chapter_no}`);
-          await setDoc(chRef, {
+          const chAltRef = doc(db, 'subjects', sId, 'chapters', `ch_${ch.chapter_no}`);
+          const payload = {
             chapter_no: ch.chapter_no,
             chapter_name: ch.chapter_name,
             chapter_name_hindi: ch.chapter_name_hindi,
@@ -289,7 +293,9 @@ export function AdminPanel({ onBack }: any) {
             mcq: ch.mcq || [],
             subjective_qa: ch.subjective_qa || [],
             updatedAt: new Date().toISOString()
-          }, { merge: true });
+          };
+          await setDoc(chRef, payload, { merge: true });
+          await setDoc(chAltRef, payload, { merge: true });
         }
       }
 
@@ -359,6 +365,14 @@ export function AdminPanel({ onBack }: any) {
             <Users className="w-4 h-4" /> पंजीकृत छात्र
           </button>
           <button 
+            onClick={() => setActiveTab('pdf_notes')} 
+            className={`pb-3 px-4 font-bold text-sm flex items-center gap-2 transition-colors cursor-pointer whitespace-nowrap ${
+              activeTab === 'pdf_notes' ? 'border-b-2 border-amber-500 text-amber-500' : 'text-stone-400 hover:text-stone-200'
+            }`}
+          >
+            <FileText className="w-4 h-4" /> Paid PDF नोट्स
+          </button>
+          <button 
             onClick={() => setActiveTab('content')} 
             className={`pb-3 px-4 font-bold text-sm flex items-center gap-2 transition-colors cursor-pointer whitespace-nowrap ${
               activeTab === 'content' ? 'border-b-2 border-amber-500 text-amber-500' : 'text-stone-400 hover:text-stone-200'
@@ -386,6 +400,13 @@ export function AdminPanel({ onBack }: any) {
 
         {/* Payment Requests (Screenshots) Tab */}
         {activeTab === 'requests' && <AdminPaymentRequests />}
+
+        {/* Paid PDF Notes Tab */}
+        {activeTab === 'pdf_notes' && (
+          <div className="relative z-10">
+            <AdminPdfNotesManager />
+          </div>
+        )}
 
         {/* Registered Students Tab */}
         {activeTab === 'students' && <AdminStudentsList />}

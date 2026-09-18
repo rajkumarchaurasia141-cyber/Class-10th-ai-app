@@ -44,9 +44,70 @@
         "lastLogin": { "type": "string" }
       },
       "required": ["email", "name"]
+    },
+    "Subject": {
+      "title": "Subject",
+      "description": "Board subject curriculum node",
+      "type": "object",
+      "properties": {
+        "subject_name": { "type": "string" },
+        "subject_name_hindi": { "type": "string" },
+        "tagline": { "type": "string" },
+        "icon": { "type": "string" },
+        "color": { "type": "string" }
+      },
+      "required": ["subject_name", "subject_name_hindi"]
+    },
+    "Chapter": {
+      "title": "Chapter",
+      "description": "Subject chapter content with notes, tips, QnA and MCQs",
+      "type": "object",
+      "properties": {
+        "chapter_no": { "type": "number" },
+        "chapter_name": { "type": "string" },
+        "chapter_name_hindi": { "type": "string" },
+        "intro_hindi": { "type": "string" },
+        "notes_hindi": { "type": "string" },
+        "topper_tips": { "type": "string" },
+        "subjective_qa": { "type": "string" },
+        "mcq": { "type": "string" },
+        "updatedAt": { "type": "string" }
+      },
+      "required": ["chapter_no", "chapter_name_hindi"]
+    },
+    "PaidNote": {
+      "title": "PaidNote",
+      "description": "Premium PDF study note uploaded by admin",
+      "type": "object",
+      "properties": {
+        "subjectId": { "type": "string" },
+        "subjectName": { "type": "string" },
+        "chapterNo": { "type": "number" },
+        "chapterName": { "type": "string" },
+        "title": { "type": "string" },
+        "description": { "type": "string" },
+        "pdfUrl": { "type": "string" },
+        "totalPages": { "type": "number" },
+        "fileSize": { "type": "string" },
+        "isPaid": { "type": "boolean" },
+        "uploadedAt": { "type": "string" }
+      },
+      "required": ["subjectId", "title", "pdfUrl"]
     }
   },
   "firestore": {
+    "/subjects/{subjectId}": {
+      "schema": "Subject",
+      "description": "Subjects list"
+    },
+    "/subjects/{subjectId}/chapters/{chapterId}": {
+      "schema": "Chapter",
+      "description": "Chapters under a subject with notes, intro, tips and 50 MCQs"
+    },
+    "/paid_notes/{noteId}": {
+      "schema": "PaidNote",
+      "description": "Premium PDF notes collection"
+    },
     "/payment_requests/{requestId}": {
       "schema": "PaymentRequest",
       "description": "Uploaded screenshots and payment verification queue"
