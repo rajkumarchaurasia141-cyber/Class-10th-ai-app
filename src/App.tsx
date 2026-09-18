@@ -104,9 +104,9 @@ function MainApp() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-900 flex justify-center selection:bg-red-500/30">
-      {/* Mobile Smartphone App Frame (Matches user screenshot mockup perfectly on desktop/mobile) */}
-      <div className="w-full max-w-md bg-slate-50 min-h-screen flex flex-col shadow-2xl relative border-x border-slate-200/80">
+    <div className="min-h-screen w-full bg-slate-50 sm:bg-slate-900 flex justify-center selection:bg-red-500/30 overflow-x-hidden">
+      {/* Mobile Smartphone App Frame (Edge-to-edge full width on mobile, centered frame on desktop) */}
+      <div className={`w-full ${activeTab === 'admin' ? 'sm:max-w-4xl' : 'sm:max-w-md md:max-w-lg'} bg-slate-50 min-h-screen flex flex-col border-0 sm:border-x sm:border-slate-200/90 sm:shadow-2xl relative overflow-x-hidden transition-all duration-200`}>
         {/* Top Header Bar with Hamburger Menu & Notifications */}
         <MobileTopBar
           onOpenDrawer={() => setShowDrawer(true)}
@@ -125,7 +125,7 @@ function MainApp() {
         />
 
         {/* Main Content Area */}
-        <main className="flex-1 overflow-y-auto">
+        <main className="flex-1 overflow-y-auto overflow-x-hidden">
           {activeTab === 'home' && (
             <HomeScreen 
               onSelect={(id: string) => { 

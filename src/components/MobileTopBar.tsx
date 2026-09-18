@@ -22,26 +22,26 @@ export function MobileTopBar({
 
   return (
     <header className="sticky top-0 z-30 bg-white/95 backdrop-blur-md border-b border-slate-200/90 px-3 sm:px-4 py-2.5 flex items-center justify-between shadow-xs">
-      {/* Left: Hamburger Menu Button */}
-      <div className="flex items-center gap-2">
+      {/* Left: Hamburger Menu Button & Brand */}
+      <div className="flex items-center gap-2 min-w-0">
         <button
           onClick={onOpenDrawer}
-          className="w-9 h-9 rounded-xl flex items-center justify-center text-stone-800 hover:bg-slate-100 hover:text-red-700 transition-colors cursor-pointer"
+          className="w-9 h-9 rounded-xl flex items-center justify-center text-stone-800 hover:bg-slate-100 hover:text-red-700 transition-colors cursor-pointer shrink-0"
           aria-label="Open navigation menu"
         >
           <Menu className="w-5 h-5" />
         </button>
 
         {/* Brand / Logo */}
-        <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-full bg-gradient-to-br from-red-600 to-red-800 text-white flex items-center justify-center font-black text-xs shadow-sm border border-amber-300">
+        <div className="flex items-center gap-2 min-w-0">
+          <div className="w-8 h-8 rounded-full bg-gradient-to-br from-red-600 to-red-800 text-white flex items-center justify-center font-black text-xs shadow-sm border border-amber-300 shrink-0">
             10th
           </div>
-          <div className="leading-none">
-            <span className="text-xs sm:text-sm font-black text-stone-900 tracking-tight block">
+          <div className="leading-none min-w-0">
+            <span className="text-xs sm:text-sm font-black text-stone-900 tracking-tight block truncate">
               पढ़ेगा <span className="text-red-600">बिहार</span>
             </span>
-            <span className="text-[9px] font-bold text-amber-600 tracking-wider uppercase block">
+            <span className="text-[9px] font-bold text-amber-600 tracking-wider uppercase block truncate">
               टॉपर बैच 2027
             </span>
           </div>
@@ -49,11 +49,11 @@ export function MobileTopBar({
       </div>
 
       {/* Right: VIP Pill + Notifications + Admin */}
-      <div className="flex items-center gap-1.5 sm:gap-2">
+      <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
         {/* VIP Button */}
         <button
           onClick={onOpenVip}
-          className={`text-[11px] font-extrabold px-2.5 py-1.5 rounded-full flex items-center gap-1 transition-all cursor-pointer shadow-xs ${
+          className={`text-[11px] font-extrabold px-2.5 py-1.5 rounded-full flex items-center gap-1 transition-all cursor-pointer shadow-xs shrink-0 ${
             isVIP
               ? 'bg-amber-100 text-amber-900 border border-amber-300 hover:bg-amber-200'
               : vipDetails?.isExpired
@@ -62,8 +62,8 @@ export function MobileTopBar({
           }`}
           title="VIP प्लान देखें"
         >
-          <Crown className="w-3.5 h-3.5 fill-current" />
-          <span>
+          <Crown className="w-3.5 h-3.5 fill-current shrink-0" />
+          <span className="whitespace-nowrap">
             {isVIP
               ? daysLeft && daysLeft < 999 ? `${daysLeft}d VIP` : 'VIP Active'
               : vipDetails?.isExpired
@@ -75,7 +75,7 @@ export function MobileTopBar({
         {/* Notification Bell (Matches user screenshot) */}
         <button
           onClick={onOpenNotifications}
-          className="w-9 h-9 rounded-xl flex items-center justify-center text-stone-700 hover:bg-slate-100 hover:text-red-700 transition-colors relative cursor-pointer"
+          className="w-9 h-9 rounded-xl flex items-center justify-center text-stone-700 hover:bg-slate-100 hover:text-red-700 transition-colors relative cursor-pointer shrink-0"
           title="सूचनाएं (Notifications)"
         >
           <Bell className="w-5 h-5" />
@@ -90,7 +90,7 @@ export function MobileTopBar({
         {isAdmin && (
           <button
             onClick={onOpenAdmin}
-            className="w-8 h-8 rounded-xl bg-stone-900 text-amber-400 hover:bg-black flex items-center justify-center transition-colors cursor-pointer"
+            className="w-8 h-8 rounded-xl bg-stone-900 text-amber-400 hover:bg-black flex items-center justify-center transition-colors cursor-pointer shrink-0"
             title="एडमिन पैनल"
           >
             <ShieldCheck className="w-4 h-4" />

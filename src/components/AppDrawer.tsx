@@ -32,15 +32,15 @@ export function AppDrawer({ isOpen, onClose, onNavigate, onOpenVip }: AppDrawerP
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex animate-fade-in">
+    <div className="fixed sm:absolute inset-0 z-50 flex animate-fade-in overflow-hidden">
       {/* Backdrop */}
       <div 
         onClick={onClose}
-        className="fixed inset-0 bg-stone-950/70 backdrop-blur-sm transition-opacity"
+        className="absolute inset-0 bg-stone-950/70 backdrop-blur-xs transition-opacity"
       />
 
-      {/* Drawer Content */}
-      <div className="relative w-72 sm:w-80 bg-white text-stone-800 h-full shadow-2xl flex flex-col z-10 animate-slide-in">
+      {/* Drawer Content - Native Android Style (82% width, rounded-r-3xl, elevation shadow) */}
+      <div className="relative w-[82%] max-w-[320px] bg-white text-stone-800 h-full shadow-2xl flex flex-col z-10 animate-slide-in rounded-r-3xl overflow-hidden border-r border-slate-200/80">
         {/* Header with User Info */}
         <div className="bg-gradient-to-br from-red-700 via-red-800 to-stone-900 text-white p-5 relative">
           <button 

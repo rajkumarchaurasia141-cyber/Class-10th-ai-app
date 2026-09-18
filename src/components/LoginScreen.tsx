@@ -39,9 +39,9 @@ export function LoginScreen() {
   const isAdminEmail = email.trim().toLowerCase() === 'rajkumarchaurasia141@gmail.com';
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-slate-900 via-slate-950 to-slate-900 flex flex-col items-center justify-center p-3.5 sm:p-6 selection:bg-red-500/30">
+    <div className="min-h-screen w-full bg-gradient-to-b from-slate-900 via-slate-950 to-slate-900 flex flex-col items-center justify-center p-3.5 sm:p-6 selection:bg-red-500/30 overflow-x-hidden">
       {/* Centered Mobile/Desktop Container */}
-      <div className="w-full max-w-md space-y-4">
+      <div className="w-full max-w-md mx-auto space-y-4 overflow-x-hidden">
         
         {/* Top Branding Emblem */}
         <div className="text-center space-y-2">

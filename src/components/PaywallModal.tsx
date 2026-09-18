@@ -197,8 +197,8 @@ export function PaywallModal({ onClose }: { onClose: () => void }) {
   const whatsappUrl = `https://wa.me/${WHATSAPP_RAW}?text=${encodeURIComponent(rawWhatsAppMessage)}`;
 
   return (
-    <div className="fixed inset-0 bg-black/85 backdrop-blur-md flex items-center justify-center p-3 sm:p-4 z-50 animate-fade-in overflow-y-auto">
-      <div className="bg-stone-900 border border-amber-500/30 rounded-3xl max-w-lg w-full p-5 sm:p-7 md:p-8 shadow-2xl relative overflow-hidden my-6 max-h-[92vh] flex flex-col">
+    <div className="fixed inset-0 bg-black/85 backdrop-blur-md flex items-center justify-center p-2.5 sm:p-4 z-50 animate-fade-in overflow-y-auto">
+      <div className="bg-stone-900 border border-amber-500/30 rounded-2xl sm:rounded-3xl max-w-lg w-full p-4 sm:p-7 md:p-8 shadow-2xl relative overflow-hidden my-auto max-h-[94vh] flex flex-col">
         {/* Background glow */}
         <div className="absolute top-0 right-0 -mr-20 -mt-20 w-52 h-52 bg-amber-500/15 rounded-full blur-3xl pointer-events-none"></div>
         <div className="absolute bottom-0 left-0 -ml-20 -mb-20 w-52 h-52 bg-amber-600/10 rounded-full blur-3xl pointer-events-none"></div>
