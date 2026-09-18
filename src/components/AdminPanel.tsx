@@ -1,115 +1,207 @@
 import React, { useState } from 'react';
-import { useAuth } from '../context/AuthContext';
-import { ShieldCheck, UserPlus, CheckCircle, AlertCircle } from 'lucide-react';
+import { db } from '../lib/firebase';
+import { doc, setDoc, collection } from 'firebase/firestore';
+import { ShieldCheck, UserPlus, CheckCircle, ArrowLeft, UploadCloud, Database } from 'lucide-react';
+import { useData } from '../context/DataContext';
 
-export function AdminPanel() {
-  const { user } = useAuth();
-  const [emailToUnlock, setEmailToUnlock] = useState('');
-  const [status, setStatus] = useState<{type: 'idle' | 'success' | 'error', message: string}>({ type: 'idle', message: '' });
-  const [isLoading, setIsLoading] = useState(false);
+export function AdminPanel({ onBack }: any) {
+  const { refreshData } = useData();
+  const [activeTab, setActiveTab] = useState<'vip' | 'content'>('vip');
+  
+  // VIP State
+  const [email, setEmail] = useState('');
+  const [msg, setMsg] = useState('');
+  const [loading, setLoading] = useState(false);
 
-  // Simple hardcoded check - only allow the owner
-  if (user?.email !== 'rajkumarchaurasia141@gmail.com') {
-    return (
-      <div className="p-6 text-center text-red-400 mt-20">
-        <ShieldCheck className="w-12 h-12 mx-auto mb-4 opacity-50" />
-        <h2 className="text-xl font-bold">Access Denied</h2>
-        <p className="mt-2">केवल एडमिन (Rajkumar) को यहाँ आने की अनुमति है।</p>
-      </div>
-    );
-  }
+  // Content State
+  const [cMsg, setCMsg] = useState('');
+  const [cLoading, setCLoading] = useState(false);
+  const [formData, setFormData] = useState({
+    subjectId: 'sanskrit',
+    subjectName: 'Sanskrit',
+    subjectNameHindi: 'संस्कृत',
+    chapterNo: '',
+    chapterNameHindi: '',
+    notesHindi: '',
+    mcqJson: '[]',
+    qnaJson: '[]'
+  });
 
-  const handleUnlock = async (e: React.FormEvent) => {
+  const handleAddVIP = async (e: any) => {
     e.preventDefault();
-    if (!emailToUnlock.trim()) return;
-
-    setIsLoading(true);
-    setStatus({ type: 'idle', message: '' });
-
+    if (!email) return;
+    setLoading(true);
     try {
-      // Create a direct API call or just send to our existing endpoint with a secret key
-      // Wait, we can just use the /api/add-vip endpoint we created earlier!
-      const res = await fetch('/api/add-vip', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          email: emailToUnlock.trim(), 
-          adminKey: "rajkumar_secret_admin_key" // We need to update server.ts to accept this
-        })
+      await setDoc(doc(db, 'vip_users', email.trim().toLowerCase()), {
+        isVip: true,
+        addedAt: new Date().toISOString()
       });
-
-      const data = await res.json();
-      if (res.ok) {
-        setStatus({ type: 'success', message: `${emailToUnlock} को सफलतापूर्वक अनलॉक कर दिया गया है!` });
-        setEmailToUnlock('');
-      } else {
-        setStatus({ type: 'error', message: data.error || 'Failed to unlock.' });
-      }
-    } catch (err) {
-      setStatus({ type: 'error', message: 'नेटवर्क एरर या सर्वर समस्या।' });
-    } finally {
-      setIsLoading(false);
+      setMsg(`${email} को VIP अनलॉक कर दिया गया है!`);
+      setEmail('');
+    } catch (e) {
+      setMsg('VIP जोड़ने में त्रुटि हुई।');
     }
+    setLoading(false);
+  };
+
+  const handleUploadContent = async (e: any) => {
+    e.preventDefault();
+    setCLoading(true);
+    setCMsg('');
+    try {
+      const subId = formData.subjectId.trim().toLowerCase();
+      // Ensure subject document exists
+      await setDoc(doc(db, 'subjects', subId), {
+        subject_name: formData.subjectName,
+        subject_name_hindi: formData.subjectNameHindi
+      }, { merge: true });
+
+      let mcq = [];
+      let qna = [];
+      try { mcq = JSON.parse(formData.mcqJson); } catch(e) {}
+      try { qna = JSON.parse(formData.qnaJson); } catch(e) {}
+
+      const chNo = Number(formData.chapterNo);
+      const chapterRef = doc(db, 'subjects', subId, 'chapters', `ch${chNo}`);
+      
+      await setDoc(chapterRef, {
+        chapter_no: chNo,
+        chapter_name_hindi: formData.chapterNameHindi,
+        notes_hindi: formData.notesHindi,
+        mcq: mcq,
+        subjective_qa: qna
+      }, { merge: true });
+
+      setCMsg(`अध्याय ${chNo} सफलतापूर्वक अपलोड हो गया!`);
+      setFormData(prev => ({ ...prev, chapterNo: '', chapterNameHindi: '', notesHindi: '', mcqJson: '[]', qnaJson: '[]' }));
+      refreshData();
+    } catch (e: any) {
+      setCMsg('अपलोड में त्रुटि: ' + e.message);
+    }
+    setCLoading(false);
   };
 
   return (
-    <div className="p-4 md:p-6 max-w-xl mx-auto w-full pt-10">
-      <div className="bg-stone-900 border border-amber-900/30 rounded-2xl p-6 shadow-xl relative overflow-hidden">
-        {/* Glow effect */}
-        <div className="absolute top-0 right-0 -mr-16 -mt-16 w-32 h-32 bg-amber-500/10 rounded-full blur-3xl"></div>
+    <div className="max-w-4xl mx-auto p-4 md:p-6 mt-8">
+      <button onClick={onBack} className="text-amber-500 mb-6 flex items-center gap-2 font-medium hover:text-amber-400 transition-colors">
+        <ArrowLeft className="w-4 h-4" /> मुख्य पेज पर वापस जाएँ
+      </button>
+
+      <div className="bg-stone-900 border border-amber-900/30 rounded-3xl p-6 md:p-8 shadow-2xl relative overflow-hidden">
+        <div className="absolute top-0 right-0 -mr-16 -mt-16 w-40 h-40 bg-amber-500/10 rounded-full blur-3xl"></div>
         
-        <div className="flex items-center gap-3 mb-6 relative z-10">
-          <div className="p-3 bg-amber-500/10 rounded-xl">
-            <ShieldCheck className="w-6 h-6 text-amber-500" />
+        <div className="flex items-center gap-4 mb-8 relative z-10">
+          <div className="p-4 bg-amber-500/10 rounded-2xl">
+            <ShieldCheck className="w-8 h-8 text-amber-500" />
           </div>
           <div>
-            <h2 className="text-xl font-bold text-white">एडमिन पैनल</h2>
-            <p className="text-sm text-stone-400">छात्रों को अनलॉक करें</p>
+            <h2 className="text-2xl font-black text-white">एडमिन पैनल</h2>
+            <p className="text-stone-400 mt-1">ऐप का पूरा नियंत्रण (VIP & Content)</p>
           </div>
         </div>
 
-        <form onSubmit={handleUnlock} className="space-y-4 relative z-10">
-          <div>
-            <label className="block text-sm font-medium text-stone-300 mb-2">छात्र का Gmail Address डालें:</label>
-            <input 
-              type="email" 
-              value={emailToUnlock}
-              onChange={(e) => setEmailToUnlock(e.target.value)}
-              placeholder="student@gmail.com"
-              className="w-full bg-stone-950 border border-stone-800 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 transition-colors"
-              required
-            />
-          </div>
-
+        <div className="flex border-b border-stone-800 mb-8 relative z-10">
           <button 
-            type="submit" 
-            disabled={isLoading || !emailToUnlock}
-            className="w-full bg-amber-600 hover:bg-amber-500 disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold py-3 px-4 rounded-xl flex items-center justify-center gap-2 transition-colors"
+            onClick={() => setActiveTab('vip')} 
+            className={`pb-4 px-4 font-bold flex items-center gap-2 transition-colors ${activeTab === 'vip' ? 'border-b-2 border-amber-500 text-amber-500' : 'text-stone-400 hover:text-stone-300'}`}
           >
-            {isLoading ? (
-              <span className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
-            ) : (
-              <>
-                <UserPlus className="w-5 h-5" />
-                अनलॉक करें (VIP बनाएं)
-              </>
-            )}
+            <UserPlus className="w-4 h-4" /> VIP एक्सेस
           </button>
-        </form>
+          <button 
+            onClick={() => setActiveTab('content')} 
+            className={`pb-4 px-4 font-bold flex items-center gap-2 transition-colors ${activeTab === 'content' ? 'border-b-2 border-amber-500 text-amber-500' : 'text-stone-400 hover:text-stone-300'}`}
+          >
+            <UploadCloud className="w-4 h-4" /> कंटेंट अपलोड
+          </button>
+        </div>
 
-        {status.message && (
-          <div className={`mt-4 p-4 rounded-xl flex items-start gap-3 border ${
-            status.type === 'success' 
-              ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400' 
-              : 'bg-red-500/10 border-red-500/20 text-red-400'
-          }`}>
-            {status.type === 'success' ? (
-              <CheckCircle className="w-5 h-5 shrink-0 mt-0.5" />
-            ) : (
-              <AlertCircle className="w-5 h-5 shrink-0 mt-0.5" />
+        {activeTab === 'vip' && (
+          <form onSubmit={handleAddVIP} className="space-y-6 relative z-10 max-w-xl">
+            <div>
+              <label className="block text-sm font-medium text-stone-300 mb-2">छात्र का Gmail Address डालें:</label>
+              <input
+                type="email"
+                value={email}
+                onChange={e => setEmail(e.target.value)}
+                placeholder="student@gmail.com"
+                className="w-full bg-stone-950 border border-stone-800 rounded-xl px-4 py-3.5 text-white focus:outline-none focus:border-amber-500 transition-colors"
+                required
+              />
+            </div>
+            <button 
+              type="submit" 
+              disabled={loading || !email}
+              className="w-full bg-amber-600 hover:bg-amber-500 disabled:opacity-50 text-white font-bold py-3.5 px-4 rounded-xl flex items-center justify-center gap-2 transition-colors"
+            >
+              {loading ? 'प्रक्रिया चल रही है...' : <><UserPlus className="w-5 h-5" /> अनलॉक करें (VIP बनाएँ)</>}
+            </button>
+            {msg && (
+              <div className="mt-4 p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 flex items-start gap-3">
+                <CheckCircle className="w-5 h-5 shrink-0 mt-0.5" />
+                <p className="font-medium">{msg}</p>
+              </div>
             )}
-            <p className="text-sm font-medium">{status.message}</p>
-          </div>
+          </form>
+        )}
+
+        {activeTab === 'content' && (
+          <form onSubmit={handleUploadContent} className="space-y-6 relative z-10">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-stone-300 mb-2">Subject ID (e.g. sanskrit)</label>
+                <input type="text" value={formData.subjectId} onChange={e => setFormData({...formData, subjectId: e.target.value})} className="w-full bg-stone-950 border border-stone-800 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-amber-500" required />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-stone-300 mb-2">Subject Name (Eng)</label>
+                <input type="text" value={formData.subjectName} onChange={e => setFormData({...formData, subjectName: e.target.value})} className="w-full bg-stone-950 border border-stone-800 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-amber-500" required />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-stone-300 mb-2">Subject Name (Hindi)</label>
+                <input type="text" value={formData.subjectNameHindi} onChange={e => setFormData({...formData, subjectNameHindi: e.target.value})} className="w-full bg-stone-950 border border-stone-800 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-amber-500" required />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-stone-300 mb-2">Chapter Number</label>
+                <input type="number" value={formData.chapterNo} onChange={e => setFormData({...formData, chapterNo: e.target.value})} className="w-full bg-stone-950 border border-stone-800 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-amber-500" required />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-stone-300 mb-2">Chapter Name (Hindi)</label>
+                <input type="text" value={formData.chapterNameHindi} onChange={e => setFormData({...formData, chapterNameHindi: e.target.value})} className="w-full bg-stone-950 border border-stone-800 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-amber-500" required />
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-stone-300 mb-2">Notes (Hindi) - Type or Paste notes</label>
+              <textarea value={formData.notesHindi} onChange={e => setFormData({...formData, notesHindi: e.target.value})} rows={6} className="w-full bg-stone-950 border border-stone-800 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-amber-500" />
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-stone-300 mb-2">MCQ JSON format</label>
+                <textarea value={formData.mcqJson} onChange={e => setFormData({...formData, mcqJson: e.target.value})} rows={6} className="w-full bg-stone-950 border border-stone-800 rounded-xl px-4 py-3 text-emerald-400 font-mono text-sm focus:outline-none focus:border-amber-500" placeholder='[{"question":"...","options":["A","B"],"correct_answer":0,"explanation":"..."}]' />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-stone-300 mb-2">Q&A JSON format</label>
+                <textarea value={formData.qnaJson} onChange={e => setFormData({...formData, qnaJson: e.target.value})} rows={6} className="w-full bg-stone-950 border border-stone-800 rounded-xl px-4 py-3 text-emerald-400 font-mono text-sm focus:outline-none focus:border-amber-500" placeholder='[{"question":"...","answer":"..."}]' />
+              </div>
+            </div>
+
+            <button 
+              type="submit" 
+              disabled={cLoading || !formData.chapterNo}
+              className="w-full bg-amber-600 hover:bg-amber-500 disabled:opacity-50 text-white font-bold py-4 px-4 rounded-xl flex items-center justify-center gap-2 transition-colors"
+            >
+              {cLoading ? 'अपलोड हो रहा है...' : <><Database className="w-5 h-5" /> डेटाबेस में सेव करें</>}
+            </button>
+            {cMsg && (
+              <div className="mt-4 p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 flex items-start gap-3">
+                <CheckCircle className="w-5 h-5 shrink-0 mt-0.5" />
+                <p className="font-medium">{cMsg}</p>
+              </div>
+            )}
+          </form>
         )}
       </div>
     </div>

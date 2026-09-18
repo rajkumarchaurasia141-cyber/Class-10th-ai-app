@@ -1,70 +1,42 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
-import { collection, getDocs, query, orderBy } from 'firebase/firestore';
+import React, { createContext, useContext, useEffect, useState } from 'react';
 import { db } from '../lib/firebase';
-import { SubjectWithChapters, Class10ChapterData } from '../data/class10SubjectData';
+import { collection, getDocs, query, orderBy } from 'firebase/firestore';
 
-interface DataContextType {
-  subjectsData: Record<string, SubjectWithChapters>;
-  loading: boolean;
-  refreshData: () => Promise<void>;
-  lastFetched: Date | null;
-}
+const DataContext = createContext<any>(null);
 
-const DataContext = createContext<DataContextType>({
-  subjectsData: {},
-  loading: true,
-  refreshData: async () => {},
-  lastFetched: null,
-});
-
-export const useData = () => useContext(DataContext);
-
-export const DataProvider = ({ children }: { children: ReactNode }) => {
-  const [subjectsData, setSubjectsData] = useState<Record<string, SubjectWithChapters>>({});
+export const DataProvider = ({ children }: any) => {
+  const [subjects, setSubjects] = useState<any>({});
   const [loading, setLoading] = useState(true);
-  const [lastFetched, setLastFetched] = useState<Date | null>(null);
 
-  const refreshData = useCallback(async () => {
+  const fetchData = async () => {
     setLoading(true);
     try {
-      const subjectsSnap = await getDocs(collection(db, 'subjects'));
-      const newData: Record<string, SubjectWithChapters> = {};
-      
-      for (const subjectDoc of subjectsSnap.docs) {
-        const subject = subjectDoc.data() as any;
-        const subjectId = subjectDoc.id;
-        
-        // Fetch chapters
-        const chaptersSnap = await getDocs(query(collection(db, 'subjects', subjectId, 'chapters'), orderBy('chapter_no', 'asc')));
-        const chapters: Class10ChapterData[] = chaptersSnap.docs.map(doc => doc.data() as Class10ChapterData);
-        
-        newData[subjectId] = {
-          subject_id: subjectId,
-          subject_name: subject.subject_name || subject.subject_name_hindi,
-          subject_name_hindi: subject.subject_name_hindi || subject.subject_name,
-          icon: subject.icon,
-          tagline: subject.tagline,
-          color: subject.color,
-          chapters: chapters,
+      const subsSnap = await getDocs(collection(db, 'subjects'));
+      const data: any = {};
+      for (const docSnap of subsSnap.docs) {
+        const sub = docSnap.data();
+        const subId = docSnap.id;
+        const chSnap = await getDocs(query(collection(db, 'subjects', subId, 'chapters'), orderBy('chapter_no', 'asc')));
+        data[subId] = {
+          ...sub,
+          id: subId,
+          chapters: chSnap.docs.map(d => ({ id: d.id, ...d.data() }))
         };
       }
-      
-      setSubjectsData(newData);
-      setLastFetched(new Date());
-    } catch (error) {
-      console.error("Error fetching data from Firestore:", error);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+      setSubjects(data);
+    } catch (e) { console.error(e); }
+    setLoading(false);
+  };
 
   useEffect(() => {
-    refreshData();
-  }, [refreshData]);
+    fetchData();
+  }, []);
 
   return (
-    <DataContext.Provider value={{ subjectsData, loading, refreshData, lastFetched }}>
+    <DataContext.Provider value={{ subjects, loading, refreshData: fetchData }}>
       {children}
     </DataContext.Provider>
   );
 };
+
+export const useData = () => useContext(DataContext);

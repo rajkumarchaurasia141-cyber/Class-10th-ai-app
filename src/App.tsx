@@ -1,109 +1,50 @@
 import React, { useState } from 'react';
-import { Header } from './components/Header';
-import { BottomNavigation } from './components/BottomNavigation';
+import { AuthProvider, useAuth } from './context/AuthContext';
+import { DataProvider } from './context/DataContext';
+import { LoginScreen } from './components/LoginScreen';
 import { HomeScreen } from './components/HomeScreen';
 import { SubjectsExplorer } from './components/SubjectsExplorer';
-import { Pichhle10SaalPYQ } from './components/Pichhle10SaalPYQ';
-import { AITeacherChatbot } from './components/AITeacherChatbot';
-import { TrickSeSamjho } from './components/TrickSeSamjho';
-import { MathPrashnawaliSolutions } from './components/MathPrashnawaliSolutions';
-import { StudyTipsModal } from './components/StudyTipsModal';
-import { InstallAppModal } from './components/InstallAppModal';
-import { ActiveMainTab, SubjectId } from './types';
-import { GraduationCap, ShieldCheck } from 'lucide-react';
-import { DataProvider, useData } from './context/DataContext';
-import { PullToRefresh } from './components/PullToRefresh';
-import { AuthProvider, useAuth } from './context/AuthContext';
-import { LoginScreen } from './components/LoginScreen';
+import { AdminPanel } from './components/AdminPanel';
+import { LogOut, ShieldCheck } from 'lucide-react';
 
+function MainApp() {
+  const { user, isAdmin, logout } = useAuth();
+  const [activeTab, setActiveTab] = useState('home');
+  const [selectedSubject, setSelectedSubject] = useState<string | null>(null);
 
-
-function AppContent() {
-  const { subjectsData, loading, refreshData } = useData();
-  const { user, refreshVIP } = useAuth();
-  const [activeTab, setActiveTab] = useState<ActiveMainTab>('home');
-  const [selectedSubjectId, setSelectedSubjectId] = useState<SubjectId>('maths');
-  const [aiTeacherSubject, setAiTeacherSubject] = useState<string>('गणित (Maths)');
-  const [aiTeacherChapter, setAiTeacherChapter] = useState<string>('');
-  const [isTipsModalOpen, setIsTipsModalOpen] = useState(false);
-  const [isInstallModalOpen, setIsInstallModalOpen] = useState(false);
-
-  // Navigate to AI Teacher with context
-  const handleNavigateToAITeacherWithContext = (subjectName: string, chapterName: string) => {
-    setAiTeacherSubject(subjectName);
-    setAiTeacherChapter(chapterName);
-    setActiveTab('ai-teacher');
-  };
-
-  // Direct ask on PYQ
-  const handleAskAITeacherPYQ = (questionText: string, subjectName: string, chapterName: string) => {
-    setAiTeacherSubject(subjectName);
-    setAiTeacherChapter(chapterName);
-    setActiveTab('ai-teacher');
-  };
-
-  if (!user) {
-    return <LoginScreen />;
-  }
-
-  if (loading && Object.keys(subjectsData).length === 0) {
-    return <div className="min-h-screen bg-stone-950 text-stone-100 flex items-center justify-center">Loading database...</div>;
-  }
+  if (!user) return <LoginScreen />;
 
   return (
-    <PullToRefresh onRefresh={async () => { await refreshData(); await refreshVIP(); }}>
-      <div className="min-h-screen bg-stone-950 text-stone-100 flex flex-col selection:bg-amber-500/30 selection:text-amber-200 relative">
-        <Header
-          activeTab={activeTab}
-          setActiveTab={setActiveTab}
-          onOpenTips={() => setIsTipsModalOpen(true)}
-          onOpenInstall={() => setIsInstallModalOpen(true)}
-        />
-
-        <main className="flex-1 overflow-y-auto pb-20 pt-16">
-          {activeTab === 'home' && (
-            <HomeScreen
-              onNavigateTab={setActiveTab}
-              onSelectSubject={setSelectedSubjectId}
-              onOpenTips={() => setIsTipsModalOpen(true)}
-            />
+    <div className="min-h-screen bg-stone-950 text-stone-100 flex flex-col font-sans selection:bg-amber-500/30">
+      <header className="px-6 py-4 border-b border-stone-800/80 bg-stone-900/80 backdrop-blur-md sticky top-0 z-40 flex justify-between items-center">
+        <h1 onClick={() => { setActiveTab('home'); setSelectedSubject(null); }} className="text-xl font-black text-amber-500 cursor-pointer flex items-center gap-2 hover:opacity-80 transition-opacity">
+          <span className="bg-amber-500 text-stone-950 px-2 py-0.5 rounded-md text-sm">10th</span> BSEB
+        </h1>
+        <div className="flex gap-4 items-center">
+          {isAdmin && (
+            <button onClick={() => setActiveTab('admin')} className="text-xs font-bold bg-amber-500/10 text-amber-500 border border-amber-500/20 px-3 py-1.5 rounded-lg flex items-center gap-1.5 hover:bg-amber-500/20 transition-colors">
+              <ShieldCheck className="w-3.5 h-3.5" /> एडमिन
+            </button>
           )}
+          <div className="hidden sm:block text-sm text-stone-400 font-medium">{user.email}</div>
+          <button onClick={logout} className="text-stone-400 hover:text-white p-2 bg-stone-800 rounded-lg transition-colors" title="Logout">
+            <LogOut className="w-4 h-4" />
+          </button>
+        </div>
+      </header>
 
-          {activeTab === 'subjects' && (
-            <SubjectsExplorer
-              selectedSubjectId={selectedSubjectId}
-              onSelectSubject={setSelectedSubjectId}
-              onNavigateToAITeacher={handleNavigateToAITeacherWithContext}
-            />
-          )}
-
-          {activeTab === 'pyq' && (
-            <Pichhle10SaalPYQ
-              onAskAITeacher={handleAskAITeacherPYQ}
-            />
-          )}
-
-          {activeTab === 'ai-teacher' && (
-            <AITeacherChatbot
-              initialSubject={aiTeacherSubject}
-              initialChapter={aiTeacherChapter}
-            />
-          )}
-          
-          {activeTab === 'tricks' && (
-            <TrickSeSamjho onAskAITeacher={handleAskAITeacherPYQ} />
-          )}
-          
-        </main>
-
-        <BottomNavigation activeTab={activeTab} onChangeTab={setActiveTab} />
-        
-        {isTipsModalOpen && <StudyTipsModal isOpen={isTipsModalOpen} onClose={() => setIsTipsModalOpen(false)} />}
-        {isInstallModalOpen && <InstallAppModal isOpen={isInstallModalOpen} onClose={() => setIsInstallModalOpen(false)} />}
-        
-        
-      </div>
-    </PullToRefresh>
+      <main className="flex-1 overflow-y-auto">
+        {activeTab === 'home' && (
+          <HomeScreen onSelect={(id: string) => { setSelectedSubject(id); setActiveTab('explorer'); }} />
+        )}
+        {activeTab === 'explorer' && selectedSubject && (
+          <SubjectsExplorer subjectId={selectedSubject} onBack={() => { setActiveTab('home'); setSelectedSubject(null); }} />
+        )}
+        {activeTab === 'admin' && isAdmin && (
+          <AdminPanel onBack={() => setActiveTab('home')} />
+        )}
+      </main>
+    </div>
   );
 }
 
@@ -111,7 +52,7 @@ export default function App() {
   return (
     <AuthProvider>
       <DataProvider>
-        <AppContent />
+        <MainApp />
       </DataProvider>
     </AuthProvider>
   );

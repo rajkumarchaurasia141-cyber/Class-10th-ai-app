@@ -1,76 +1,50 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useEffect, useState } from 'react';
+import { auth, db } from '../lib/firebase';
+import { GoogleAuthProvider, signInWithPopup, onAuthStateChanged, signOut } from 'firebase/auth';
+import { doc, getDoc } from 'firebase/firestore';
 
-export interface User {
-  name: string;
-  email: string;
-}
+const AuthContext = createContext<any>(null);
 
-interface AuthContextType {
-  user: User | null;
-  isVIP: boolean;
-  login: (name: string, email: string) => void;
-  logout: () => void;
-  showPaywall: boolean;
-  setShowPaywall: (show: boolean) => void;
-  refreshVIP: () => Promise<void>;
-}
+export const AuthProvider = ({ children }: any) => {
+  const [user, setUser] = useState<any>(null);
+  const [isVIP, setIsVIP] = useState(false);
+  const [loading, setLoading] = useState(true);
 
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
-
-const unlockedStudents = [
-  "Rajkumarchaurasia576@gmail.com",
-  "rajkumarchaurasia760@gmail.com",
-];
-
-export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [user, setUser] = useState<User | null>(null);
-  const [showPaywall, setShowPaywall] = useState(false);
+  const isAdmin = user?.email === 'rajkumarchaurasia141@gmail.com';
 
   useEffect(() => {
-    try {
-      const storedUser = localStorage.getItem('pb_user');
-      if (storedUser) {
-        setUser(JSON.parse(storedUser));
+    const unsubscribe = onAuthStateChanged(auth, async (u) => {
+      setUser(u);
+      if (u) {
+        if (u.email === 'rajkumarchaurasia141@gmail.com') {
+          setIsVIP(true);
+        } else {
+          try {
+            const docRef = doc(db, 'vip_users', u.email || '');
+            const snap = await getDoc(docRef);
+            setIsVIP(snap.exists() && snap.data().isVip === true);
+          } catch (e) { console.error(e); }
+        }
+      } else {
+        setIsVIP(false);
       }
-    } catch (e) {
-      console.error("Error reading user from localStorage");
-    }
+      setLoading(false);
+    });
+    return unsubscribe;
   }, []);
 
-  const login = (name: string, email: string) => {
-    const newUser = { name, email };
-    setUser(newUser);
-    localStorage.setItem('pb_user', JSON.stringify(newUser));
+  const login = async () => {
+    const provider = new GoogleAuthProvider();
+    await signInWithPopup(auth, provider);
   };
 
-  const logout = () => {
-    setUser(null);
-    localStorage.removeItem('pb_user');
-  };
-
-  
-  const [isVIP, setIsVIP] = useState(false);
-
-  const refreshVIP = async () => {
-    setIsVIP(true);
-  };
-
-  useEffect(() => {
-    refreshVIP();
-  }, [user]);
-
+  const logout = () => signOut(auth);
 
   return (
-    <AuthContext.Provider value={{ user, isVIP, login, logout, showPaywall, setShowPaywall, refreshVIP }}>
-      {children}
+    <AuthContext.Provider value={{ user, isAdmin, isVIP, loading, login, logout }}>
+      {loading ? <div className="min-h-screen flex items-center justify-center">Loading...</div> : children}
     </AuthContext.Provider>
   );
 };
 
-export const useAuth = () => {
-  const context = useContext(AuthContext);
-  if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider');
-  }
-  return context;
-};
+export const useAuth = () => useContext(AuthContext);
