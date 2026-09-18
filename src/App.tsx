@@ -17,6 +17,8 @@ import { DownloadsNotesView } from './components/DownloadsNotesView';
 import { DoubtChatView } from './components/DoubtChatView';
 import { ProfileView } from './components/ProfileView';
 import { MyCoursesView } from './components/MyCoursesView';
+import { LiveClassesView } from './components/LiveClassesView';
+import { TopperLeaderboardView } from './components/TopperLeaderboardView';
 
 function MainApp() {
   const { user, isAdmin, isVIP, vipDetails } = useAuth();
@@ -41,6 +43,14 @@ function MainApp() {
         break;
       case 'course':
         setActiveTab('my_courses');
+        setSelectedSubject(null);
+        break;
+      case 'live':
+        setActiveTab('live');
+        setSelectedSubject(null);
+        break;
+      case 'leaderboard':
+        setActiveTab('leaderboard');
         setSelectedSubject(null);
         break;
       case 'routine':
@@ -99,6 +109,18 @@ function MainApp() {
                 setSelectedSubject(id); 
                 setActiveTab('explorer'); 
               }} 
+              onOpenVip={() => setShowVipModal(true)}
+            />
+          )}
+
+          {activeTab === 'live' && (
+            <LiveClassesView 
+              onOpenVip={() => setShowVipModal(true)}
+            />
+          )}
+
+          {activeTab === 'leaderboard' && (
+            <TopperLeaderboardView 
               onOpenVip={() => setShowVipModal(true)}
             />
           )}

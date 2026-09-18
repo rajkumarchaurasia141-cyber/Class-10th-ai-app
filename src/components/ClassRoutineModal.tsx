@@ -1,61 +1,13 @@
 import React from 'react';
 import { X, Calendar, Clock, BookOpen, CheckCircle, Bell, Download } from 'lucide-react';
+import { useData } from '../context/DataContext';
 
 interface ClassRoutineModalProps {
   onClose: () => void;
 }
 
 export function ClassRoutineModal({ onClose }: ClassRoutineModalProps) {
-  const schedule = [
-    {
-      time: '06:30 AM - 07:30 AM',
-      subject: 'संस्कृत (पीयूषम्)',
-      topic: 'श्लोक वाचन, शब्दार्थ & व्याकरण',
-      instructor: 'संस्कृत विशेषज्ञ',
-      days: 'सोमवार, बुधवार, शुक्रवार',
-      color: 'border-l-amber-500 bg-amber-50/50'
-    },
-    {
-      time: '07:30 AM - 08:30 AM',
-      subject: 'विज्ञान (Science)',
-      topic: 'भौतिकी / रसायन / जीवविज्ञान थ्योरी',
-      instructor: 'साइंस टीम',
-      days: 'प्रतिदिन (Mon - Sat)',
-      color: 'border-l-blue-500 bg-blue-50/50'
-    },
-    {
-      time: '04:30 PM - 05:30 PM',
-      subject: 'गणित (Mathematics)',
-      topic: 'NCERT प्रश्नावली & उदाहरण अभ्यास',
-      instructor: 'मैथ्स गुरु',
-      days: 'प्रतिदिन (Mon - Sat)',
-      color: 'border-l-red-500 bg-red-50/50'
-    },
-    {
-      time: '06:00 PM - 07:00 PM',
-      subject: 'सामाजिक विज्ञान (SST)',
-      topic: 'इतिहास, भूगोल, अर्थशास्त्र, आपदा प्रबंधन',
-      instructor: 'SST एक्सपर्ट',
-      days: 'मंगलवार, गुरुवार, शनिवार',
-      color: 'border-l-emerald-500 bg-emerald-50/50'
-    },
-    {
-      time: '07:30 PM - 08:30 PM',
-      subject: 'हिंदी (गोधूलि & व्याकरण)',
-      topic: 'गद्य, पद्य एवं पत्र/निबंध लेखन',
-      instructor: 'हिंदी विशेषज्ञ',
-      days: 'सोमवार, बुधवार, शुक्रवार',
-      color: 'border-l-purple-500 bg-purple-50/50'
-    },
-    {
-      time: '08:30 PM - 09:30 PM',
-      subject: 'डेली टेस्ट & 50 MCQ क्विज़',
-      topic: 'लाइव टेस्ट रैंकिंग & सेल्फ प्रैक्टिस',
-      instructor: 'ऑटो इवैल्यूएशन',
-      days: 'प्रतिदिन रात्रि',
-      color: 'border-l-indigo-500 bg-indigo-50/50'
-    }
-  ];
+  const { routine } = useData();
 
   return (
     <div className="fixed inset-0 z-50 bg-stone-950/75 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 animate-fade-in">
@@ -70,7 +22,7 @@ export function ClassRoutineModal({ onClose }: ClassRoutineModalProps) {
               <h3 className="font-black text-base sm:text-lg text-white leading-tight">
                 टॉपर बैच 2027 - टाइम टेबल
               </h3>
-              <p className="text-xs text-amber-200">बिहार बोर्ड कक्षा 10वीं दैनिक क्लास रूटीन</p>
+              <p className="text-xs text-amber-200">बिहार बोर्ड कक्षा 10वीं दैनिक क्लास रूटीन (एडमिन द्वारा अपडेटेड)</p>
             </div>
           </div>
           <button
@@ -89,10 +41,10 @@ export function ClassRoutineModal({ onClose }: ClassRoutineModalProps) {
 
         {/* Schedule List */}
         <div className="flex-1 overflow-y-auto p-4 space-y-2.5">
-          {schedule.map((item, idx) => (
+          {routine.map((item) => (
             <div
-              key={idx}
-              className={`p-3 rounded-2xl border border-slate-200/80 border-l-4 ${item.color} shadow-xs space-y-1`}
+              key={item.id}
+              className={`p-3 rounded-2xl border border-slate-200/80 border-l-4 ${item.color || 'border-l-red-500 bg-red-50/50'} shadow-xs space-y-1`}
             >
               <div className="flex items-center justify-between">
                 <span className="font-extrabold text-stone-900 text-sm">

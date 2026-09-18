@@ -11,7 +11,8 @@ import {
   Share2,
   Crown,
   FileText,
-  BookOpen
+  BookOpen,
+  Trophy
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
@@ -184,6 +185,25 @@ export function FeatureGrid({ onNavigate }: FeatureGridProps) {
           </div>
           <span className="absolute -top-1 -right-1 bg-red-600 text-white font-black text-[8px] px-1 rounded-full animate-pulse">
             NEW
+          </span>
+        </div>
+      )
+    },
+    {
+      id: 'leaderboard',
+      title: 'Topper Rank',
+      subtitle: 'टॉपर लीडरबोर्ड',
+      badge: 'TOP',
+      badgeColor: 'bg-amber-500 text-stone-950 font-black',
+      bgIcon: 'bg-gradient-to-br from-amber-500 to-yellow-600',
+      icon: Trophy,
+      renderIcon: () => (
+        <div className="w-12 h-12 rounded-2xl bg-amber-50 border border-amber-100 flex items-center justify-center relative shadow-sm group-hover:scale-105 transition-transform">
+          <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-amber-500 to-yellow-600 flex items-center justify-center text-stone-950 shadow-md shadow-amber-500/20">
+            <Trophy className="w-5 h-5 fill-stone-950" />
+          </div>
+          <span className="absolute -top-1 -right-1 bg-red-600 text-white font-black text-[8px] px-1 rounded-full animate-pulse">
+            HOT
           </span>
         </div>
       )

@@ -29,7 +29,7 @@ interface HomeScreenProps {
 }
 
 export function HomeScreen({ onSelect, onNavigateTab }: HomeScreenProps) {
-  const { subjects, loading } = useData();
+  const { subjects, loading, motivationalQuotes } = useData();
   const { isVIP, vipDetails } = useAuth();
 
   // Modals state
@@ -82,6 +82,11 @@ export function HomeScreen({ onSelect, onNavigateTab }: HomeScreenProps) {
       case 'social':
         setShowSocial(true);
         break;
+      case 'leaderboard':
+        if (onNavigateTab) {
+          onNavigateTab('leaderboard');
+        }
+        break;
       default:
         break;
     }
@@ -99,6 +104,21 @@ export function HomeScreen({ onSelect, onNavigateTab }: HomeScreenProps) {
 
   return (
     <div className="p-3 sm:p-4 w-full max-w-2xl mx-auto space-y-4 pb-20">
+      {/* 0. Motivational Quote Banner (Dynamic from Admin Panel) */}
+      {motivationalQuotes.filter(q => q.isActive).length > 0 && (
+        <div className="bg-gradient-to-r from-amber-500/15 via-amber-400/10 to-amber-500/15 border border-amber-300/80 rounded-2xl p-3 flex items-center gap-3 shadow-xs">
+          <div className="w-8 h-8 rounded-xl bg-amber-500 text-stone-950 flex items-center justify-center shrink-0 font-bold shadow-xs">
+            <Sparkles className="w-4 h-4" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <div className="text-[10px] font-black uppercase text-amber-800 tracking-wider">आज का टॉपर सुविचार (Daily Thought)</div>
+            <p className="text-xs font-extrabold text-stone-900 truncate">
+              "{motivationalQuotes.filter(q => q.isActive)[0]?.quote}"
+            </p>
+          </div>
+        </div>
+      )}
+
       {/* 1. Hero Carousel Banner (Matches top banner in user screenshot) */}
       <HeroCarouselBanner 
         onOpenVip={() => setShowPaywall(true)}

@@ -1,5 +1,6 @@
 import React from 'react';
 import { X, Bell, Crown, Sparkles, BookOpen, Clock, ChevronRight } from 'lucide-react';
+import { useData } from '../context/DataContext';
 
 interface NotificationsModalProps {
   onClose: () => void;
@@ -8,44 +9,7 @@ interface NotificationsModalProps {
 }
 
 export function NotificationsModal({ onClose, onOpenVip, onOpenCourse }: NotificationsModalProps) {
-  const notifications = [
-    {
-      id: 'notif-1',
-      title: '🎉 टॉपर बैच 2027 स्पेशल ऑफर!',
-      desc: 'बिहार बोर्ड 10वीं के सभी 6 विषयों का सम्पूर्ण कोर्स अब मात्र ₹99 (1 माह) या ₹600 (पूरे 1 वर्ष) में उपलब्ध है। अभी VIP बैच अनलॉक करें।',
-      time: '10 मिनट पहले',
-      isNew: true,
-      action: onOpenVip,
-      actionText: 'ऑफर देखें'
-    },
-    {
-      id: 'notif-2',
-      title: '📝 संस्कृत (मङ्गलम्) के 50 नए VVI MCQs लाइव हैं',
-      desc: 'संस्कृत पीयूषम् के प्रथम पाठ के 50 चुनिंदा वस्तुनिष्ठ प्रश्नों का टेस्ट सेट अपलोड कर दिया गया है। अपना स्कोर तुरंत चेक करें।',
-      time: 'आज, 09:30 AM',
-      isNew: true,
-      action: onOpenCourse,
-      actionText: 'टेस्ट दें'
-    },
-    {
-      id: 'notif-3',
-      title: '📚 NCERT विज्ञान & गणित डिजिटल नोट्स उपलब्ध',
-      desc: 'सभी अध्यायों के हस्तलिखित नोट्स, सूत्र एवं बोर्ड परीक्षा मॉडल उत्तर पीडीएफ फॉर्मेट में उपलब्ध हैं।',
-      time: 'कल, 06:15 PM',
-      isNew: false,
-      action: onOpenCourse,
-      actionText: 'नोट्स पढ़ें'
-    },
-    {
-      id: 'notif-4',
-      title: '⏰ क्लास रूटीन 2027 अपडेट कर दिया गया है',
-      desc: 'दैनिक सुबह 6:30 AM से शाम 8:30 PM तक का सम्पूर्ण शेड्यूल ऐप के "Class Routine" सेक्शन में देख सकते हैं।',
-      time: '2 दिन पहले',
-      isNew: false,
-      action: null,
-      actionText: null
-    }
-  ];
+  const { notifications } = useData();
 
   return (
     <div className="fixed inset-0 z-50 bg-stone-950/75 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 animate-fade-in">
@@ -73,51 +37,63 @@ export function NotificationsModal({ onClose, onOpenVip, onOpenCourse }: Notific
 
         {/* List */}
         <div className="flex-1 overflow-y-auto p-4 space-y-3">
-          {notifications.map((n) => (
-            <div
-              key={n.id}
-              className={`p-3.5 rounded-2xl border transition-all space-y-2 ${
-                n.isNew
-                  ? 'bg-amber-50/50 border-amber-300/80 shadow-xs'
-                  : 'bg-slate-50/60 border-slate-200'
-              }`}
-            >
-              <div className="flex items-start justify-between gap-2">
-                <h4 className="font-extrabold text-stone-900 text-sm leading-tight">
-                  {n.title}
-                </h4>
-                {n.isNew && (
-                  <span className="bg-red-600 text-white text-[9px] font-black px-1.5 py-0.5 rounded-full shrink-0">
-                    NEW
+          {notifications.map((n) => {
+            let actionFn = null;
+            let actionText = null;
+            if (n.actionType === 'vip') {
+              actionFn = onOpenVip;
+              actionText = 'ऑफर देखें';
+            } else if (n.actionType === 'courses' || n.actionType === 'live') {
+              actionFn = onOpenCourse;
+              actionText = n.actionType === 'live' ? 'लाइव क्लास देखें' : 'कोर्स खोलें';
+            }
+
+            return (
+              <div
+                key={n.id}
+                className={`p-3.5 rounded-2xl border transition-all space-y-2 ${
+                  n.isNew
+                    ? 'bg-amber-50/50 border-amber-300/80 shadow-xs'
+                    : 'bg-slate-50/60 border-slate-200'
+                }`}
+              >
+                <div className="flex items-start justify-between gap-2">
+                  <h4 className="font-extrabold text-stone-900 text-sm leading-tight">
+                    {n.title}
+                  </h4>
+                  {n.isNew && (
+                    <span className="bg-red-600 text-white text-[9px] font-black px-1.5 py-0.5 rounded-full shrink-0">
+                      NEW
+                    </span>
+                  )}
+                </div>
+
+                <p className="text-xs text-stone-600 leading-relaxed">
+                  {n.description}
+                </p>
+
+                <div className="flex items-center justify-between pt-1 border-t border-slate-200/60 text-[10px] text-stone-500">
+                  <span className="flex items-center gap-1">
+                    <Clock className="w-3 h-3" />
+                    {n.timeLabel || 'अभी-अभी'}
                   </span>
-                )}
+
+                  {actionFn && (
+                    <button
+                      onClick={() => {
+                        onClose();
+                        actionFn();
+                      }}
+                      className="text-xs font-bold text-red-700 hover:text-red-900 flex items-center gap-0.5 cursor-pointer"
+                    >
+                      <span>{actionText}</span>
+                      <ChevronRight className="w-3 h-3" />
+                    </button>
+                  )}
+                </div>
               </div>
-
-              <p className="text-xs text-stone-600 leading-relaxed">
-                {n.desc}
-              </p>
-
-              <div className="flex items-center justify-between pt-1 border-t border-slate-200/60 text-[10px] text-stone-500">
-                <span className="flex items-center gap-1">
-                  <Clock className="w-3 h-3" />
-                  {n.time}
-                </span>
-
-                {n.action && (
-                  <button
-                    onClick={() => {
-                      onClose();
-                      n.action?.();
-                    }}
-                    className="text-xs font-bold text-red-700 hover:text-red-900 flex items-center gap-0.5 cursor-pointer"
-                  >
-                    <span>{n.actionText}</span>
-                    <ChevronRight className="w-3 h-3" />
-                  </button>
-                )}
-              </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
 
         {/* Footer */}

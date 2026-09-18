@@ -46,3 +46,70 @@ export interface PaidPdfNote {
   isPaid?: boolean;
   uploadedAt?: string;
 }
+
+export interface LiveClass {
+  id: string;
+  title: string;
+  youtubeUrl: string;
+  subjectName: string;
+  teacherName: string;
+  scheduledAt: string;
+  isLive: boolean;
+  description?: string;
+  createdAt: string;
+}
+
+export interface LeaderboardEntry {
+  id: string;
+  studentName: string;
+  district: string;
+  score: number;
+  totalMarks: number;
+  testName: string;
+  subjectName: string;
+  avatarColor?: string;
+  createdAt: string;
+  isVip?: boolean;
+}
+
+export interface RoutineItem {
+  id: string;
+  time: string;
+  subject: string;
+  topic: string;
+  instructor: string;
+  days: string;
+  color: string;
+}
+
+export interface MotivationalQuote {
+  id: string;
+  quote: string;
+  author: string;
+  isActive: boolean;
+  createdAt: string;
+}
+
+export interface NotificationItem {
+  id: string;
+  title: string;
+  description: string;
+  timeLabel: string;
+  isNew: boolean;
+  actionType?: 'live' | 'vip' | 'courses' | 'none';
+  createdAt: string;
+}
+
+export interface AppConfig {
+  helplineNumber: string;
+  upiId: string;
+  qrCodeDataUrl?: string;
+  youtubeUrl: string;
+  instagramUrl: string;
+  whatsappGroupUrl: string;
+  telegramUrl: string;
+  price1Month: number;
+  price1Year: number;
+}
+
+

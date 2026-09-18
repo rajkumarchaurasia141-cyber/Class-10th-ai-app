@@ -18,7 +18,8 @@ import {
   RefreshCw,
   FileCode,
   Receipt,
-  Users
+  Users,
+  Settings
 } from 'lucide-react';
 import { useData } from '../context/DataContext';
 import { defaultSubjectsData } from '../data/defaultCurriculum';
@@ -26,6 +27,12 @@ import { MCQItem, QAItem } from '../types';
 import { AdminPaymentRequests } from './AdminPaymentRequests';
 import { AdminStudentsList } from './AdminStudentsList';
 import { AdminPdfNotesManager } from './AdminPdfNotesManager';
+import { AdminLiveClassesManager } from './AdminLiveClassesManager';
+import { AdminRoutineManager } from './AdminRoutineManager';
+import { AdminQuotesManager } from './AdminQuotesManager';
+import { AdminNotificationsManager } from './AdminNotificationsManager';
+import { AdminSettingsManager } from './AdminSettingsManager';
+import { Radio, Calendar, Bell } from 'lucide-react';
 import { calculateVipExpiry } from '../utils/vipHelper';
 
 const PRESET_SUBJECTS = [
@@ -38,7 +45,7 @@ const PRESET_SUBJECTS = [
 
 export function AdminPanel({ onBack }: any) {
   const { refreshData } = useData();
-  const [activeTab, setActiveTab] = useState<'requests' | 'students' | 'vip' | 'content' | 'pdf_notes' | 'sync'>('requests');
+  const [activeTab, setActiveTab] = useState<'requests' | 'students' | 'vip' | 'content' | 'pdf_notes' | 'live_classes' | 'routine' | 'quotes' | 'notifications' | 'settings' | 'sync'>('requests');
   const [pendingRequestsCount, setPendingRequestsCount] = useState<number>(0);
 
   useEffect(() => {
@@ -373,6 +380,38 @@ export function AdminPanel({ onBack }: any) {
             <FileText className="w-4 h-4" /> Paid PDF नोट्स
           </button>
           <button 
+            onClick={() => setActiveTab('live_classes')} 
+            className={`pb-3 px-4 font-bold text-sm flex items-center gap-2 transition-colors cursor-pointer whitespace-nowrap ${
+              activeTab === 'live_classes' ? 'border-b-2 border-amber-500 text-amber-500' : 'text-stone-400 hover:text-stone-200'
+            }`}
+          >
+            <Radio className="w-4 h-4 text-red-500 animate-pulse" /> 🔴 YouTube लाइव क्लास
+          </button>
+          <button 
+            onClick={() => setActiveTab('routine')} 
+            className={`pb-3 px-4 font-bold text-sm flex items-center gap-2 transition-colors cursor-pointer whitespace-nowrap ${
+              activeTab === 'routine' ? 'border-b-2 border-amber-500 text-amber-500' : 'text-stone-400 hover:text-stone-200'
+            }`}
+          >
+            <Calendar className="w-4 h-4 text-red-400" /> 📅 क्लास रूटीन
+          </button>
+          <button 
+            onClick={() => setActiveTab('quotes')} 
+            className={`pb-3 px-4 font-bold text-sm flex items-center gap-2 transition-colors cursor-pointer whitespace-nowrap ${
+              activeTab === 'quotes' ? 'border-b-2 border-amber-500 text-amber-500' : 'text-stone-400 hover:text-stone-200'
+            }`}
+          >
+            <Sparkles className="w-4 h-4 text-amber-400" /> 💡 सुविचार / कोट्स
+          </button>
+          <button 
+            onClick={() => setActiveTab('notifications')} 
+            className={`pb-3 px-4 font-bold text-sm flex items-center gap-2 transition-colors cursor-pointer whitespace-nowrap ${
+              activeTab === 'notifications' ? 'border-b-2 border-amber-500 text-amber-500' : 'text-stone-400 hover:text-stone-200'
+            }`}
+          >
+            <Bell className="w-4 h-4 text-red-500 animate-bounce" /> 🔔 पुश नोटिफिकेशन्स
+          </button>
+          <button 
             onClick={() => setActiveTab('content')} 
             className={`pb-3 px-4 font-bold text-sm flex items-center gap-2 transition-colors cursor-pointer whitespace-nowrap ${
               activeTab === 'content' ? 'border-b-2 border-amber-500 text-amber-500' : 'text-stone-400 hover:text-stone-200'
@@ -387,6 +426,14 @@ export function AdminPanel({ onBack }: any) {
             }`}
           >
             <UserPlus className="w-4 h-4" /> VIP विद्यार्थी जोड़ें
+          </button>
+          <button 
+            onClick={() => setActiveTab('settings')} 
+            className={`pb-3 px-4 font-bold text-sm flex items-center gap-2 transition-colors cursor-pointer whitespace-nowrap ${
+              activeTab === 'settings' ? 'border-b-2 border-amber-500 text-amber-500' : 'text-stone-400 hover:text-stone-200'
+            }`}
+          >
+            <Settings className="w-4 h-4 text-amber-400" /> ⚙️ ऐप सेटिंग्स & मूल्य
           </button>
           <button 
             onClick={() => setActiveTab('sync')} 
@@ -405,6 +452,41 @@ export function AdminPanel({ onBack }: any) {
         {activeTab === 'pdf_notes' && (
           <div className="relative z-10">
             <AdminPdfNotesManager />
+          </div>
+        )}
+
+        {/* Live Classes Tab */}
+        {activeTab === 'live_classes' && (
+          <div className="relative z-10">
+            <AdminLiveClassesManager />
+          </div>
+        )}
+
+        {/* Routine Tab */}
+        {activeTab === 'routine' && (
+          <div className="relative z-10">
+            <AdminRoutineManager />
+          </div>
+        )}
+
+        {/* Quotes Tab */}
+        {activeTab === 'quotes' && (
+          <div className="relative z-10">
+            <AdminQuotesManager />
+          </div>
+        )}
+
+        {/* Notifications Tab */}
+        {activeTab === 'notifications' && (
+          <div className="relative z-10">
+            <AdminNotificationsManager />
+          </div>
+        )}
+
+        {/* Settings Tab */}
+        {activeTab === 'settings' && (
+          <div className="relative z-10">
+            <AdminSettingsManager />
           </div>
         )}
 

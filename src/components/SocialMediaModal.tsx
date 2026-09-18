@@ -14,20 +14,23 @@ import {
   Instagram,
   Sparkles
 } from 'lucide-react';
+import { useData } from '../context/DataContext';
 
 interface SocialMediaModalProps {
   onClose: () => void;
 }
 
 export function SocialMediaModal({ onClose }: SocialMediaModalProps) {
+  const { appConfig } = useData();
   const [copiedLink, setCopiedLink] = useState<string | null>(null);
 
-  const YOUTUBE_URL = 'https://www.youtube.com/@Vidyaagent2.0';
-  const INSTAGRAM_URL = 'https://www.instagram.com/unbroken_raj_01?stkn=dmJwNzNhNDl0cXhz';
-  const HELPLINE_NUMBER = '9241511070';
-  const HELPLINE_TEL = '+919241511070';
-  const WHATSAPP_HELPLINE_URL = `https://wa.me/919241511070?text=${encodeURIComponent('नमस्ते सर, मुझे पढ़ेगा बिहार 10वीं टॉपर बैच और नोट्स के बारे में जानकारी चाहिए।')}`;
-  const WHATSAPP_GROUP_URL = `https://wa.me/919241511070?text=${encodeURIComponent('नमस्ते सर, मुझे 10th BSEB 2027 WhatsApp ग्रुप में जोड़ें।')}`;
+  const YOUTUBE_URL = appConfig.youtubeUrl;
+  const INSTAGRAM_URL = appConfig.instagramUrl;
+  const HELPLINE_NUMBER = appConfig.helplineNumber;
+  const HELPLINE_TEL = '+91' + appConfig.helplineNumber;
+  const WHATSAPP_HELPLINE_URL = `https://wa.me/91${appConfig.helplineNumber}?text=${encodeURIComponent('नमस्ते सर, मुझे पढ़ेगा बिहार 10वीं टॉपर बैच और नोट्स के बारे में जानकारी चाहिए।')}`;
+  const WHATSAPP_GROUP_URL = appConfig.whatsappGroupUrl || `https://wa.me/91${appConfig.helplineNumber}?text=${encodeURIComponent('नमस्ते सर, मुझे 10th BSEB 2027 WhatsApp ग्रुप में जोड़ें।')}`;
+  const TELEGRAM_URL = appConfig.telegramUrl || 'https://t.me';
 
   const handleCopy = (text: string, id: string) => {
     navigator.clipboard?.writeText(text);
@@ -218,7 +221,7 @@ export function SocialMediaModal({ onClose }: SocialMediaModalProps) {
               </div>
 
               <a
-                href="https://t.me"
+                href={TELEGRAM_URL}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="px-3.5 py-1.5 rounded-xl bg-sky-600 hover:bg-sky-700 text-white text-xs font-bold flex items-center gap-1 shadow-xs transition-all cursor-pointer shrink-0"

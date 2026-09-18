@@ -19,11 +19,13 @@ import {
   Clock
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { useData } from '../context/DataContext';
 import { db } from '../lib/firebase';
 import { doc, setDoc } from 'firebase/firestore';
 
 export function PaywallModal({ onClose }: { onClose: () => void }) {
   const { user, isVIP, vipDetails } = useAuth();
+  const { appConfig } = useData();
   const [selectedPlan, setSelectedPlan] = useState<'1month' | '1year'>('1year');
   const [showPaymentInfo, setShowPaymentInfo] = useState(false);
   const [copiedUpi, setCopiedUpi] = useState(false);
@@ -38,12 +40,15 @@ export function PaywallModal({ onClose }: { onClose: () => void }) {
   const [uploadError, setUploadError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const UPI_ID = '9708868515@ybl';
-  const WHATSAPP_RAW = '919241511070';
-  const WHATSAPP_DISPLAY = '9241511070';
+  const UPI_ID = appConfig.upiId;
+  const WHATSAPP_RAW = '91' + appConfig.helplineNumber;
+  const WHATSAPP_DISPLAY = appConfig.helplineNumber;
 
-  const planAmount = selectedPlan === '1month' ? '₹99' : '₹600';
-  const planTitle = selectedPlan === '1month' ? '1 माह प्लान (₹99)' : '1 वर्ष प्लान (₹600)';
+  const priceMonth = appConfig.price1Month;
+  const priceYear = appConfig.price1Year;
+
+  const planAmount = selectedPlan === '1month' ? `₹${priceMonth}` : `₹${priceYear}`;
+  const planTitle = selectedPlan === '1month' ? `1 माह प्लान (₹${priceMonth})` : `1 वर्ष प्लान (₹${priceYear})`;
 
   const handleCopy = async (text: string, type: 'upi' | 'phone') => {
     try {
@@ -270,7 +275,7 @@ export function PaywallModal({ onClose }: { onClose: () => void }) {
                 )}
               </div>
               <div className="flex items-baseline gap-1 mb-1.5">
-                <span className="text-3xl font-black text-white">₹99</span>
+                <span className="text-3xl font-black text-white">₹{priceMonth}</span>
                 <span className="text-xs text-stone-400">/ 1 महीना</span>
               </div>
               <div className="flex items-center gap-1 text-[11px] text-stone-300 font-medium mt-1">
@@ -301,7 +306,7 @@ export function PaywallModal({ onClose }: { onClose: () => void }) {
                 )}
               </div>
               <div className="flex items-baseline gap-1 mb-1.5">
-                <span className="text-3xl font-black text-white">₹600</span>
+                <span className="text-3xl font-black text-white">₹{priceYear}</span>
                 <span className="text-xs text-stone-400">/ 1 पूरा वर्ष</span>
               </div>
               <div className="flex items-center gap-1 text-[11px] text-amber-300 font-medium mt-1">
@@ -406,6 +411,19 @@ export function PaywallModal({ onClose }: { onClose: () => void }) {
                     </button>
                   </div>
                 </div>
+
+                {/* QR Code Scanner Display if uploaded by Admin */}
+                {appConfig.qrCodeDataUrl && (
+                  <div className="bg-stone-900 border border-amber-500/40 rounded-2xl p-4 text-center space-y-2">
+                    <div className="text-xs font-bold text-amber-400 flex items-center justify-center gap-1.5">
+                      <QrCode className="w-4 h-4" /> QR स्कैनर से स्कैन करके पेमेंट करें:
+                    </div>
+                    <div className="w-44 h-44 mx-auto bg-white p-2 rounded-xl border border-amber-500/30 shadow-md">
+                      <img src={appConfig.qrCodeDataUrl} alt="UPI QR Scanner" className="w-full h-full object-contain" />
+                    </div>
+                    <p className="text-[11px] text-stone-400">किसी भी UPI ऐप (GPay, PhonePe, Paytm) से स्कैन करें</p>
+                  </div>
+                )}
 
                 {/* STEP 2: IN-APP SCREENSHOT UPLOAD */}
                 <div className="bg-stone-900/90 border border-amber-500/40 rounded-2xl p-3.5 sm:p-4 space-y-3">
