@@ -95,7 +95,7 @@ export function HomeScreen({ onSelect, onNavigateTab }: HomeScreenProps) {
   const subList = Object.values(subjects);
 
   return (
-    <div className="p-3 sm:p-4 max-w-lg mx-auto space-y-4 pb-20">
+    <div className="p-3 sm:p-4 w-full max-w-2xl mx-auto space-y-4 pb-20">
       {/* 1. Hero Carousel Banner (Matches top banner in user screenshot) */}
       <HeroCarouselBanner 
         onOpenVip={() => setShowPaywall(true)}

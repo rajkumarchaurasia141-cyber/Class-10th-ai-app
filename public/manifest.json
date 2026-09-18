@@ -1,0 +1,20 @@
+{
+  "id": "/",
+  "name": "पढ़ेगा बिहार - 10th BSEB",
+  "short_name": "पढ़ेगा बिहार",
+  "description": "बिहार बोर्ड कक्षा 10वीं (BSEB 2027) NCERT हिंदी माध्यम संपूर्ण तैयारी",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#f8fafc",
+  "theme_color": "#b91c1c",
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "sizes": "192x192 512x512",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}

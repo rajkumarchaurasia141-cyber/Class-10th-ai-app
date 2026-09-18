@@ -104,9 +104,9 @@ function MainApp() {
   };
 
   return (
-    <div className="min-h-screen w-full bg-slate-50 sm:bg-slate-900 flex justify-center selection:bg-red-500/30 overflow-x-hidden">
-      {/* Mobile Smartphone App Frame (Edge-to-edge full width on mobile, centered frame on desktop) */}
-      <div className={`w-full ${activeTab === 'admin' ? 'sm:max-w-4xl' : 'sm:max-w-md md:max-w-lg'} bg-slate-50 min-h-screen flex flex-col border-0 sm:border-x sm:border-slate-200/90 sm:shadow-2xl relative overflow-x-hidden transition-all duration-200`}>
+    <div className="min-h-screen w-full bg-slate-50 flex flex-col items-center selection:bg-red-500/30 overflow-x-hidden">
+      {/* Edge-to-Edge Native Android Full-Width App Container */}
+      <div className={`w-full ${activeTab === 'admin' ? 'max-w-5xl' : 'max-w-2xl'} bg-slate-50 min-h-screen flex flex-col relative overflow-x-hidden transition-all duration-150`}>
         {/* Top Header Bar with Hamburger Menu & Notifications */}
         <MobileTopBar
           onOpenDrawer={() => setShowDrawer(true)}

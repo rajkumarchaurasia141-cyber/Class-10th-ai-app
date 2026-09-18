@@ -32,7 +32,7 @@ export function AppDrawer({ isOpen, onClose, onNavigate, onOpenVip }: AppDrawerP
   if (!isOpen) return null;
 
   return (
-    <div className="fixed sm:absolute inset-0 z-50 flex animate-fade-in overflow-hidden">
+    <div className="fixed inset-0 z-50 flex animate-fade-in overflow-hidden">
       {/* Backdrop */}
       <div 
         onClick={onClose}
