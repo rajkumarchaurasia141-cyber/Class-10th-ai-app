@@ -1,103 +1,212 @@
 import React, { useState } from 'react';
 import { useData } from '../context/DataContext';
 import { useAuth } from '../context/AuthContext';
-import { BookText, Crown, Sparkles, ChevronRight, CheckCircle2 } from 'lucide-react';
+import { 
+  BookText, 
+  Crown, 
+  Sparkles, 
+  ChevronRight, 
+  CheckCircle2, 
+  Flame, 
+  GraduationCap, 
+  Award,
+  ArrowRight,
+  BookOpen
+} from 'lucide-react';
+import { HeroCarouselBanner } from './HeroCarouselBanner';
+import { FeatureGrid } from './FeatureGrid';
 import { PaywallModal } from './PaywallModal';
+import { ClassRoutineModal } from './ClassRoutineModal';
+import { NcertBooksModal } from './NcertBooksModal';
+import { SocialMediaModal } from './SocialMediaModal';
+import { FreeTestModal } from './FreeTestModal';
+import { FreeNotesModal } from './FreeNotesModal';
 
-export function HomeScreen({ onSelect }: any) {
+interface HomeScreenProps {
+  onSelect: (subjectId: string) => void;
+  onNavigateTab?: (tab: string) => void;
+}
+
+export function HomeScreen({ onSelect, onNavigateTab }: HomeScreenProps) {
   const { subjects, loading } = useData();
-  const { isVIP } = useAuth();
-  const [showPaywall, setShowPaywall] = useState(false);
+  const { isVIP, vipDetails } = useAuth();
 
-  if (loading) return <div className="text-center p-10 text-stone-400">विषय लोड हो रहे हैं...</div>;
+  // Modals state
+  const [showPaywall, setShowPaywall] = useState(false);
+  const [showRoutine, setShowRoutine] = useState(false);
+  const [showNcert, setShowNcert] = useState(false);
+  const [showSocial, setShowSocial] = useState(false);
+  const [showFreeTest, setShowFreeTest] = useState(false);
+  const [showFreeNotes, setShowFreeNotes] = useState(false);
+
+  const handleFeatureNavigate = (id: string) => {
+    switch (id) {
+      case 'course':
+        // Scroll to subjects or open subjects view
+        const el = document.getElementById('all-subjects-section');
+        if (el) el.scrollIntoView({ behavior: 'smooth' });
+        break;
+      case 'free_courses':
+        // Open first subject demo
+        onSelect('sanskrit');
+        break;
+      case 'paid_notes':
+        if (!isVIP) {
+          setShowPaywall(true);
+        } else {
+          onSelect('sanskrit');
+        }
+        break;
+      case 'paid_test':
+        if (!isVIP) {
+          setShowPaywall(true);
+        } else {
+          onSelect('sanskrit');
+        }
+        break;
+      case 'ncert_book':
+        setShowNcert(true);
+        break;
+      case 'free_notes':
+        setShowFreeNotes(true);
+        break;
+      case 'free_test':
+        setShowFreeTest(true);
+        break;
+      case 'routine':
+        setShowRoutine(true);
+        break;
+      case 'social':
+        setShowSocial(true);
+        break;
+      default:
+        break;
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="p-8 text-center text-stone-500 text-sm">
+        विषय एवं पाठ्यक्रम लोड हो रहे हैं...
+      </div>
+    );
+  }
 
   const subList = Object.values(subjects);
-  if (subList.length === 0) return <div className="text-center p-10 text-stone-400">कोई विषय नहीं मिला।</div>;
 
   return (
-    <div className="p-4 max-w-4xl mx-auto space-y-6">
-      {/* VIP Plan Promo Banner */}
-      {!isVIP ? (
-        <div 
-          onClick={() => setShowPaywall(true)}
-          className="bg-gradient-to-r from-amber-950/60 via-stone-900 to-amber-950/40 border border-amber-500/40 rounded-3xl p-5 md:p-6 shadow-xl cursor-pointer hover:border-amber-500 transition-all relative overflow-hidden group"
-        >
-          <div className="absolute top-0 right-0 -mr-12 -mt-12 w-36 h-36 bg-amber-500/15 rounded-full blur-2xl group-hover:bg-amber-500/25 transition-all"></div>
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 relative z-10">
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 rounded-2xl bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-amber-400 shrink-0">
-                <Crown className="w-6 h-6" />
-              </div>
-              <div>
-                <div className="flex items-center gap-2">
-                  <span className="text-xs font-bold text-amber-400 uppercase tracking-wider bg-amber-500/10 px-2 py-0.5 rounded">
-                    फुल कोर्स VIP प्लान
-                  </span>
-                  <span className="text-xs text-amber-300/80 font-medium">
-                    1 माह: ₹99 | 1 वर्ष: ₹600
-                  </span>
-                </div>
-                <h3 className="text-lg md:text-xl font-black text-white mt-1">
-                  सभी अध्यायों के पूरे नोट्स & 50 MCQs अनलॉक करें
-                </h3>
-                <p className="text-xs text-stone-400 mt-0.5">
-                  1 महीना मात्र ₹99 अथवा 1 पूरा वर्ष मात्र ₹600 में — क्लिक करके प्लान देखें
-                </p>
-              </div>
-            </div>
+    <div className="p-3 sm:p-4 max-w-lg mx-auto space-y-4 pb-20">
+      {/* 1. Hero Carousel Banner (Matches top banner in user screenshot) */}
+      <HeroCarouselBanner 
+        onOpenVip={() => setShowPaywall(true)}
+        onExploreCourses={() => {
+          const el = document.getElementById('all-subjects-section');
+          if (el) el.scrollIntoView({ behavior: 'smooth' });
+        }}
+      />
 
-            <div className="flex items-center gap-1.5 bg-amber-500 hover:bg-amber-400 text-stone-950 font-bold px-4 py-2.5 rounded-xl text-xs whitespace-nowrap shadow transition-all shrink-0">
-              <span>प्लान देखें</span>
-              <ChevronRight className="w-4 h-4" />
-            </div>
-          </div>
-        </div>
-      ) : (
-        <div className="bg-stone-900/90 border border-amber-500/30 rounded-2xl p-4 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-amber-500/10 rounded-xl text-amber-400">
-              <Crown className="w-5 h-5" />
+      {/* 2. 3x3 Feature Grid (Matches exact 9 icons & labels in user screenshot) */}
+      <FeatureGrid onNavigate={handleFeatureNavigate} />
+
+      {/* 3. VIP Status Banner / Teaser */}
+      {isVIP ? (
+        <div className="bg-gradient-to-r from-amber-500/15 via-white to-amber-500/10 border border-amber-300 rounded-2xl p-3.5 flex items-center justify-between shadow-xs">
+          <div className="flex items-center gap-2.5">
+            <div className="w-9 h-9 rounded-xl bg-amber-400 text-stone-950 flex items-center justify-center font-bold shadow-xs">
+              <Crown className="w-5 h-5 fill-current" />
             </div>
             <div>
-              <div className="flex items-center gap-2">
-                <span className="text-xs font-bold text-amber-400">VIP एक्सेस सक्रिय है</span>
-                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
+              <div className="flex items-center gap-1.5">
+                <span className="text-xs font-black text-stone-900">VIP एक्सेस सक्रिय</span>
+                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
               </div>
-              <p className="text-xs text-stone-400">आपके पास सभी विषयों और अध्यायों का सम्पूर्ण एक्सेस है।</p>
+              <p className="text-[11px] text-stone-600">
+                वैधता: {vipDetails?.formattedExpiry} तक ({vipDetails?.daysRemaining} दिन बाकी)
+              </p>
             </div>
           </div>
-          <button 
-            onClick={() => setShowPaywall(true)} 
-            className="text-xs text-stone-400 hover:text-amber-400 underline cursor-pointer"
+          <button
+            onClick={() => setShowPaywall(true)}
+            className="text-xs font-bold text-amber-800 hover:text-amber-900 underline cursor-pointer"
           >
-            प्लान विवरण
+            विवरण
           </button>
+        </div>
+      ) : (
+        <div 
+          onClick={() => setShowPaywall(true)}
+          className="bg-gradient-to-r from-red-700 to-amber-700 text-white rounded-2xl p-3.5 shadow-sm flex items-center justify-between cursor-pointer hover:brightness-105 transition-all"
+        >
+          <div className="flex items-center gap-2.5">
+            <div className="w-9 h-9 rounded-xl bg-white/20 flex items-center justify-center text-amber-300 font-bold border border-white/20">
+              <Crown className="w-5 h-5 fill-current" />
+            </div>
+            <div>
+              <div className="text-xs font-black text-white">टॉपर VIP प्लान अनलॉक करें</div>
+              <p className="text-[11px] text-amber-100">1 माह: ₹99 | 1 पूरा वर्ष: ₹600 मात्र</p>
+            </div>
+          </div>
+          <span className="text-xs font-bold bg-white text-red-700 px-3 py-1 rounded-full shadow-xs flex items-center gap-1">
+            <span>देखें</span>
+            <ChevronRight className="w-3.5 h-3.5" />
+          </span>
         </div>
       )}
 
-      {/* Subjects Grid */}
-      <div>
-        <h2 className="text-2xl font-bold mb-4 text-amber-500">सभी विषय (Class 10)</h2>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          {subList.map((sub: any, index: number) => (
-            <div 
-              key={sub.id || `sub-${index}`} 
-              onClick={() => onSelect(sub.id)} 
-              className="bg-stone-900 p-6 rounded-2xl cursor-pointer border border-stone-800 hover:border-amber-500/50 hover:bg-stone-800/50 transition-all flex items-center gap-4 shadow-lg"
-            >
-              <div className="p-4 bg-amber-500/10 rounded-xl text-amber-500">
-                <BookText className="w-8 h-8" />
+      {/* 4. All Subjects Section */}
+      <div id="all-subjects-section" className="space-y-2.5 pt-1">
+        <div className="flex items-center justify-between px-1">
+          <h3 className="text-sm font-bold text-stone-900 flex items-center gap-1.5">
+            <span className="w-2 h-4 rounded-full bg-red-600 inline-block"></span>
+            <span>सभी विषय (Class 10th BSEB)</span>
+          </h3>
+          <span className="text-[11px] text-stone-500 font-medium">{subList.length} विषय उपलब्ध</span>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+          {subList.map((sub: any) => {
+            return (
+              <div
+                key={sub.id}
+                onClick={() => onSelect(sub.id)}
+                className="bg-white hover:bg-slate-50 border border-slate-200/90 rounded-2xl p-3.5 transition-all shadow-xs hover:shadow-md cursor-pointer flex items-center justify-between group"
+              >
+                <div className="flex items-center gap-3 min-w-0">
+                  <div className="w-11 h-11 rounded-2xl bg-red-50 text-red-700 flex items-center justify-center font-bold text-sm border border-red-100 group-hover:scale-105 transition-transform shrink-0">
+                    <BookText className="w-5 h-5" />
+                  </div>
+                  <div className="min-w-0">
+                    <h4 className="font-extrabold text-stone-900 text-sm truncate group-hover:text-red-700 transition-colors">
+                      {sub.subject_name_hindi || sub.subject_name || sub.id}
+                    </h4>
+                    <p className="text-[11px] text-stone-500 truncate">
+                      {sub.chapters?.length || 0} अध्याय • नोट्स व MCQs
+                    </p>
+                  </div>
+                </div>
+
+                <div className="w-7 h-7 rounded-full bg-slate-100 group-hover:bg-red-50 text-stone-400 group-hover:text-red-700 flex items-center justify-center transition-colors shrink-0">
+                  <ChevronRight className="w-4 h-4" />
+                </div>
               </div>
-              <div>
-                <h3 className="text-xl font-bold text-white">{sub.subject_name_hindi || sub.subject_name || sub.id}</h3>
-                <p className="text-sm text-stone-400 mt-1">{sub.chapters?.length || 0} अध्याय उपलब्ध</p>
-              </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </div>
 
+      {/* 5. Modals */}
       {showPaywall && <PaywallModal onClose={() => setShowPaywall(false)} />}
+      {showRoutine && <ClassRoutineModal onClose={() => setShowRoutine(false)} />}
+      {showNcert && <NcertBooksModal onClose={() => setShowNcert(false)} onOpenSubject={(id) => onSelect(id)} />}
+      {showSocial && <SocialMediaModal onClose={() => setShowSocial(false)} />}
+      {showFreeTest && <FreeTestModal onClose={() => setShowFreeTest(false)} onOpenVip={() => setShowPaywall(true)} />}
+      {showFreeNotes && (
+        <FreeNotesModal 
+          onClose={() => setShowFreeNotes(false)} 
+          onOpenVip={() => setShowPaywall(true)} 
+          onOpenSubject={(id) => onSelect(id)} 
+        />
+      )}
     </div>
   );
 }
