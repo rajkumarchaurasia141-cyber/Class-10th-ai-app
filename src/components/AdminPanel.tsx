@@ -1,207 +1,858 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { db } from '../lib/firebase';
-import { doc, setDoc, collection } from 'firebase/firestore';
-import { ShieldCheck, UserPlus, CheckCircle, ArrowLeft, UploadCloud, Database } from 'lucide-react';
+import { doc, setDoc, writeBatch, collection, onSnapshot } from 'firebase/firestore';
+import { 
+  ShieldCheck, 
+  UserPlus, 
+  CheckCircle, 
+  ArrowLeft, 
+  UploadCloud, 
+  Database, 
+  BookOpen, 
+  FileText, 
+  Sparkles, 
+  HelpCircle, 
+  CheckCircle2, 
+  Plus, 
+  Trash2, 
+  RefreshCw,
+  FileCode,
+  Receipt,
+  Users
+} from 'lucide-react';
 import { useData } from '../context/DataContext';
+import { defaultSubjectsData } from '../data/defaultCurriculum';
+import { MCQItem, QAItem } from '../types';
+import { AdminPaymentRequests } from './AdminPaymentRequests';
+import { AdminStudentsList } from './AdminStudentsList';
+import { calculateVipExpiry } from '../utils/vipHelper';
+
+const PRESET_SUBJECTS = [
+  { id: 'sanskrit', name: 'Sanskrit', hindi: 'संस्कृत (पीयूषम्)' },
+  { id: 'science', name: 'Science', hindi: 'विज्ञान (भौतिकी, रसायन, जीव)' },
+  { id: 'hindi', name: 'Hindi', hindi: 'हिन्दी (गोधूलि भाग-2)' },
+  { id: 'math', name: 'Mathematics', hindi: 'गणित (Maths)' },
+  { id: 'social_science', name: 'Social Science', hindi: 'सामाजिक विज्ञान' }
+];
 
 export function AdminPanel({ onBack }: any) {
   const { refreshData } = useData();
-  const [activeTab, setActiveTab] = useState<'vip' | 'content'>('vip');
+  const [activeTab, setActiveTab] = useState<'requests' | 'students' | 'vip' | 'content' | 'sync'>('requests');
+  const [pendingRequestsCount, setPendingRequestsCount] = useState<number>(0);
+
+  useEffect(() => {
+    try {
+      const unsub = onSnapshot(collection(db, 'payment_requests'), (snapshot) => {
+        let count = 0;
+        snapshot.forEach((d) => {
+          if (d.data()?.status === 'pending') count++;
+        });
+        setPendingRequestsCount(count);
+      });
+      return () => unsub();
+    } catch (e) {
+      console.error(e);
+    }
+  }, []);
   
   // VIP State
   const [email, setEmail] = useState('');
+  const [vipPlan, setVipPlan] = useState<'1month' | '1year'>('1year');
   const [msg, setMsg] = useState('');
   const [loading, setLoading] = useState(false);
 
-  // Content State
+  // Content Upload State
   const [cMsg, setCMsg] = useState('');
   const [cLoading, setCLoading] = useState(false);
-  const [formData, setFormData] = useState({
-    subjectId: 'sanskrit',
-    subjectName: 'Sanskrit',
-    subjectNameHindi: 'संस्कृत',
-    chapterNo: '',
-    chapterNameHindi: '',
-    notesHindi: '',
-    mcqJson: '[]',
-    qnaJson: '[]'
-  });
+  const [syncLoading, setSyncLoading] = useState(false);
+  const [syncMsg, setSyncMsg] = useState('');
 
-  const handleAddVIP = async (e: any) => {
+  // Form Data
+  const [subjectId, setSubjectId] = useState('sanskrit');
+  const [subjectName, setSubjectName] = useState('Sanskrit');
+  const [subjectNameHindi, setSubjectNameHindi] = useState('संस्कृत (पीयूषम्)');
+  const [chapterNo, setChapterNo] = useState('');
+  const [chapterNameHindi, setChapterNameHindi] = useState('');
+  const [chapterNameEng, setChapterNameEng] = useState('');
+  
+  // Rich Sections
+  const [introHindi, setIntroHindi] = useState('');
+  const [notesHindi, setNotesHindi] = useState('');
+  const [topperTips, setTopperTips] = useState('');
+
+  // Structured QnA and MCQ
+  const [qaMode, setQaMode] = useState<'visual' | 'json'>('visual');
+  const [qaList, setQaList] = useState<QAItem[]>([
+    { type: 'लघु उत्तरीय', question: '', answer: '' }
+  ]);
+  const [qaJson, setQaJson] = useState('[]');
+
+  const [mcqMode, setMcqMode] = useState<'visual' | 'json'>('visual');
+  const [mcqList, setMcqList] = useState<MCQItem[]>([
+    { question: '', options: ['', '', '', ''], correct_answer: 0, explanation: '' }
+  ]);
+  const [mcqJson, setMcqJson] = useState('[]');
+
+  // Change preset subject
+  const handleSelectPresetSubject = (p: typeof PRESET_SUBJECTS[0]) => {
+    setSubjectId(p.id);
+    setSubjectName(p.name);
+    setSubjectNameHindi(p.hindi);
+  };
+
+  // Add VIP
+  const handleAddVIP = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email) return;
     setLoading(true);
     try {
-      await setDoc(doc(db, 'vip_users', email.trim().toLowerCase()), {
+      const cleanEmail = email.trim().toLowerCase();
+      const expiry = calculateVipExpiry(vipPlan);
+
+      await setDoc(doc(db, 'vip_users', cleanEmail), {
         isVip: true,
+        plan: vipPlan,
+        planDuration: expiry.planDurationText,
+        planPrice: vipPlan === '1month' ? 99 : 600,
+        validFrom: expiry.validFrom,
+        expiresAt: expiry.expiresAt,
         addedAt: new Date().toISOString()
+      }, { merge: true });
+
+      const expiryDateFormatted = new Date(expiry.expiresAt).toLocaleDateString('hi-IN', {
+        day: 'numeric',
+        month: 'short',
+        year: 'numeric'
       });
-      setMsg(`${email} को VIP अनलॉक कर दिया गया है!`);
+
+      setMsg(`${cleanEmail} को VIP बैच (${expiry.planDurationText}) सफलतापूर्वक अनलॉक कर दिया गया है! (वैधता: ${expiryDateFormatted} तक)`);
       setEmail('');
-    } catch (e) {
-      setMsg('VIP जोड़ने में त्रुटि हुई।');
+    } catch (e: any) {
+      setMsg('VIP जोड़ने में त्रुटि: ' + e.message);
     }
     setLoading(false);
   };
 
-  const handleUploadContent = async (e: any) => {
+  // Pre-fill Sample Template
+  const handleLoadSampleTemplate = () => {
+    setChapterNo('1');
+    setChapterNameHindi('मङ्गलम्');
+    setChapterNameEng('Mangalam');
+    setIntroHindi(`【 पाठ परिचय 】
+प्रस्तुत पाठ 'मङ्गलम्' उपनिषद के विभिन्न अध्यायों से संकलित है। इस पाठ में महर्षि वेदव्यास द्वारा चार उपनिषदों से पाँच पवित्र मंत्र लिए गए हैं। इसमें सत्य, आत्मा और परमात्मा के गूढ़ स्वरूप का वर्णन है।`);
+    
+    setNotesHindi(`【 मन्त्र एवं विस्तृत व्याख्या 】
+१. हिरण्मयेन पात्रेण सत्यस्यापिहितं मुखम्।
+तत्त्वं पूषन्नपावृणु सत्यधर्माय दृष्टये॥
+अर्थ: हे सूर्यदेव! सत्य का मुख सोने जैसे ज्योतिर्मय पात्र से ढँका हुआ है। सत्य धर्म के दर्शन के लिए उस आवरण को हटा दीजिए।`);
+
+    setTopperTips(`【 🏆 VVI टॉपर परीक्षा टिप्स 】
+१. 'सत्यमेव जयते' मुण्डकोपनिषद् से संकलित है।
+२. उपनिषदों की कुल संख्या 108 है।
+३. मङ्गलम् पाठ के रचनाकार महर्षि वेदव्यास हैं।`);
+
+    setQaList([
+      {
+        type: 'लघु उत्तरीय',
+        question: 'मङ्गलम् पाठ के आधार पर सत्य की क्या महत्ता है?',
+        answer: 'सत्य की ही सदा विजय होती है, असत्य की नहीं। सत्य के मार्ग से ही देवलोक का मार्ग खुलता है।'
+      }
+    ]);
+
+    setMcqList([
+      {
+        question: 'मङ्गलम् पाठ में कुल कितने मन्त्र हैं?',
+        options: ['4', '5', '6', '8'],
+        correct_answer: 1,
+        explanation: 'मङ्गलम् पाठ में 4 उपनिषदों से कुल 5 मन्त्र संकलित हैं।'
+      }
+    ]);
+  };
+
+  // Q&A List actions
+  const addQaItem = () => {
+    setQaList([...qaList, { type: 'लघु उत्तरीय', question: '', answer: '' }]);
+  };
+  const removeQaItem = (idx: number) => {
+    setQaList(qaList.filter((_, i) => i !== idx));
+  };
+  const updateQaItem = (idx: number, field: keyof QAItem, val: string) => {
+    const updated = [...qaList];
+    updated[idx] = { ...updated[idx], [field]: val };
+    setQaList(updated);
+  };
+
+  // MCQ List actions
+  const addMcqItem = () => {
+    setMcqList([...mcqList, { question: '', options: ['', '', '', ''], correct_answer: 0, explanation: '' }]);
+  };
+  const removeMcqItem = (idx: number) => {
+    setMcqList(mcqList.filter((_, i) => i !== idx));
+  };
+  const updateMcqQuestion = (idx: number, val: string) => {
+    const updated = [...mcqList];
+    updated[idx].question = val;
+    setMcqList(updated);
+  };
+  const updateMcqOption = (qIdx: number, optIdx: number, val: string) => {
+    const updated = [...mcqList];
+    const newOptions = [...updated[qIdx].options];
+    newOptions[optIdx] = val;
+    updated[qIdx].options = newOptions;
+    setMcqList(updated);
+  };
+  const updateMcqCorrect = (qIdx: number, correctIdx: number) => {
+    const updated = [...mcqList];
+    updated[qIdx].correct_answer = correctIdx;
+    setMcqList(updated);
+  };
+  const updateMcqExplanation = (qIdx: number, val: string) => {
+    const updated = [...mcqList];
+    updated[qIdx].explanation = val;
+    setMcqList(updated);
+  };
+
+  // Save Content to Firestore
+  const handleUploadContent = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!chapterNo) {
+      setCMsg('कृपया अध्याय संख्या दर्ज करें।');
+      return;
+    }
     setCLoading(true);
     setCMsg('');
+
     try {
-      const subId = formData.subjectId.trim().toLowerCase();
+      const subId = subjectId.trim().toLowerCase();
       // Ensure subject document exists
       await setDoc(doc(db, 'subjects', subId), {
-        subject_name: formData.subjectName,
-        subject_name_hindi: formData.subjectNameHindi
+        subject_name: subjectName,
+        subject_name_hindi: subjectNameHindi
       }, { merge: true });
 
-      let mcq = [];
-      let qna = [];
-      try { mcq = JSON.parse(formData.mcqJson); } catch(e) {}
-      try { qna = JSON.parse(formData.qnaJson); } catch(e) {}
+      let finalMcq = mcqList.filter(m => m.question.trim().length > 0);
+      let finalQa = qaList.filter(q => q.question.trim().length > 0);
 
-      const chNo = Number(formData.chapterNo);
+      if (mcqMode === 'json') {
+        try { finalMcq = JSON.parse(mcqJson); } catch (e) {}
+      }
+      if (qaMode === 'json') {
+        try { finalQa = JSON.parse(qaJson); } catch (e) {}
+      }
+
+      const chNo = Number(chapterNo);
       const chapterRef = doc(db, 'subjects', subId, 'chapters', `ch${chNo}`);
       
       await setDoc(chapterRef, {
         chapter_no: chNo,
-        chapter_name_hindi: formData.chapterNameHindi,
-        notes_hindi: formData.notesHindi,
-        mcq: mcq,
-        subjective_qa: qna
+        chapter_name: chapterNameEng,
+        chapter_name_hindi: chapterNameHindi,
+        intro_hindi: introHindi,
+        notes_hindi: notesHindi,
+        topper_tips: topperTips,
+        mcq: finalMcq,
+        subjective_qa: finalQa,
+        updatedAt: new Date().toISOString()
       }, { merge: true });
 
-      setCMsg(`अध्याय ${chNo} सफलतापूर्वक अपलोड हो गया!`);
-      setFormData(prev => ({ ...prev, chapterNo: '', chapterNameHindi: '', notesHindi: '', mcqJson: '[]', qnaJson: '[]' }));
-      refreshData();
+      setCMsg(`अध्याय ${chNo} (${chapterNameHindi || subjectNameHindi}) सफलतापूर्वक Firestore में सेव हो गया!`);
+      await refreshData();
     } catch (e: any) {
       setCMsg('अपलोड में त्रुटि: ' + e.message);
     }
     setCLoading(false);
   };
 
+  // Sync All Default Curriculum to Firestore
+  const handleSyncAllDefaultToFirestore = async () => {
+    if (!confirm('क्या आप सभी इन-बिल्ट अध्यायों (संस्कृत, विज्ञान, हिन्दी, गणित) को सीधे Firestore डेटाबेस में अपलोड/सिंक करना चाहते हैं?')) {
+      return;
+    }
+    setSyncLoading(true);
+    setSyncMsg('');
+    try {
+      for (const [sId, subObj] of Object.entries(defaultSubjectsData)) {
+        await setDoc(doc(db, 'subjects', sId), {
+          subject_name: subObj.subject_name,
+          subject_name_hindi: subObj.subject_name_hindi
+        }, { merge: true });
+
+        for (const ch of subObj.chapters) {
+          const chRef = doc(db, 'subjects', sId, 'chapters', `ch${ch.chapter_no}`);
+          await setDoc(chRef, {
+            chapter_no: ch.chapter_no,
+            chapter_name: ch.chapter_name,
+            chapter_name_hindi: ch.chapter_name_hindi,
+            intro_hindi: ch.intro_hindi || '',
+            notes_hindi: ch.notes_hindi || '',
+            topper_tips: ch.topper_tips || '',
+            mcq: ch.mcq || [],
+            subjective_qa: ch.subjective_qa || [],
+            updatedAt: new Date().toISOString()
+          }, { merge: true });
+        }
+      }
+
+      setSyncMsg('सफलता! सभी विषयों के सम्पूर्ण NCERT नोट्स, पाठ परिचय, टॉपर टिप्स, Q&A और 50 MCQs Firestore डेटाबेस में सिंक हो गए हैं।');
+      await refreshData();
+    } catch (e: any) {
+      setSyncMsg('सिंक करने में त्रुटि: ' + e.message);
+    }
+    setSyncLoading(false);
+  };
+
   return (
-    <div className="max-w-4xl mx-auto p-4 md:p-6 mt-8">
-      <button onClick={onBack} className="text-amber-500 mb-6 flex items-center gap-2 font-medium hover:text-amber-400 transition-colors">
-        <ArrowLeft className="w-4 h-4" /> मुख्य पेज पर वापस जाएँ
+    <div className="max-w-5xl mx-auto p-4 md:p-6 mt-4 pb-28 selection:bg-amber-500/30">
+      <button onClick={onBack} className="text-amber-500 mb-6 flex items-center gap-2 font-medium hover:text-amber-400 transition-colors cursor-pointer">
+        <ArrowLeft className="w-4 h-4" /> मुख्य पोर्टल पर वापस जाएँ
       </button>
 
-      <div className="bg-stone-900 border border-amber-900/30 rounded-3xl p-6 md:p-8 shadow-2xl relative overflow-hidden">
-        <div className="absolute top-0 right-0 -mr-16 -mt-16 w-40 h-40 bg-amber-500/10 rounded-full blur-3xl"></div>
-        
-        <div className="flex items-center gap-4 mb-8 relative z-10">
-          <div className="p-4 bg-amber-500/10 rounded-2xl">
-            <ShieldCheck className="w-8 h-8 text-amber-500" />
+      <div className="bg-stone-900 border border-stone-800 rounded-3xl p-6 md:p-8 shadow-2xl relative overflow-hidden">
+        <div className="absolute top-0 right-0 -mr-16 -mt-16 w-48 h-48 bg-amber-500/10 rounded-full blur-3xl pointer-events-none"></div>
+
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8 relative z-10 border-b border-stone-800 pb-6">
+          <div className="flex items-center gap-4">
+            <div className="p-3.5 bg-amber-500/10 rounded-2xl border border-amber-500/20 text-amber-500">
+              <ShieldCheck className="w-8 h-8" />
+            </div>
+            <div>
+              <span className="text-xs font-bold text-amber-500 uppercase tracking-wider bg-amber-500/10 px-2 py-0.5 rounded">
+                सुपर एडमिन नियंत्रण
+              </span>
+              <h2 className="text-2xl font-black text-white mt-1">एडमिन कंट्रोल पैनल</h2>
+              <p className="text-stone-400 text-xs mt-0.5">पाठ परिचय, नोट्स, टॉपर टिप्स, Q&A एवं VIP प्रबंधन</p>
+            </div>
           </div>
-          <div>
-            <h2 className="text-2xl font-black text-white">एडमिन पैनल</h2>
-            <p className="text-stone-400 mt-1">ऐप का पूरा नियंत्रण (VIP & Content)</p>
-          </div>
+
+          <button
+            onClick={handleLoadSampleTemplate}
+            className="text-xs font-semibold bg-stone-800 hover:bg-stone-700 text-stone-200 px-3.5 py-2 rounded-xl transition-colors border border-stone-700 flex items-center gap-1.5 cursor-pointer w-fit"
+            title="सैंपल डेटा फॉर्म में लोड करें"
+          >
+            <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+            सैंपल NCERT टेम्पलेट भरें
+          </button>
         </div>
 
-        <div className="flex border-b border-stone-800 mb-8 relative z-10">
+        {/* Tab Controls */}
+        <div className="flex border-b border-stone-800 mb-8 relative z-10 gap-2 overflow-x-auto scrollbar-none">
           <button 
-            onClick={() => setActiveTab('vip')} 
-            className={`pb-4 px-4 font-bold flex items-center gap-2 transition-colors ${activeTab === 'vip' ? 'border-b-2 border-amber-500 text-amber-500' : 'text-stone-400 hover:text-stone-300'}`}
+            onClick={() => setActiveTab('requests')} 
+            className={`pb-3 px-4 font-bold text-sm flex items-center gap-2 transition-colors cursor-pointer whitespace-nowrap ${
+              activeTab === 'requests' ? 'border-b-2 border-amber-500 text-amber-500' : 'text-stone-400 hover:text-stone-200'
+            }`}
           >
-            <UserPlus className="w-4 h-4" /> VIP एक्सेस
+            <Receipt className="w-4 h-4" />
+            <span>पेमेंट रिक्वेस्ट</span>
+            {pendingRequestsCount > 0 && (
+              <span className="bg-amber-500 text-stone-950 font-black text-[11px] px-2 py-0.5 rounded-full">
+                {pendingRequestsCount} नई
+              </span>
+            )}
+          </button>
+          <button 
+            onClick={() => setActiveTab('students')} 
+            className={`pb-3 px-4 font-bold text-sm flex items-center gap-2 transition-colors cursor-pointer whitespace-nowrap ${
+              activeTab === 'students' ? 'border-b-2 border-amber-500 text-amber-500' : 'text-stone-400 hover:text-stone-200'
+            }`}
+          >
+            <Users className="w-4 h-4" /> पंजीकृत छात्र
           </button>
           <button 
             onClick={() => setActiveTab('content')} 
-            className={`pb-4 px-4 font-bold flex items-center gap-2 transition-colors ${activeTab === 'content' ? 'border-b-2 border-amber-500 text-amber-500' : 'text-stone-400 hover:text-stone-300'}`}
+            className={`pb-3 px-4 font-bold text-sm flex items-center gap-2 transition-colors cursor-pointer whitespace-nowrap ${
+              activeTab === 'content' ? 'border-b-2 border-amber-500 text-amber-500' : 'text-stone-400 hover:text-stone-200'
+            }`}
           >
-            <UploadCloud className="w-4 h-4" /> कंटेंट अपलोड
+            <UploadCloud className="w-4 h-4" /> नया चैप्टर अपलोड / एडिट
+          </button>
+          <button 
+            onClick={() => setActiveTab('vip')} 
+            className={`pb-3 px-4 font-bold text-sm flex items-center gap-2 transition-colors cursor-pointer whitespace-nowrap ${
+              activeTab === 'vip' ? 'border-b-2 border-amber-500 text-amber-500' : 'text-stone-400 hover:text-stone-200'
+            }`}
+          >
+            <UserPlus className="w-4 h-4" /> VIP विद्यार्थी जोड़ें
+          </button>
+          <button 
+            onClick={() => setActiveTab('sync')} 
+            className={`pb-3 px-4 font-bold text-sm flex items-center gap-2 transition-colors cursor-pointer whitespace-nowrap ${
+              activeTab === 'sync' ? 'border-b-2 border-amber-500 text-amber-500' : 'text-stone-400 hover:text-stone-200'
+            }`}
+          >
+            <RefreshCw className="w-4 h-4" /> क्लाउड सिंक (1-क्लिक)
           </button>
         </div>
 
-        {activeTab === 'vip' && (
-          <form onSubmit={handleAddVIP} className="space-y-6 relative z-10 max-w-xl">
+        {/* Payment Requests (Screenshots) Tab */}
+        {activeTab === 'requests' && <AdminPaymentRequests />}
+
+        {/* Registered Students Tab */}
+        {activeTab === 'students' && <AdminStudentsList />}
+
+        {/* Content Upload Tab */}
+        {activeTab === 'content' && (
+          <form onSubmit={handleUploadContent} className="space-y-6 relative z-10">
+            {/* Quick Subject Selectors */}
             <div>
-              <label className="block text-sm font-medium text-stone-300 mb-2">छात्र का Gmail Address डालें:</label>
-              <input
-                type="email"
-                value={email}
-                onChange={e => setEmail(e.target.value)}
-                placeholder="student@gmail.com"
-                className="w-full bg-stone-950 border border-stone-800 rounded-xl px-4 py-3.5 text-white focus:outline-none focus:border-amber-500 transition-colors"
-                required
+              <label className="block text-xs font-semibold text-stone-300 uppercase tracking-wider mb-2">
+                त्वरित विषय चयन (Quick Subject Pick)
+              </label>
+              <div className="flex flex-wrap gap-2">
+                {PRESET_SUBJECTS.map((p) => (
+                  <button
+                    key={p.id}
+                    type="button"
+                    onClick={() => handleSelectPresetSubject(p)}
+                    className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                      subjectId === p.id 
+                        ? 'bg-amber-600 text-white shadow-md shadow-amber-900/30' 
+                        : 'bg-stone-950 text-stone-400 border border-stone-800 hover:border-stone-700 hover:text-stone-200'
+                    }`}
+                  >
+                    {p.hindi}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Subject details */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 bg-stone-950/60 p-4 rounded-2xl border border-stone-800/80">
+              <div>
+                <label className="block text-xs font-medium text-stone-400 mb-1">Subject ID (जैसे sanskrit)</label>
+                <input 
+                  type="text" 
+                  value={subjectId} 
+                  onChange={e => setSubjectId(e.target.value)} 
+                  className="w-full bg-stone-900 border border-stone-800 rounded-xl px-3.5 py-2.5 text-white text-sm focus:border-amber-500 focus:outline-none" 
+                  required 
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-stone-400 mb-1">विषय नाम (English)</label>
+                <input 
+                  type="text" 
+                  value={subjectName} 
+                  onChange={e => setSubjectName(e.target.value)} 
+                  className="w-full bg-stone-900 border border-stone-800 rounded-xl px-3.5 py-2.5 text-white text-sm focus:border-amber-500 focus:outline-none" 
+                  required 
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-stone-400 mb-1">विषय नाम (हिन्दी में)</label>
+                <input 
+                  type="text" 
+                  value={subjectNameHindi} 
+                  onChange={e => setSubjectNameHindi(e.target.value)} 
+                  className="w-full bg-stone-900 border border-stone-800 rounded-xl px-3.5 py-2.5 text-white text-sm focus:border-amber-500 focus:outline-none" 
+                  required 
+                />
+              </div>
+            </div>
+
+            {/* Chapter Info */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div>
+                <label className="block text-xs font-semibold text-stone-300 uppercase tracking-wider mb-1.5">
+                  अध्याय संख्या (Chapter No.)
+                </label>
+                <input 
+                  type="number" 
+                  placeholder="उदा. 1, 2, 3..." 
+                  value={chapterNo} 
+                  onChange={e => setChapterNo(e.target.value)} 
+                  className="w-full bg-stone-950 border border-stone-800 rounded-xl px-4 py-3 text-white text-sm focus:border-amber-500 focus:outline-none font-bold" 
+                  required 
+                />
+              </div>
+              <div className="md:col-span-2">
+                <label className="block text-xs font-semibold text-stone-300 uppercase tracking-wider mb-1.5">
+                  अध्याय का नाम (हिन्दी में)
+                </label>
+                <input 
+                  type="text" 
+                  placeholder="उदा. मङ्गलम् / रासायनिक अभिक्रियाएँ..." 
+                  value={chapterNameHindi} 
+                  onChange={e => setChapterNameHindi(e.target.value)} 
+                  className="w-full bg-stone-950 border border-stone-800 rounded-xl px-4 py-3 text-white text-sm focus:border-amber-500 focus:outline-none" 
+                  required 
+                />
+              </div>
+            </div>
+
+            {/* Section 1: पाठ परिचय */}
+            <div className="bg-stone-950/70 p-5 rounded-2xl border border-stone-800/80">
+              <label className="block text-sm font-bold text-amber-400 mb-2 flex items-center gap-2">
+                <BookOpen className="w-4 h-4 text-amber-400" />
+                १. पाठ परिचय (Chapter Introduction / Background)
+              </label>
+              <p className="text-xs text-stone-400 mb-3">
+                पाठ का संदर्भ, रचयिता/लेखक का नाम, मूल ग्रंथ, और पाठ का उद्देश्य यहाँ विस्तार से लिखें।
+              </p>
+              <textarea 
+                value={introHindi} 
+                onChange={e => setIntroHindi(e.target.value)} 
+                rows={5} 
+                placeholder="【 पाठ परिचय 】&#10;प्रस्तुत पाठ... उपनिषद/गद्य से संकलित है..."
+                className="w-full bg-stone-900 border border-stone-800 rounded-xl px-4 py-3 text-white text-sm focus:border-amber-500 focus:outline-none leading-relaxed" 
               />
             </div>
+
+            {/* Section 2: विस्तृत नोट्स */}
+            <div className="bg-stone-950/70 p-5 rounded-2xl border border-stone-800/80">
+              <label className="block text-sm font-bold text-amber-400 mb-2 flex items-center gap-2">
+                <FileText className="w-4 h-4 text-amber-400" />
+                २. विस्तृत नोट्स एवं मुख्य बिन्दु (Detailed Notes & Shlokas / Concepts)
+              </label>
+              <p className="text-xs text-stone-400 mb-3">
+                श्लोकों का संस्कृत मूल + सरल हिन्दी अर्थ + वैज्ञानिक सिद्धांत या ऐतिहासिक व्याख्या।
+              </p>
+              <textarea 
+                value={notesHindi} 
+                onChange={e => setNotesHindi(e.target.value)} 
+                rows={8} 
+                placeholder="【 मन्त्र एवं विस्तृत व्याख्या 】&#10;१. श्लोक / परिभाषा...&#10;अर्थ:...&#10;व्याख्या:..."
+                className="w-full bg-stone-900 border border-stone-800 rounded-xl px-4 py-3 text-white text-sm focus:border-amber-500 focus:outline-none leading-relaxed" 
+              />
+            </div>
+
+            {/* Section 3: VVI टॉपर टिप्स */}
+            <div className="bg-stone-950/70 p-5 rounded-2xl border border-stone-800/80">
+              <label className="block text-sm font-bold text-amber-400 mb-2 flex items-center gap-2">
+                <Sparkles className="w-4 h-4 text-amber-400" />
+                ३. VVI टॉपर परीक्षा टिप्स (Topper Exam Secrets & BSEB Key Points)
+              </label>
+              <p className="text-xs text-stone-400 mb-3">
+                बिहार बोर्ड परीक्षा में १००% आने वाले महत्वपूर्ण बिंदु, गलतियों से बचने के उपाय और याद रखने की ट्रिक्स।
+              </p>
+              <textarea 
+                value={topperTips} 
+                onChange={e => setTopperTips(e.target.value)} 
+                rows={5} 
+                placeholder="【 🏆 VVI टॉपर परीक्षा टिप्स 】&#10;१. इस पाठ से वस्तुनिष्ठ में यह प्रश्न 100% पूछा जाता है...&#10;२. दीर्घ उत्तरीय में यह सूत्र अवश्य लिखें..."
+                className="w-full bg-stone-900 border border-stone-800 rounded-xl px-4 py-3 text-white text-sm focus:border-amber-500 focus:outline-none leading-relaxed" 
+              />
+            </div>
+
+            {/* Section 4: NCERT प्रश्न-उत्तर */}
+            <div className="bg-stone-950/70 p-5 rounded-2xl border border-stone-800/80">
+              <div className="flex items-center justify-between mb-4">
+                <label className="text-sm font-bold text-amber-400 flex items-center gap-2">
+                  <HelpCircle className="w-4 h-4 text-amber-400" />
+                  ४. NCERT अभ्यास एवं महत्वपूर्ण प्रश्न-उत्तर (Subjective Q&A)
+                </label>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setQaMode(qaMode === 'visual' ? 'json' : 'visual')}
+                    className="text-xs bg-stone-800 text-stone-300 hover:text-white px-2.5 py-1 rounded-lg border border-stone-700 flex items-center gap-1 cursor-pointer"
+                  >
+                    <FileCode className="w-3.5 h-3.5" />
+                    {qaMode === 'visual' ? 'JSON मोड' : 'विजुअल मोड'}
+                  </button>
+                  {qaMode === 'visual' && (
+                    <button
+                      type="button"
+                      onClick={addQaItem}
+                      className="text-xs bg-amber-600 hover:bg-amber-500 text-white px-3 py-1.5 rounded-lg flex items-center gap-1 font-bold cursor-pointer"
+                    >
+                      <Plus className="w-3.5 h-3.5" /> प्रश्न जोड़ें
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              {qaMode === 'visual' ? (
+                <div className="space-y-4">
+                  {qaList.map((qa, idx) => (
+                    <div key={`qa-${idx}`} className="bg-stone-900 p-4 rounded-xl border border-stone-800 space-y-3 relative">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-bold text-amber-400">प्रश्न #{idx + 1}</span>
+                        <div className="flex items-center gap-2">
+                          <select
+                            value={qa.type || 'लघु उत्तरीय'}
+                            onChange={e => updateQaItem(idx, 'type', e.target.value)}
+                            className="bg-stone-950 text-stone-300 text-xs border border-stone-800 rounded-lg px-2 py-1"
+                          >
+                            <option value="लघु उत्तरीय">लघु उत्तरीय</option>
+                            <option value="दीर्घ उत्तरीय">दीर्घ उत्तरीय</option>
+                            <option value="NCERT">NCERT</option>
+                          </select>
+                          {qaList.length > 1 && (
+                            <button
+                              type="button"
+                              onClick={() => removeQaItem(idx)}
+                              className="text-red-400 hover:text-red-300 p-1 rounded transition-colors"
+                              title="हटाएँ"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          )}
+                        </div>
+                      </div>
+
+                      <input
+                        type="text"
+                        placeholder="प्रश्न लिखें (उदा. मङ्गलम् पाठ का मुख्य उद्देश्य क्या है?)"
+                        value={qa.question}
+                        onChange={e => updateQaItem(idx, 'question', e.target.value)}
+                        className="w-full bg-stone-950 border border-stone-800 rounded-lg px-3 py-2 text-white text-sm focus:border-amber-500 focus:outline-none"
+                      />
+
+                      <textarea
+                        placeholder="उत्तर यहाँ लिखें..."
+                        value={qa.answer}
+                        onChange={e => updateQaItem(idx, 'answer', e.target.value)}
+                        rows={3}
+                        className="w-full bg-stone-950 border border-stone-800 rounded-lg px-3 py-2 text-stone-200 text-sm focus:border-amber-500 focus:outline-none leading-relaxed"
+                      />
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <textarea
+                  value={qaJson}
+                  onChange={e => setQaJson(e.target.value)}
+                  rows={8}
+                  className="w-full bg-stone-900 border border-stone-800 rounded-xl px-4 py-3 text-emerald-400 font-mono text-xs focus:border-amber-500 focus:outline-none"
+                  placeholder='[{"type":"लघु उत्तरीय","question":"...","answer":"..."}]'
+                />
+              )}
+            </div>
+
+            {/* Section 5: वस्तुनिष्ठ प्रश्न (50 MCQs) */}
+            <div className="bg-stone-950/70 p-5 rounded-2xl border border-stone-800/80">
+              <div className="flex items-center justify-between mb-4">
+                <label className="text-sm font-bold text-amber-400 flex items-center gap-2">
+                  <CheckCircle2 className="w-4 h-4 text-amber-400" />
+                  ५. वस्तुनिष्ठ प्रश्न (50 VVI MCQs)
+                </label>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setMcqMode(mcqMode === 'visual' ? 'json' : 'visual')}
+                    className="text-xs bg-stone-800 text-stone-300 hover:text-white px-2.5 py-1 rounded-lg border border-stone-700 flex items-center gap-1 cursor-pointer"
+                  >
+                    <FileCode className="w-3.5 h-3.5" />
+                    {mcqMode === 'visual' ? 'JSON मोड' : 'विजुअल मोड'}
+                  </button>
+                  {mcqMode === 'visual' && (
+                    <button
+                      type="button"
+                      onClick={addMcqItem}
+                      className="text-xs bg-amber-600 hover:bg-amber-500 text-white px-3 py-1.5 rounded-lg flex items-center gap-1 font-bold cursor-pointer"
+                    >
+                      <Plus className="w-3.5 h-3.5" /> MCQ जोड़ें
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              {mcqMode === 'visual' ? (
+                <div className="space-y-4">
+                  {mcqList.map((m, qIdx) => (
+                    <div key={`mcq-form-${qIdx}`} className="bg-stone-900 p-4 rounded-xl border border-stone-800 space-y-3">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-bold text-amber-400">MCQ #{qIdx + 1}</span>
+                        {mcqList.length > 1 && (
+                          <button
+                            type="button"
+                            onClick={() => removeMcqItem(qIdx)}
+                            className="text-red-400 hover:text-red-300 p-1"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        )}
+                      </div>
+
+                      <input
+                        type="text"
+                        placeholder="प्रश्न लिखें..."
+                        value={m.question}
+                        onChange={e => updateMcqQuestion(qIdx, e.target.value)}
+                        className="w-full bg-stone-950 border border-stone-800 rounded-lg px-3 py-2 text-white text-sm focus:border-amber-500 focus:outline-none"
+                      />
+
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                        {m.options.map((opt, oIdx) => (
+                          <div key={`opt-input-${qIdx}-${oIdx}`} className="flex items-center gap-2 bg-stone-950 p-2 rounded-lg border border-stone-800">
+                            <input
+                              type="radio"
+                              name={`correct-${qIdx}`}
+                              checked={m.correct_answer === oIdx}
+                              onChange={() => updateMcqCorrect(qIdx, oIdx)}
+                              className="accent-amber-500 cursor-pointer"
+                              title="सही विकल्प चुनें"
+                            />
+                            <span className="text-xs font-bold text-stone-400 font-mono w-4">
+                              {String.fromCharCode(65 + oIdx)}:
+                            </span>
+                            <input
+                              type="text"
+                              placeholder={`विकल्प ${String.fromCharCode(65 + oIdx)}`}
+                              value={opt}
+                              onChange={e => updateMcqOption(qIdx, oIdx, e.target.value)}
+                              className="w-full bg-transparent text-white text-xs focus:outline-none"
+                            />
+                          </div>
+                        ))}
+                      </div>
+
+                      <input
+                        type="text"
+                        placeholder="व्याख्या / स्पष्टीकरण (वैकल्पिक)..."
+                        value={m.explanation || ''}
+                        onChange={e => updateMcqExplanation(qIdx, e.target.value)}
+                        className="w-full bg-stone-950 border border-stone-800 rounded-lg px-3 py-1.5 text-stone-300 text-xs focus:border-amber-500 focus:outline-none"
+                      />
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <textarea
+                  value={mcqJson}
+                  onChange={e => setMcqJson(e.target.value)}
+                  rows={8}
+                  className="w-full bg-stone-900 border border-stone-800 rounded-xl px-4 py-3 text-emerald-400 font-mono text-xs focus:border-amber-500 focus:outline-none"
+                  placeholder='[{"question":"...","options":["A","B","C","D"],"correct_answer":0,"explanation":"..."}]'
+                />
+              )}
+            </div>
+
+            {/* Submit Button */}
             <button 
               type="submit" 
-              disabled={loading || !email}
-              className="w-full bg-amber-600 hover:bg-amber-500 disabled:opacity-50 text-white font-bold py-3.5 px-4 rounded-xl flex items-center justify-center gap-2 transition-colors"
+              disabled={cLoading || !chapterNo}
+              className="w-full bg-amber-600 hover:bg-amber-500 disabled:opacity-50 text-white font-bold py-4 px-4 rounded-2xl flex items-center justify-center gap-2 transition-all shadow-xl shadow-amber-900/20 cursor-pointer text-base"
             >
-              {loading ? 'प्रक्रिया चल रही है...' : <><UserPlus className="w-5 h-5" /> अनलॉक करें (VIP बनाएँ)</>}
+              {cLoading ? 'डेटाबेस में सुरक्षित हो रहा है...' : (
+                <>
+                  <Database className="w-5 h-5" />
+                  <span>यह पूरा अध्याय डेटाबेस (Firestore) में सेव करें</span>
+                </>
+              )}
             </button>
-            {msg && (
-              <div className="mt-4 p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 flex items-start gap-3">
+
+            {cMsg && (
+              <div className="p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 flex items-start gap-3">
                 <CheckCircle className="w-5 h-5 shrink-0 mt-0.5" />
-                <p className="font-medium">{msg}</p>
+                <p className="font-medium text-sm">{cMsg}</p>
               </div>
             )}
           </form>
         )}
 
-        {activeTab === 'content' && (
-          <form onSubmit={handleUploadContent} className="space-y-6 relative z-10">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        {/* VIP Tab */}
+        {activeTab === 'vip' && (
+          <form onSubmit={handleAddVIP} className="space-y-6 relative z-10 max-w-xl">
+            <div className="bg-stone-950/60 p-6 rounded-2xl border border-stone-800 space-y-4">
               <div>
-                <label className="block text-sm font-medium text-stone-300 mb-2">Subject ID (e.g. sanskrit)</label>
-                <input type="text" value={formData.subjectId} onChange={e => setFormData({...formData, subjectId: e.target.value})} className="w-full bg-stone-950 border border-stone-800 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-amber-500" required />
+                <label className="block text-sm font-semibold text-stone-300 mb-2">
+                  छात्र का जीमेल (Gmail Address) दर्ज करें:
+                </label>
+                <input
+                  type="email"
+                  value={email}
+                  onChange={e => setEmail(e.target.value)}
+                  placeholder="उदा. student@gmail.com"
+                  className="w-full bg-stone-900 border border-stone-800 rounded-xl px-4 py-3.5 text-white focus:outline-none focus:border-amber-500 transition-colors text-sm"
+                  required
+                />
               </div>
-              <div>
-                <label className="block text-sm font-medium text-stone-300 mb-2">Subject Name (Eng)</label>
-                <input type="text" value={formData.subjectName} onChange={e => setFormData({...formData, subjectName: e.target.value})} className="w-full bg-stone-950 border border-stone-800 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-amber-500" required />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-stone-300 mb-2">Subject Name (Hindi)</label>
-                <input type="text" value={formData.subjectNameHindi} onChange={e => setFormData({...formData, subjectNameHindi: e.target.value})} className="w-full bg-stone-950 border border-stone-800 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-amber-500" required />
-              </div>
-            </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-stone-300 mb-2">Chapter Number</label>
-                <input type="number" value={formData.chapterNo} onChange={e => setFormData({...formData, chapterNo: e.target.value})} className="w-full bg-stone-950 border border-stone-800 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-amber-500" required />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-stone-300 mb-2">Chapter Name (Hindi)</label>
-                <input type="text" value={formData.chapterNameHindi} onChange={e => setFormData({...formData, chapterNameHindi: e.target.value})} className="w-full bg-stone-950 border border-stone-800 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-amber-500" required />
-              </div>
-            </div>
+                <label className="block text-xs font-semibold text-stone-300 uppercase tracking-wider mb-2">
+                  VIP सदस्यता प्लान चुनें:
+                </label>
+                <div className="grid grid-cols-2 gap-3">
+                  <div
+                    onClick={() => setVipPlan('1month')}
+                    className={`p-3.5 rounded-xl border cursor-pointer transition-all ${
+                      vipPlan === '1month'
+                        ? 'bg-amber-950/50 border-amber-500 text-white shadow-md'
+                        : 'bg-stone-900 border-stone-800 text-stone-400 hover:border-stone-700'
+                    }`}
+                  >
+                    <div className="font-bold text-sm">1 माह प्लान</div>
+                    <div className="text-xl font-black text-amber-400 mt-1">₹99</div>
+                    <div className="text-[11px] text-stone-400 mt-0.5">30 दिनों का फुल एक्सेस</div>
+                  </div>
 
-            <div>
-              <label className="block text-sm font-medium text-stone-300 mb-2">Notes (Hindi) - Type or Paste notes</label>
-              <textarea value={formData.notesHindi} onChange={e => setFormData({...formData, notesHindi: e.target.value})} rows={6} className="w-full bg-stone-950 border border-stone-800 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-amber-500" />
-            </div>
+                  <div
+                    onClick={() => setVipPlan('1year')}
+                    className={`p-3.5 rounded-xl border cursor-pointer transition-all relative ${
+                      vipPlan === '1year'
+                        ? 'bg-amber-950/50 border-amber-500 text-white shadow-md'
+                        : 'bg-stone-900 border-stone-800 text-stone-400 hover:border-stone-700'
+                    }`}
+                  >
+                    <div className="font-bold text-sm">1 वर्ष प्लान (Best)</div>
+                    <div className="text-xl font-black text-amber-400 mt-1">₹600</div>
+                    <div className="text-[11px] text-stone-400 mt-0.5">पूरे साल का फुल एक्सेस</div>
+                  </div>
+                </div>
+              </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-stone-300 mb-2">MCQ JSON format</label>
-                <textarea value={formData.mcqJson} onChange={e => setFormData({...formData, mcqJson: e.target.value})} rows={6} className="w-full bg-stone-950 border border-stone-800 rounded-xl px-4 py-3 text-emerald-400 font-mono text-sm focus:outline-none focus:border-amber-500" placeholder='[{"question":"...","options":["A","B"],"correct_answer":0,"explanation":"..."}]' />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-stone-300 mb-2">Q&A JSON format</label>
-                <textarea value={formData.qnaJson} onChange={e => setFormData({...formData, qnaJson: e.target.value})} rows={6} className="w-full bg-stone-950 border border-stone-800 rounded-xl px-4 py-3 text-emerald-400 font-mono text-sm focus:outline-none focus:border-amber-500" placeholder='[{"question":"...","answer":"..."}]' />
-              </div>
+              <p className="text-xs text-stone-500">
+                अनलॉक करने के बाद यह छात्र कक्षा 10 के सभी अध्यायों, नोट्स और टेस्ट सीरीज को चुने गए प्लान के अनुसार एक्सेस कर पाएगा।
+              </p>
             </div>
 
             <button 
               type="submit" 
-              disabled={cLoading || !formData.chapterNo}
-              className="w-full bg-amber-600 hover:bg-amber-500 disabled:opacity-50 text-white font-bold py-4 px-4 rounded-xl flex items-center justify-center gap-2 transition-colors"
+              disabled={loading || !email}
+              className="w-full bg-amber-600 hover:bg-amber-500 disabled:opacity-50 text-white font-bold py-3.5 px-4 rounded-xl flex items-center justify-center gap-2 transition-colors cursor-pointer"
             >
-              {cLoading ? 'अपलोड हो रहा है...' : <><Database className="w-5 h-5" /> डेटाबेस में सेव करें</>}
+              {loading ? 'प्रक्रिया चल रही है...' : <><UserPlus className="w-5 h-5" /> छात्र को VIP एक्सेस दें</>}
             </button>
-            {cMsg && (
-              <div className="mt-4 p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 flex items-start gap-3">
+
+            {msg && (
+              <div className="p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 flex items-start gap-3">
                 <CheckCircle className="w-5 h-5 shrink-0 mt-0.5" />
-                <p className="font-medium">{cMsg}</p>
+                <p className="font-medium text-sm">{msg}</p>
               </div>
             )}
           </form>
+        )}
+
+        {/* Sync Tab */}
+        {activeTab === 'sync' && (
+          <div className="space-y-6 relative z-10 max-w-2xl">
+            <div className="bg-stone-950 p-6 rounded-2xl border border-stone-800">
+              <h3 className="text-lg font-bold text-white mb-2 flex items-center gap-2">
+                <RefreshCw className="w-5 h-5 text-amber-500" />
+                क्लाउड डेटाबेस में इन-बिल्ट सिलेबस अपलोड करें
+              </h3>
+              <p className="text-stone-400 text-sm leading-relaxed mb-6">
+                इस बटन पर क्लिक करते ही आपके ऐप के सभी तैयार चैप्टर्स (संस्कृत के मङ्गलम्, पाटलिपुत्रवैभवम्, अलसकथा; विज्ञान के रासायनिक समीकरण; हिन्दी के श्रम विभाजन; तथा गणित के वास्तविक संख्याएँ) उनके विस्तृत पाठ परिचय, टॉपर टिप्स, Q&A और 50 MCQs के साथ सीधे आपके <strong>Firebase Firestore</strong> डेटाबेस में स्थायी रूप से सेव हो जाएँगे।
+              </p>
+
+              <button
+                onClick={handleSyncAllDefaultToFirestore}
+                disabled={syncLoading}
+                className="bg-amber-600 hover:bg-amber-500 disabled:opacity-50 text-white font-bold py-3 px-5 rounded-xl flex items-center gap-2 text-sm transition-all shadow-lg shadow-amber-900/20 cursor-pointer"
+              >
+                {syncLoading ? (
+                  <>
+                    <RefreshCw className="w-4 h-4 animate-spin" />
+                    डेटाबेस में सिंक हो रहा है...
+                  </>
+                ) : (
+                  <>
+                    <Database className="w-4 h-4" />
+                    क्लाउड में सिंक करें (Push to Cloud)
+                  </>
+                )}
+              </button>
+            </div>
+
+            {syncMsg && (
+              <div className="p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 flex items-start gap-3">
+                <CheckCircle className="w-5 h-5 shrink-0 mt-0.5" />
+                <p className="font-medium text-sm">{syncMsg}</p>
+              </div>
+            )}
+          </div>
         )}
       </div>
     </div>

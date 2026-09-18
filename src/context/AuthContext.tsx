@@ -1,76 +1,152 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import { auth, db } from '../lib/firebase';
-import { GoogleAuthProvider, signInWithPopup, signInWithRedirect, getRedirectResult, onAuthStateChanged, signOut } from 'firebase/auth';
-import { doc, getDoc } from 'firebase/firestore';
+import { db } from '../lib/firebase';
+import { doc, setDoc, onSnapshot } from 'firebase/firestore';
+import { checkVipExpiryStatus } from '../utils/vipHelper';
 
 const AuthContext = createContext<any>(null);
 
 export const AuthProvider = ({ children }: any) => {
-  const [user, setUser] = useState<any>(null);
+  const [user, setUser] = useState<{ name: string; email: string } | null>(null);
   const [isVIP, setIsVIP] = useState(false);
+  const [vipDetails, setVipDetails] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const isAdmin = user?.email === 'rajkumarchaurasia141@gmail.com';
+  const isAdmin = user?.email?.trim().toLowerCase() === 'rajkumarchaurasia141@gmail.com';
 
   useEffect(() => {
-    // Check if there was an error from redirect
-    getRedirectResult(auth).catch((err) => {
-      console.error("Redirect error:", err);
-      setError(err.message);
-    });
-
-    const unsubscribe = onAuthStateChanged(auth, async (u) => {
-      setUser(u);
-      if (u) {
-        if (u.email === 'rajkumarchaurasia141@gmail.com') {
-          setIsVIP(true);
-        } else {
-          try {
-            const docRef = doc(db, 'vip_users', u.email || '');
-            const snap = await getDoc(docRef);
-            setIsVIP(snap.exists() && snap.data().isVip === true);
-          } catch (e) { console.error(e); }
+    try {
+      const saved = localStorage.getItem('bseb_user');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (parsed && parsed.email) {
+          setUser(parsed);
         }
-      } else {
-        setIsVIP(false);
       }
-      setLoading(false);
-    });
-    return unsubscribe;
+    } catch (e) {
+      console.error("Failed to read user from localStorage", e);
+    }
+    setLoading(false);
   }, []);
 
-  const login = async () => {
-    setError(null);
-    try {
-      const provider = new GoogleAuthProvider();
-      // Required for mobile PWAs where popups might be blocked or lost
-      provider.setCustomParameters({
-        prompt: 'select_account'
-      });
-      await signInWithPopup(auth, provider);
-    } catch (e: any) {
-      console.error("Popup Error:", e);
-      if (e.code === 'auth/popup-blocked' || e.code === 'auth/popup-closed-by-user' || e.code === 'auth/cancelled-popup-request') {
-        try {
-          const provider = new GoogleAuthProvider();
-          await signInWithRedirect(auth, provider);
-        } catch(redirectErr: any) {
-           setError('लॉगिन एरर: ' + redirectErr.message);
-        }
-      } else {
-        setError('लॉगिन में समस्या आई है। कृपया दोबारा प्रयास करें। Error: ' + e.message);
-      }
+  // Real-time VIP listener with automatic expiration check
+  useEffect(() => {
+    if (!user?.email) {
+      setIsVIP(false);
+      setVipDetails(null);
+      return;
     }
+
+    const cleanEmail = user.email.trim().toLowerCase();
+    if (cleanEmail === 'rajkumarchaurasia141@gmail.com') {
+      setIsVIP(true);
+      setVipDetails({
+        isVip: true,
+        plan: 'admin_lifetime',
+        planDurationText: 'लाइफटाइम एडमिन',
+        isExpired: false,
+        daysRemaining: 9999,
+        formattedExpiry: 'असीमित (Admin)'
+      });
+      return;
+    }
+
+    try {
+      const docRef = doc(db, 'vip_users', cleanEmail);
+      const unsub = onSnapshot(docRef, (docSnap) => {
+        if (docSnap.exists()) {
+          const data = docSnap.data();
+          if (data?.isVip === true) {
+            const expiryStatus = checkVipExpiryStatus(data.expiresAt);
+
+            if (expiryStatus.isExpired) {
+              // Time has passed -> auto de-activate VIP
+              setIsVIP(false);
+              setVipDetails({
+                ...data,
+                isExpired: true,
+                daysRemaining: 0,
+                statusText: expiryStatus.statusText,
+                formattedExpiry: expiryStatus.formattedExpiry
+              });
+            } else {
+              // Still valid
+              setIsVIP(true);
+              setVipDetails({
+                ...data,
+                isExpired: false,
+                daysRemaining: expiryStatus.daysRemaining,
+                statusText: expiryStatus.statusText,
+                formattedExpiry: expiryStatus.formattedExpiry
+              });
+            }
+            return;
+          }
+        }
+        // Not a VIP
+        setIsVIP(false);
+        setVipDetails(null);
+      }, (err) => {
+        console.error("VIP listener error:", err);
+        setIsVIP(false);
+        setVipDetails(null);
+      });
+      return () => unsub();
+    } catch (e) {
+      console.error("VIP snapshot setup error:", e);
+    }
+  }, [user?.email]);
+
+  const login = async (name: string, email: string) => {
+    setError(null);
+    const cleanName = name.trim();
+    const cleanEmail = email.trim().toLowerCase();
+
+    if (!cleanName) {
+      setError('कृपया अपना नाम दर्ज करें।');
+      return false;
+    }
+    if (!cleanEmail || !cleanEmail.includes('@')) {
+      setError('कृपया एक मान्य ईमेल (Gmail) दर्ज करें।');
+      return false;
+    }
+
+    const userData = { name: cleanName, email: cleanEmail };
+
+    try {
+      // Save student in Firestore
+      await setDoc(doc(db, 'students', cleanEmail), {
+        name: cleanName,
+        email: cleanEmail,
+        lastLogin: new Date().toISOString()
+      }, { merge: true });
+    } catch (e) {
+      console.error("Student record save error:", e);
+    }
+
+    localStorage.setItem('bseb_user', JSON.stringify(userData));
+    setUser(userData);
+    return true;
   };
 
-  const logout = () => signOut(auth);
+  const logout = () => {
+    localStorage.removeItem('bseb_user');
+    setUser(null);
+    setIsVIP(false);
+    setVipDetails(null);
+    setError(null);
+  };
 
   return (
-    <AuthContext.Provider value={{ user, isAdmin, isVIP, loading, login, logout, error, setError }}>
-      {loading ? <div className="min-h-screen flex items-center justify-center text-amber-500 font-bold">Loading...</div> : children}
+    <AuthContext.Provider value={{ user, isAdmin, isVIP, vipDetails, loading, login, logout, error, setError }}>
+      {loading ? (
+        <div className="min-h-screen bg-stone-950 flex items-center justify-center text-amber-500 font-bold">
+          लोड हो रहा है...
+        </div>
+      ) : children}
     </AuthContext.Provider>
   );
 };
 
 export const useAuth = () => useContext(AuthContext);
+

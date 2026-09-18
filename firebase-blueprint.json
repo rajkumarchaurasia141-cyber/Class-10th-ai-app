@@ -1,0 +1,63 @@
+{
+  "entities": {
+    "PaymentRequest": {
+      "title": "PaymentRequest",
+      "description": "Student payment proof and VIP upgrade request",
+      "type": "object",
+      "properties": {
+        "studentName": { "type": "string", "description": "Name of student" },
+        "studentEmail": { "type": "string", "description": "Login email of student" },
+        "plan": { "type": "string", "enum": ["1month", "1year"] },
+        "planTitle": { "type": "string" },
+        "planAmount": { "type": "string" },
+        "planPrice": { "type": "number" },
+        "screenshotDataUrl": { "type": "string", "description": "Base64 compressed image data of payment screenshot" },
+        "utr": { "type": "string", "description": "Optional UPI reference or transaction ID" },
+        "status": { "type": "string", "enum": ["pending", "approved", "rejected"] },
+        "submittedAt": { "type": "string" },
+        "approvedAt": { "type": "string" }
+      },
+      "required": ["studentEmail", "plan", "screenshotDataUrl", "status", "submittedAt"]
+    },
+    "VipUser": {
+      "title": "VipUser",
+      "description": "User granted VIP status",
+      "type": "object",
+      "properties": {
+        "isVip": { "type": "boolean" },
+        "plan": { "type": "string" },
+        "planDuration": { "type": "string" },
+        "planPrice": { "type": "number" },
+        "addedAt": { "type": "string" },
+        "validFrom": { "type": "string" },
+        "expiresAt": { "type": "string", "description": "ISO timestamp when VIP validity expires (30 days or 365 days)" }
+      },
+      "required": ["isVip", "addedAt"]
+    },
+    "Student": {
+      "title": "Student",
+      "description": "Student profile record",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "email": { "type": "string" },
+        "lastLogin": { "type": "string" }
+      },
+      "required": ["email", "name"]
+    }
+  },
+  "firestore": {
+    "/payment_requests/{requestId}": {
+      "schema": "PaymentRequest",
+      "description": "Uploaded screenshots and payment verification queue"
+    },
+    "/vip_users/{userEmail}": {
+      "schema": "VipUser",
+      "description": "Granted VIP memberships"
+    },
+    "/students/{studentId}": {
+      "schema": "Student",
+      "description": "Registered students database"
+    }
+  }
+}
