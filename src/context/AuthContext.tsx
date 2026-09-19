@@ -12,7 +12,19 @@ export const AuthProvider = ({ children }: any) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const isAdmin = user?.email?.trim().toLowerCase() === 'rajkumarchaurasia141@gmail.com';
+  const getAdminEmails = (): string[] => {
+    try {
+      const stored = localStorage.getItem('bseb_admin_emails');
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        if (Array.isArray(parsed)) return parsed.map(e => e.trim().toLowerCase());
+      }
+    } catch (e) {}
+    return ['rajkumarchaurasia141@gmail.com'];
+  };
+
+  const cleanUserEmail = user?.email?.trim().toLowerCase() || '';
+  const isAdmin = cleanUserEmail === 'rajkumarchaurasia141@gmail.com' || getAdminEmails().includes(cleanUserEmail);
 
   useEffect(() => {
     try {
@@ -38,7 +50,7 @@ export const AuthProvider = ({ children }: any) => {
     }
 
     const cleanEmail = user.email.trim().toLowerCase();
-    if (cleanEmail === 'rajkumarchaurasia141@gmail.com') {
+    if (cleanEmail === 'rajkumarchaurasia141@gmail.com' || getAdminEmails().includes(cleanEmail)) {
       setIsVIP(true);
       setVipDetails({
         isVip: true,

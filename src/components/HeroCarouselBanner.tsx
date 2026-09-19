@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Crown, CheckCircle2, ChevronRight, Sparkles, BookOpen, Clock } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { useData } from '../context/DataContext';
 
 interface HeroCarouselBannerProps {
   onOpenVip: () => void;
@@ -9,79 +10,45 @@ interface HeroCarouselBannerProps {
 
 export function HeroCarouselBanner({ onOpenVip, onExploreCourses }: HeroCarouselBannerProps) {
   const { isVIP, vipDetails } = useAuth();
+  const { appConfig } = useData();
   const [currentSlide, setCurrentSlide] = useState(0);
 
-  const slides = [
-    {
-      id: 'topper-batch',
-      tag: 'बिहार बोर्ड परीक्षा 2027',
-      title: 'टॉपर बैच - 2027',
-      subtitle: '10th All Subjects (NCERT)',
-      features: [
-        'लाइव & रिकॉर्डेड क्लासेस',
-        'हस्तलिखित चैप्टर नोट्स (PDF)',
-        'डाउट समाधान & गाइडेंस',
-        'चैप्टर वाइज 50 MCQ टेस्ट'
-      ],
-      subjects: ['गणित', 'विज्ञान', 'सामाजिक विज्ञान', 'संस्कृत', 'हिंदी'],
-      oldPrice: '₹1800',
-      newPrice: '₹99 / ₹600',
-      priceLabel: 'Course Fee',
-      actionText: isVIP ? 'बैच अनलॉक है' : 'ज्वाइन करें',
-      actionSub: isVIP ? 'कंटेंट पढ़ें' : 'VIP अनलॉक',
-      bgGradient: 'from-red-900 via-stone-900 to-red-950',
-      badgeColor: 'bg-amber-400 text-stone-950'
-    },
-    {
-      id: 'topper-notes',
-      tag: 'स्पेशल स्टडी मटेरियल',
-      title: 'टॉपर हैंडराइटिंग नोट्स',
-      subtitle: 'संपूर्ण 10वीं सिलेबस कवरेज',
-      features: [
-        'VVI महत्वपूर्ण प्रश्नोत्तर',
-        'संस्कृत पीयूषम् सम्पूर्ण श्लोकार्थ',
-        'गणित सूत्र एवं ट्रिक्स',
-        'बोर्ड परीक्षा मॉडल पेपर्स'
-      ],
-      subjects: ['NCERT आधारित', 'PYQ 2016-2027', '100% स्कोरिंग'],
-      oldPrice: '₹999',
-      newPrice: '₹99 मात्र',
-      priceLabel: '1 Month Fee',
-      actionText: 'नोट्स देखें',
-      actionSub: 'डाउनलोड करें',
-      bgGradient: 'from-amber-900 via-stone-900 to-stone-950',
-      badgeColor: 'bg-emerald-400 text-stone-950'
-    },
-    {
-      id: 'test-series',
-      tag: '50 Objective MCQ Series',
-      title: 'महा-टेस्ट सीरीज 2027',
-      subtitle: 'प्रत्येक अध्याय के 50 चुनिंदा प्रश्न',
-      features: [
-        'तुरंत रिजल्ट व स्कोर कार्ड',
-        'सटीक व्याख्या व सही उत्तर',
-        'टाइम लिमिट अभ्यास',
-        'रैंक व प्रोग्रेस रिपोर्ट'
-      ],
-      subjects: ['संस्कृत', 'विज्ञान', 'गणित', 'सामाजिक विज्ञान'],
-      oldPrice: '₹500',
-      newPrice: 'फ्री + VIP',
-      priceLabel: 'All Tests',
-      actionText: 'टेस्ट दें',
-      actionSub: 'प्रैक्टिस शुरू करें',
-      bgGradient: 'from-blue-950 via-stone-900 to-indigo-950',
-      badgeColor: 'bg-amber-400 text-stone-950'
-    }
-  ];
+  const slides = (appConfig.banners && appConfig.banners.length > 0) 
+    ? appConfig.banners 
+    : [
+        {
+          id: 'topper-batch',
+          tag: 'बिहार बोर्ड परीक्षा 2027',
+          title: 'टॉपर बैच - 2027',
+          subtitle: '10th All Subjects (NCERT)',
+          features: [
+            'लाइव & रिकॉर्डेड क्लासेस',
+            'हस्तलिखित चैप्टर नोट्स (PDF)',
+            'डाउट समाधान & गाइडेंस',
+            'चैप्टर वाइज 50 MCQ टेस्ट'
+          ],
+          subjects: ['गणित', 'विज्ञान', 'सामाजिक विज्ञान', 'संस्कृत', 'हिंदी'],
+          oldPrice: '₹1800',
+          newPrice: '₹99 / ₹600',
+          priceLabel: 'Course Fee',
+          actionText: isVIP ? 'बैच अनलॉक है' : 'ज्वाइन करें',
+          actionSub: isVIP ? 'कंटेंट पढ़ें' : 'VIP अनलॉक',
+          bgGradient: 'from-red-900 via-stone-900 to-red-950',
+          badgeColor: 'bg-amber-400 text-stone-950'
+        }
+      ];
 
   useEffect(() => {
+    if (slides.length <= 1) return;
     const timer = setInterval(() => {
       setCurrentSlide((prev) => (prev + 1) % slides.length);
     }, 6000);
     return () => clearInterval(timer);
   }, [slides.length]);
 
-  const slide = slides[currentSlide];
+  const slide = slides[currentSlide % slides.length];
+
+  if (!slide) return null;
 
   return (
     <div className="relative rounded-2xl overflow-hidden shadow-lg border border-red-900/30 transition-all">

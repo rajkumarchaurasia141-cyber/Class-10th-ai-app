@@ -32,7 +32,10 @@ import { AdminRoutineManager } from './AdminRoutineManager';
 import { AdminQuotesManager } from './AdminQuotesManager';
 import { AdminNotificationsManager } from './AdminNotificationsManager';
 import { AdminSettingsManager } from './AdminSettingsManager';
-import { Radio, Calendar, Bell } from 'lucide-react';
+import { AdminBannersManager } from './AdminBannersManager';
+import { AdminAdminsManager } from './AdminAdminsManager';
+import { AdminApkManager } from './AdminApkManager';
+import { Radio, Calendar, Bell, Layout, Smartphone } from 'lucide-react';
 import { calculateVipExpiry } from '../utils/vipHelper';
 
 const PRESET_SUBJECTS = [
@@ -45,7 +48,7 @@ const PRESET_SUBJECTS = [
 
 export function AdminPanel({ onBack }: any) {
   const { refreshData } = useData();
-  const [activeTab, setActiveTab] = useState<'requests' | 'students' | 'vip' | 'content' | 'pdf_notes' | 'live_classes' | 'routine' | 'quotes' | 'notifications' | 'settings' | 'sync'>('requests');
+  const [activeTab, setActiveTab] = useState<'requests' | 'students' | 'vip' | 'content' | 'pdf_notes' | 'live_classes' | 'routine' | 'quotes' | 'notifications' | 'settings' | 'banners' | 'admins' | 'apk' | 'sync'>('requests');
   const [pendingRequestsCount, setPendingRequestsCount] = useState<number>(0);
 
   useEffect(() => {
@@ -428,12 +431,36 @@ export function AdminPanel({ onBack }: any) {
             <UserPlus className="w-4 h-4" /> VIP विद्यार्थी जोड़ें
           </button>
           <button 
+            onClick={() => setActiveTab('banners')} 
+            className={`pb-3 px-4 font-bold text-sm flex items-center gap-2 transition-colors cursor-pointer whitespace-nowrap ${
+              activeTab === 'banners' ? 'border-b-2 border-amber-500 text-amber-500' : 'text-stone-400 hover:text-stone-200'
+            }`}
+          >
+            <Layout className="w-4 h-4 text-red-400" /> 🖼️ होम बैनर (Widgets)
+          </button>
+          <button 
             onClick={() => setActiveTab('settings')} 
             className={`pb-3 px-4 font-bold text-sm flex items-center gap-2 transition-colors cursor-pointer whitespace-nowrap ${
               activeTab === 'settings' ? 'border-b-2 border-amber-500 text-amber-500' : 'text-stone-400 hover:text-stone-200'
             }`}
           >
             <Settings className="w-4 h-4 text-amber-400" /> ⚙️ ऐप सेटिंग्स & मूल्य
+          </button>
+          <button 
+            onClick={() => setActiveTab('admins')} 
+            className={`pb-3 px-4 font-bold text-sm flex items-center gap-2 transition-colors cursor-pointer whitespace-nowrap ${
+              activeTab === 'admins' ? 'border-b-2 border-amber-500 text-amber-500' : 'text-stone-400 hover:text-stone-200'
+            }`}
+          >
+            <ShieldCheck className="w-4 h-4 text-emerald-400" /> 🔒 एडमिन आईडी मैनेज
+          </button>
+          <button 
+            onClick={() => setActiveTab('apk')} 
+            className={`pb-3 px-4 font-bold text-sm flex items-center gap-2 transition-colors cursor-pointer whitespace-nowrap ${
+              activeTab === 'apk' ? 'border-b-2 border-amber-500 text-amber-500' : 'text-stone-400 hover:text-stone-200'
+            }`}
+          >
+            <Smartphone className="w-4 h-4 text-emerald-500" /> 📱 APK & AAB शेयर
           </button>
           <button 
             onClick={() => setActiveTab('sync')} 
@@ -483,10 +510,31 @@ export function AdminPanel({ onBack }: any) {
           </div>
         )}
 
+        {/* Banners Tab */}
+        {activeTab === 'banners' && (
+          <div className="relative z-10">
+            <AdminBannersManager />
+          </div>
+        )}
+
         {/* Settings Tab */}
         {activeTab === 'settings' && (
           <div className="relative z-10">
             <AdminSettingsManager />
+          </div>
+        )}
+
+        {/* Admins Tab */}
+        {activeTab === 'admins' && (
+          <div className="relative z-10">
+            <AdminAdminsManager />
+          </div>
+        )}
+
+        {/* APK / AAB Manager Tab */}
+        {activeTab === 'apk' && (
+          <div className="relative z-10">
+            <AdminApkManager />
           </div>
         )}
 

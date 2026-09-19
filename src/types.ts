@@ -100,6 +100,22 @@ export interface NotificationItem {
   createdAt: string;
 }
 
+export interface BannerItem {
+  id: string;
+  tag: string;
+  title: string;
+  subtitle: string;
+  features: string[];
+  subjects: string[];
+  oldPrice: string;
+  newPrice: string;
+  priceLabel: string;
+  actionText: string;
+  actionSub: string;
+  bgGradient: string;
+  badgeColor: string;
+}
+
 export interface AppConfig {
   helplineNumber: string;
   upiId: string;
@@ -110,6 +126,10 @@ export interface AppConfig {
   telegramUrl: string;
   price1Month: number;
   price1Year: number;
+  banners?: BannerItem[];
+  adminEmails?: string[];
+  apkUrl?: string;
+  aabUrl?: string;
 }
 
 
