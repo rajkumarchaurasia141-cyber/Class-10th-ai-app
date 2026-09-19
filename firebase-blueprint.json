@@ -66,6 +66,7 @@
         "chapter_no": { "type": "number" },
         "chapter_name": { "type": "string" },
         "chapter_name_hindi": { "type": "string" },
+        "section_name": { "type": "string", "description": "Section label like गद्य खंड, काव्य खंड, or वर्णिका" },
         "intro_hindi": { "type": "string" },
         "notes_hindi": { "type": "string" },
         "topper_tips": { "type": "string" },
