@@ -41,25 +41,6 @@ export function LoginScreen() {
     }
   };
 
-  const handleQuickLogin = async (quickName: string, quickEmail: string) => {
-    setError(null);
-    setLoading(true);
-    try {
-      await login(quickName, quickEmail);
-    } catch (err: any) {
-      console.warn("Quick login note:", err);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleClearCache = () => {
-    try {
-      localStorage.clear();
-      window.location.reload();
-    } catch {}
-  };
-
   const isAdminEmail = email.trim().toLowerCase() === 'rajkumarchaurasia141@gmail.com';
 
   return (
@@ -183,41 +164,6 @@ export function LoginScreen() {
                 </>
               )}
             </button>
-
-            {/* Divider: OR 1-Click Fast Entry */}
-            <div className="relative my-3.5">
-              <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-slate-200"></div>
-              </div>
-              <div className="relative flex justify-center text-xs">
-                <span className="bg-white px-2.5 text-stone-400 font-bold uppercase tracking-wider text-[10px]">
-                  या 1-क्लिक में तुरंत शुरू करें
-                </span>
-              </div>
-            </div>
-
-            {/* Quick Access Buttons */}
-            <div className="grid grid-cols-2 gap-2.5">
-              <button
-                type="button"
-                onClick={() => handleQuickLogin('BSEB विद्यार्थी', 'student.bseb@gmail.com')}
-                disabled={loading}
-                className="py-2.5 px-3 rounded-xl bg-slate-100 hover:bg-slate-200 text-stone-800 text-xs font-bold flex items-center justify-center gap-1.5 transition-colors border border-slate-200 cursor-pointer shadow-xs active:scale-[0.98]"
-              >
-                <GraduationCap className="w-4 h-4 text-red-600" />
-                <span>विद्यार्थी प्रवेश</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => handleQuickLogin('Rajkumar Chaurasia', 'rajkumarchaurasia141@gmail.com')}
-                disabled={loading}
-                className="py-2.5 px-3 rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-950 text-xs font-bold flex items-center justify-center gap-1.5 transition-colors border border-amber-200 cursor-pointer shadow-xs active:scale-[0.98]"
-              >
-                <ShieldCheck className="w-4 h-4 text-amber-600" />
-                <span>एडमिन प्रवेश</span>
-              </button>
-            </div>
           </form>
 
           {/* Feature Badges Grid */}
@@ -269,17 +215,9 @@ export function LoginScreen() {
         </div>
 
         {/* Footer info */}
-        <div className="text-center space-y-1">
-          <p className="text-[11px] text-stone-400 font-medium">
-            बिहार विद्यालय परीक्षा समिति (BSEB 2027) के विद्यार्थियों द्वारा 100% विश्वसनीय
-          </p>
-          <button
-            onClick={handleClearCache}
-            className="text-[10px] text-stone-500 hover:text-stone-300 underline cursor-pointer"
-          >
-            ऐप रिफ्रेश/डेटा रीसेट करें (Troubleshoot & Reset)
-          </button>
-        </div>
+        <p className="text-[11px] text-stone-400 text-center font-medium">
+          बिहार विद्यालय परीक्षा समिति (BSEB 2027) के विद्यार्थियों द्वारा 100% विश्वसनीय
+        </p>
 
       </div>
     </div>

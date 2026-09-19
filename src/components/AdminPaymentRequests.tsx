@@ -51,31 +51,48 @@ export function AdminPaymentRequests() {
   const [processingId, setProcessingId] = useState<string | null>(null);
 
   useEffect(() => {
+    const mergeWithLocal = (remoteItems: PaymentRequestItem[]) => {
+      let merged = [...remoteItems];
+      try {
+        const localItems: PaymentRequestItem[] = JSON.parse(localStorage.getItem('bseb_payment_requests') || '[]');
+        const remoteIds = new Set(remoteItems.map(i => i.id));
+        for (const loc of localItems) {
+          if (!remoteIds.has(loc.id)) {
+            merged.push(loc);
+          }
+        }
+      } catch (e) {
+        console.warn('Local requests merge notice:', e);
+      }
+
+      // Sort by submittedAt descending (newest first)
+      merged.sort((a, b) => {
+        const tA = new Date(a.submittedAt || 0).getTime();
+        const tB = new Date(b.submittedAt || 0).getTime();
+        return tB - tA;
+      });
+
+      setRequests(merged);
+      setLoading(false);
+    };
+
     try {
       const unsub = onSnapshot(collection(db, 'payment_requests'), (snapshot) => {
         const items: PaymentRequestItem[] = [];
         snapshot.forEach((docSnap) => {
           items.push({ id: docSnap.id, ...docSnap.data() } as PaymentRequestItem);
         });
-
-        // Sort by submittedAt descending (newest first)
-        items.sort((a, b) => {
-          const tA = new Date(a.submittedAt || 0).getTime();
-          const tB = new Date(b.submittedAt || 0).getTime();
-          return tB - tA;
-        });
-
-        setRequests(items);
-        setLoading(false);
+        mergeWithLocal(items);
       }, (err) => {
         console.warn('Payment requests fetch notice:', err?.message || String(err));
-        setLoading(false);
+        // Fallback to local storage if Firestore snapshot fails
+        mergeWithLocal([]);
       });
 
       return () => unsub();
     } catch (e: any) {
       console.warn('Payment requests setup notice:', e?.message || String(e));
-      setLoading(false);
+      mergeWithLocal([]);
     }
   }, []);
 
@@ -114,6 +131,30 @@ export function AdminPaymentRequests() {
         expiresAt: expiry.expiresAt
       }, { merge: true });
 
+      // 3. Keep local storage synced
+      try {
+        const localItems: PaymentRequestItem[] = JSON.parse(localStorage.getItem('bseb_payment_requests') || '[]');
+        const updated = localItems.map(item => item.id === req.id ? { ...item, status: 'approved' as const, approvedAt: new Date().toISOString() } : item);
+        localStorage.setItem('bseb_payment_requests', JSON.stringify(updated));
+
+        const localVips = JSON.parse(localStorage.getItem('bseb_vip_users') || '{}');
+        localVips[cleanEmail] = {
+          isVip: true,
+          plan: planKey,
+          planDuration: expiry.planDurationText,
+          planPrice: req.planPrice || (planKey === '1month' ? 99 : 600),
+          studentName: req.studentName || '',
+          validFrom: expiry.validFrom,
+          expiresAt: expiry.expiresAt,
+          addedAt: new Date().toISOString(),
+          activatedByAdmin: true
+        };
+        localStorage.setItem('bseb_vip_users', JSON.stringify(localVips));
+      } catch {}
+
+      // Update in-memory state immediately
+      setRequests(prev => prev.map(item => item.id === req.id ? { ...item, status: 'approved' as const, approvedAt: new Date().toISOString() } : item));
+
       const expiryDateFormatted = new Date(expiry.expiresAt).toLocaleDateString('hi-IN', {
         day: 'numeric',
         month: 'short',
@@ -144,12 +185,22 @@ export function AdminPaymentRequests() {
       await safeSetDoc(doc(db, 'payment_requests', req.id), {
         status: 'rejected'
       }, { merge: true });
+
+      // Update local storage
+      try {
+        const localItems: PaymentRequestItem[] = JSON.parse(localStorage.getItem('bseb_payment_requests') || '[]');
+        const updated = localItems.map(item => item.id === req.id ? { ...item, status: 'rejected' as const } : item);
+        localStorage.setItem('bseb_payment_requests', JSON.stringify(updated));
+      } catch {}
+
+      setRequests(prev => prev.map(item => item.id === req.id ? { ...item, status: 'rejected' as const } : item));
+
       if (selectedImage?.id === req.id) {
         setSelectedImage(prev => prev ? { ...prev, status: 'rejected' } : null);
       }
     } catch (err: any) {
       if (isQuotaError(err)) {
-        alert('सूचना: आज की Firestore दैनिक लिमिट पूरी हो चुकी है।');
+        setActionMsg('सूचना: आज की Firestore दैनिक लिमिट पूरी हो चुकी है।');
       } else {
         alert('त्रुटि: ' + err?.message);
       }
@@ -163,10 +214,19 @@ export function AdminPaymentRequests() {
     if (!confirm('क्या आप इस पेमेंट रिक्वेस्ट रिकॉर्ड को हटाना चाहते हैं?')) return;
     try {
       await safeDeleteDoc(doc(db, 'payment_requests', id));
+
+      // Remove from local storage
+      try {
+        const localItems: PaymentRequestItem[] = JSON.parse(localStorage.getItem('bseb_payment_requests') || '[]');
+        const updated = localItems.filter(item => item.id !== id);
+        localStorage.setItem('bseb_payment_requests', JSON.stringify(updated));
+      } catch {}
+
+      setRequests(prev => prev.filter(item => item.id !== id));
       if (selectedImage?.id === id) setSelectedImage(null);
     } catch (err: any) {
       if (isQuotaError(err)) {
-        alert('सूचना: आज की Firestore दैनिक लिमिट पूरी हो चुकी है।');
+        setActionMsg('सूचना: आज की Firestore दैनिक लिमिट पूरी हो चुकी है।');
       } else {
         alert('डिलीट में त्रुटि: ' + err?.message);
       }

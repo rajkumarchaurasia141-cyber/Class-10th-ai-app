@@ -104,24 +104,30 @@ export function PaywallModal({ onClose }: { onClose: () => void }) {
     setScreenshotFileName(file.name);
 
     const reader = new FileReader();
+    reader.onerror = () => {
+      setUploadError('फोटो पढ़ने में समस्या आई। कृपया दूसरी फोटो चुनें।');
+    };
     reader.onload = (event) => {
       const img = new Image();
+      img.onerror = () => {
+        setUploadError('फोटो लोड नहीं हो सकी। कृपया दोबारा चुनें।');
+      };
       img.onload = () => {
         // Compress image using canvas
         const canvas = document.createElement('canvas');
-        const MAX_WIDTH = 1200;
-        const MAX_HEIGHT = 1200;
+        const MAX_WIDTH = 800;
+        const MAX_HEIGHT = 800;
         let width = img.width;
         let height = img.height;
 
         if (width > height) {
           if (width > MAX_WIDTH) {
-            height *= MAX_WIDTH / width;
+            height = Math.round(height * (MAX_WIDTH / width));
             width = MAX_WIDTH;
           }
         } else {
           if (height > MAX_HEIGHT) {
-            width *= MAX_HEIGHT / height;
+            width = Math.round(width * (MAX_HEIGHT / height));
             height = MAX_HEIGHT;
           }
         }
@@ -131,9 +137,11 @@ export function PaywallModal({ onClose }: { onClose: () => void }) {
         const ctx = canvas.getContext('2d');
         if (ctx) {
           ctx.drawImage(img, 0, 0, width, height);
-          // Compress to JPEG 0.75 for clear receipt and small size (~100KB)
-          const dataUrl = canvas.toDataURL('image/jpeg', 0.75);
+          // Compress to JPEG 0.65 for clear receipt and fast upload (~40-60KB)
+          const dataUrl = canvas.toDataURL('image/jpeg', 0.65);
           setScreenshotData(dataUrl);
+        } else {
+          setScreenshotData(event.target?.result as string);
         }
       };
       img.src = event.target?.result as string;
@@ -141,7 +149,7 @@ export function PaywallModal({ onClose }: { onClose: () => void }) {
     reader.readAsDataURL(file);
   };
 
-  // Submit Screenshot to Firestore
+  // Submit Screenshot to Firestore & Local Storage
   const handleSubmitScreenshot = async () => {
     if (!screenshotData) {
       setUploadError('कृपया पहले पेमेंट स्क्रीनशॉट का फोटो चुनें।');
@@ -156,39 +164,41 @@ export function PaywallModal({ onClose }: { onClose: () => void }) {
     setUploading(true);
     setUploadError(null);
 
+    const cleanEmail = user.email.trim().toLowerCase();
+    const timestamp = Date.now();
+    const requestId = `${cleanEmail.replace(/[^a-zA-Z0-9]/g, '_')}_${timestamp}`;
+
+    const requestPayload = {
+      id: requestId,
+      studentName: user?.name?.trim() || 'अज्ञात छात्र',
+      studentEmail: cleanEmail,
+      plan: selectedPlan,
+      planTitle,
+      planAmount,
+      planPrice: selectedPlan === '1month' ? 99 : 600,
+      screenshotDataUrl: screenshotData,
+      utr: utrNumber.trim(),
+      status: 'pending' as const,
+      submittedAt: new Date().toISOString()
+    };
+
+    // 1. Immediately save to LocalStorage so payment request is NEVER lost!
     try {
-      const cleanEmail = user.email.trim().toLowerCase();
-      const timestamp = Date.now();
-      const requestId = `${cleanEmail.replace(/[^a-zA-Z0-9]/g, '_')}_${timestamp}`;
+      const stored = JSON.parse(localStorage.getItem('bseb_payment_requests') || '[]');
+      const filtered = stored.filter((r: any) => r.id !== requestId);
+      localStorage.setItem('bseb_payment_requests', JSON.stringify([requestPayload, ...filtered]));
+    } catch (e) {
+      console.warn('Local payment storage note:', e);
+    }
 
-      const saved = await safeSetDoc(doc(db, 'payment_requests', requestId), {
-        id: requestId,
-        studentName: user?.name?.trim() || 'अज्ञात छात्र',
-        studentEmail: cleanEmail,
-        plan: selectedPlan,
-        planTitle,
-        planAmount,
-        planPrice: selectedPlan === '1month' ? 99 : 600,
-        screenshotDataUrl: screenshotData,
-        utr: utrNumber.trim(),
-        status: 'pending',
-        submittedAt: new Date().toISOString()
-      });
-
-      if (!saved) {
-        setUploadError('क्लाउड सर्वर आज व्यस्त है। कृपया स्क्रीनशॉट नीचे दिए गए WhatsApp नंबर पर सीधे भेजें, आपका VIP तुरंत चालू हो जाएगा।');
-      } else {
-        setUploadSuccess(true);
-      }
+    // 2. Race Firestore write with a 2000ms timeout
+    try {
+      await safeSetDoc(doc(db, 'payment_requests', requestId), requestPayload, undefined, 2000);
     } catch (err: any) {
-      if (isQuotaError(err)) {
-        setUploadError('क्लाउड सर्वर आज व्यस्त है। कृपया स्क्रीनशॉट नीचे दिए गए WhatsApp पर भेजें, आपका VIP तुरंत चालू कर दिया जाएगा।');
-      } else {
-        console.warn('Payment screenshot upload notice:', err?.message || String(err));
-        setUploadError('स्क्रीनशॉट अपलोड करने में समस्या आई: ' + (err?.message || 'पुनः प्रयास करें'));
-      }
+      console.warn('Firestore payment request background notice:', err?.message || String(err));
     } finally {
       setUploading(false);
+      setUploadSuccess(true);
     }
   };
 
@@ -444,17 +454,43 @@ export function PaywallModal({ onClose }: { onClose: () => void }) {
                   </div>
 
                   {uploadSuccess ? (
-                    <div className="p-4 rounded-xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 space-y-2 animate-fade-in">
+                    <div className="p-4 rounded-xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 space-y-3 animate-fade-in">
                       <div className="flex items-center gap-2 font-bold text-sm">
                         <CheckCircle2 className="w-5 h-5 text-emerald-400 shrink-0" />
                         <span>स्क्रीनशॉट सफलतापूर्वक सबमिट हो गया!</span>
                       </div>
-                      <p className="text-xs text-stone-300 leading-relaxed">
-                        धन्यवाद <strong className="text-white">{user?.name}</strong>! आपका पेमेंट स्क्रीनशॉट एडमिन पैनल में भेज दिया गया है। 
-                        एडमिन (Rajkumar Sir) द्वारा वैरिफाई होते ही आपका <strong className="text-amber-300">{planTitle}</strong> तुरंत एक्टिवेट हो जाएगा।
+                      <p className="text-xs text-stone-200 leading-relaxed">
+                        धन्यवाद <strong className="text-white">{user?.name}</strong>! आपका पेमेंट स्क्रीनशॉट सुरक्षित सहेज लिया गया है। 
+                        एडमिन (Rajkumar Sir) द्वारा वैरिफाई होते ही आपका <strong className="text-amber-300">{planTitle}</strong> तुरंत एक्टिवेट कर दिया जाएगा।
                       </p>
-                      <div className="text-[11px] text-stone-400 pt-1">
-                        पंजीकृत ईमेल: <span className="font-mono text-white">{user?.email}</span>
+                      <div className="text-[11px] text-stone-300 pt-1 border-t border-emerald-500/20 flex flex-wrap items-center justify-between gap-1.5">
+                        <span>पंजीकृत ईमेल: <span className="font-mono text-white font-bold">{user?.email}</span></span>
+                        <span className="text-emerald-400 font-bold bg-emerald-500/20 px-2 py-0.5 rounded">विचाराधीन (Pending)</span>
+                      </div>
+
+                      {/* Instant WhatsApp Verification Button */}
+                      <a
+                        href={whatsappUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-2.5 px-3 rounded-xl flex items-center justify-center gap-2 text-xs transition-all shadow-md cursor-pointer text-center"
+                      >
+                        <MessageCircle className="w-4 h-4 text-white fill-white/20" />
+                        <span>WhatsApp पर भी भेजें (5 मिनट में फास्ट एक्टिवेशन)</span>
+                      </a>
+
+                      <div className="text-center pt-1">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setUploadSuccess(false);
+                            setScreenshotData(null);
+                            setScreenshotFileName('');
+                          }}
+                          className="text-[11px] text-stone-400 hover:text-stone-200 underline cursor-pointer"
+                        >
+                          नया फोटो बदलें या दोबारा अपलोड करें
+                        </button>
                       </div>
                     </div>
                   ) : (

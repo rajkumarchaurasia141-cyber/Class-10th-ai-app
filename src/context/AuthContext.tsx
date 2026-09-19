@@ -76,6 +76,25 @@ export const AuthProvider = ({ children }: any) => {
       return;
     }
 
+    // Immediate local VIP cache check for instantaneous activation
+    try {
+      const localVips = JSON.parse(localStorage.getItem('bseb_vip_users') || '{}');
+      if (localVips[cleanEmail]?.isVip) {
+        const data = localVips[cleanEmail];
+        const expiryStatus = checkVipExpiryStatus(data.expiresAt);
+        if (!expiryStatus.isExpired) {
+          setIsVIP(true);
+          setVipDetails({
+            ...data,
+            isExpired: false,
+            daysRemaining: expiryStatus.daysRemaining,
+            statusText: expiryStatus.statusText,
+            formattedExpiry: expiryStatus.formattedExpiry
+          });
+        }
+      }
+    } catch {}
+
     try {
       const docRef = doc(db, 'vip_users', cleanEmail);
       const unsub = onSnapshot(docRef, (docSnap) => {
@@ -108,11 +127,48 @@ export const AuthProvider = ({ children }: any) => {
             return;
           }
         }
+        // If doc doesn't exist in Firestore, double check local VIP before revoking
+        try {
+          const localVips = JSON.parse(localStorage.getItem('bseb_vip_users') || '{}');
+          if (localVips[cleanEmail]?.isVip) {
+            const data = localVips[cleanEmail];
+            const expiryStatus = checkVipExpiryStatus(data.expiresAt);
+            if (!expiryStatus.isExpired) {
+              setIsVIP(true);
+              setVipDetails({
+                ...data,
+                isExpired: false,
+                daysRemaining: expiryStatus.daysRemaining,
+                statusText: expiryStatus.statusText,
+                formattedExpiry: expiryStatus.formattedExpiry
+              });
+              return;
+            }
+          }
+        } catch {}
         // Not a VIP
         setIsVIP(false);
         setVipDetails(null);
       }, (err) => {
         console.warn("VIP listener notice:", err?.message || String(err));
+        try {
+          const localVips = JSON.parse(localStorage.getItem('bseb_vip_users') || '{}');
+          if (localVips[cleanEmail]?.isVip) {
+            const data = localVips[cleanEmail];
+            const expiryStatus = checkVipExpiryStatus(data.expiresAt);
+            if (!expiryStatus.isExpired) {
+              setIsVIP(true);
+              setVipDetails({
+                ...data,
+                isExpired: false,
+                daysRemaining: expiryStatus.daysRemaining,
+                statusText: expiryStatus.statusText,
+                formattedExpiry: expiryStatus.formattedExpiry
+              });
+              return;
+            }
+          }
+        } catch {}
         setIsVIP(false);
         setVipDetails(null);
       });
