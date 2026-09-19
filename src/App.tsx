@@ -85,9 +85,9 @@ function MainApp() {
   };
 
   return (
-    <div className="min-h-screen w-full bg-slate-50 flex flex-col items-center selection:bg-red-500/30 overflow-x-hidden">
+    <div className="min-h-screen w-full bg-slate-50 flex flex-col selection:bg-red-500/30 overflow-x-hidden">
       {/* Edge-to-Edge Native Android Full-Width App Container */}
-      <div className={`w-full ${activeTab === 'admin' ? 'max-w-5xl' : 'max-w-2xl'} bg-slate-50 min-h-screen flex flex-col relative overflow-x-hidden transition-all duration-150`}>
+      <div className="w-full bg-slate-50 min-h-screen flex flex-col relative overflow-x-hidden">
         {/* Top Header Bar with Hamburger Menu & Notifications */}
         <MobileTopBar
           onOpenDrawer={() => setShowDrawer(true)}
