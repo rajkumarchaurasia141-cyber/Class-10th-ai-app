@@ -355,8 +355,8 @@ export const DataProvider = ({ children }: any) => {
                 intro_hindi: fCh.intro_hindi || current.intro_hindi || '',
                 notes_hindi: fCh.notes_hindi || current.notes_hindi || '',
                 topper_tips: fCh.topper_tips || current.topper_tips || '',
-                mcq: (fCh.mcq && fCh.mcq.length > 0) ? fCh.mcq : (current.mcq || []),
-                subjective_qa: (fCh.subjective_qa && fCh.subjective_qa.length > 0) ? fCh.subjective_qa : (current.subjective_qa || [])
+                mcq: (current.mcq && current.mcq.length > (fCh.mcq?.length || 0)) ? current.mcq : ((fCh.mcq && fCh.mcq.length > 0) ? fCh.mcq : (current.mcq || [])),
+                subjective_qa: (current.subjective_qa && current.subjective_qa.length > (fCh.subjective_qa?.length || 0)) ? current.subjective_qa : ((fCh.subjective_qa && fCh.subjective_qa.length > 0) ? fCh.subjective_qa : (current.subjective_qa || []))
               };
             } else {
               existingChapters.push(fCh);

@@ -22,6 +22,7 @@ import { SocialMediaModal } from './SocialMediaModal';
 import { FreeTestModal } from './FreeTestModal';
 import { FreeNotesModal } from './FreeNotesModal';
 import { PaidTestHubModal } from './PaidTestHubModal';
+import { PaidCourseModal } from './PaidCourseModal';
 
 interface HomeScreenProps {
   onSelect: (subjectId: string) => void;
@@ -40,16 +41,12 @@ export function HomeScreen({ onSelect, onNavigateTab }: HomeScreenProps) {
   const [showFreeTest, setShowFreeTest] = useState(false);
   const [showFreeNotes, setShowFreeNotes] = useState(false);
   const [showPaidTest, setShowPaidTest] = useState(false);
+  const [showPaidCourse, setShowPaidCourse] = useState(false);
 
   const handleFeatureNavigate = (id: string) => {
     switch (id) {
       case 'course':
-        if (onNavigateTab) {
-          onNavigateTab('my_courses');
-        } else {
-          const el = document.getElementById('all-subjects-section');
-          if (el) el.scrollIntoView({ behavior: 'smooth' });
-        }
+        setShowPaidCourse(true);
         break;
       case 'free_courses':
         // Open first subject demo
@@ -176,46 +173,7 @@ export function HomeScreen({ onSelect, onNavigateTab }: HomeScreenProps) {
         </div>
       )}
 
-      {/* 4. All Subjects Section */}
-      <div id="all-subjects-section" className="space-y-2.5 pt-1">
-        <div className="flex items-center justify-between px-1">
-          <h3 className="text-sm font-bold text-stone-900 flex items-center gap-1.5">
-            <span className="w-2 h-4 rounded-full bg-red-600 inline-block"></span>
-            <span>सभी विषय (Class 10th BSEB)</span>
-          </h3>
-          <span className="text-[11px] text-stone-500 font-medium">{subList.length} विषय उपलब्ध</span>
-        </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-          {subList.map((sub: any) => {
-            return (
-              <div
-                key={sub.id}
-                onClick={() => onSelect(sub.id)}
-                className="bg-white hover:bg-slate-50 border border-slate-200/90 rounded-2xl p-3.5 transition-all shadow-xs hover:shadow-md cursor-pointer flex items-center justify-between group"
-              >
-                <div className="flex items-center gap-3 min-w-0">
-                  <div className="w-11 h-11 rounded-2xl bg-red-50 text-red-700 flex items-center justify-center font-bold text-sm border border-red-100 group-hover:scale-105 transition-transform shrink-0">
-                    <BookText className="w-5 h-5" />
-                  </div>
-                  <div className="min-w-0">
-                    <h4 className="font-extrabold text-stone-900 text-sm truncate group-hover:text-red-700 transition-colors">
-                      {sub.subject_name_hindi || sub.subject_name || sub.id}
-                    </h4>
-                    <p className="text-[11px] text-stone-500 truncate">
-                      {sub.chapters?.length || 0} अध्याय • नोट्स व MCQs
-                    </p>
-                  </div>
-                </div>
-
-                <div className="w-7 h-7 rounded-full bg-slate-100 group-hover:bg-red-50 text-stone-400 group-hover:text-red-700 flex items-center justify-center transition-colors shrink-0">
-                  <ChevronRight className="w-4 h-4" />
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      </div>
 
       {/* 5. Modals */}
       {showPaywall && <PaywallModal onClose={() => setShowPaywall(false)} />}
@@ -235,6 +193,14 @@ export function HomeScreen({ onSelect, onNavigateTab }: HomeScreenProps) {
           onClose={() => setShowPaidTest(false)} 
           onOpenVip={() => setShowPaywall(true)} 
           isVIP={isVIP}
+        />
+      )}
+      {showPaidCourse && (
+        <PaidCourseModal
+          isOpen={showPaidCourse}
+          onClose={() => setShowPaidCourse(false)}
+          onSelectSubject={(id) => onSelect(id)}
+          onOpenPaidTest={() => setShowPaidTest(true)}
         />
       )}
     </div>

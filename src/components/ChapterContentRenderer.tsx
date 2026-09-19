@@ -84,7 +84,7 @@ export const ChapterContentRenderer: React.FC<ChapterContentRendererProps> = ({
   const renderFormattedNotes = (rawText: string) => {
     if (!rawText) return null;
 
-    const lines = rawText.split('\n');
+    const lines = String(rawText).split('\n');
     const elements: React.ReactNode[] = [];
     let currentBlock: string[] = [];
 
@@ -94,7 +94,7 @@ export const ChapterContentRenderer: React.FC<ChapterContentRendererProps> = ({
         if (text) {
           elements.push(
             <div key={key} className="p-4 sm:p-5 rounded-2xl bg-white border border-slate-200/80 shadow-xs hover:border-slate-300 transition-all leading-relaxed text-slate-800 text-[14.5px] font-normal">
-              {text.split('\n').map((l, lIdx) => {
+              {String(text || '').split('\n').map((l, lIdx) => {
                 // Bullet lines
                 if (l.trim().startsWith('▶') || l.trim().startsWith('•') || l.trim().startsWith('-')) {
                   const cleanLine = l.replace(/^[▶•\-]\s*/, '');
@@ -166,9 +166,10 @@ export const ChapterContentRenderer: React.FC<ChapterContentRendererProps> = ({
   };
 
   // Helper to highlight terms in quotes or specific keywords
-  const highlightKeywords = (str: string) => {
+  const highlightKeywords = (str: any) => {
+    const safeStr = typeof str === 'string' ? str : String(str || '');
     // Regex for single or double quotes
-    const parts = str.split(/(['"][^'"]+['"])/g);
+    const parts = safeStr.split(/(['"][^'"]+['"])/g);
     return parts.map((part, i) => {
       if ((part.startsWith("'") && part.endsWith("'")) || (part.startsWith('"') && part.endsWith('"'))) {
         return (
@@ -183,6 +184,33 @@ export const ChapterContentRenderer: React.FC<ChapterContentRendererProps> = ({
 
   return (
     <div className="space-y-4">
+      {/* Official Disha/Topper Style Notes Header Banner */}
+      <div className="bg-gradient-to-r from-red-700 via-red-600 to-amber-600 rounded-2xl shadow-md p-3 text-white flex items-center justify-between border-2 border-amber-400">
+        <div className="flex items-center gap-3">
+          <div className="w-11 h-11 rounded-xl bg-white text-red-700 flex items-center justify-center font-black shadow-inner text-sm uppercase">
+            PB
+          </div>
+          <div>
+            <span className="bg-amber-400 text-stone-950 font-black text-[9px] px-2 py-0.5 rounded-full uppercase tracking-wider">
+              Class 10th BSEB 2027
+            </span>
+            <h4 className="font-black text-sm sm:text-base tracking-tight text-white mt-0.5">
+              PADHEGA BIHAR — HINDI FULL NOTES
+            </h4>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-2 bg-black/20 p-1.5 rounded-xl border border-white/20">
+          <div className="w-9 h-9 rounded-lg overflow-hidden border border-amber-300 bg-stone-900 shrink-0 flex items-center justify-center">
+            <span className="text-[10px] font-black text-amber-300">RK</span>
+          </div>
+          <div className="text-right hidden sm:block">
+            <span className="text-[9px] text-amber-200 block font-bold leading-none">BY - DIRECTOR</span>
+            <span className="text-xs font-black text-white tracking-wide">Raj Kumar Chaurasia</span>
+          </div>
+        </div>
+      </div>
+
       {/* Audio Read-Aloud Floating Banner */}
       <div className="bg-gradient-to-r from-red-700 via-rose-600 to-amber-600 text-white p-3.5 rounded-2xl shadow-md flex items-center justify-between">
         <div className="flex items-center gap-2.5">
@@ -317,7 +345,7 @@ export const ChapterContentRenderer: React.FC<ChapterContentRendererProps> = ({
           {/* Rendered Tips */}
           <div className="space-y-3">
             {currentChapter.topper_tips ? (
-              currentChapter.topper_tips.split('\n').filter((l: string) => l.trim().length > 0).map((line: string, idx: number) => {
+              String(currentChapter.topper_tips || '').split('\n').filter((l: string) => l.trim().length > 0).map((line: string, idx: number) => {
                 const trimmed = line.trim();
                 if (trimmed.startsWith('【')) {
                   return (
