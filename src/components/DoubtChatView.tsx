@@ -89,7 +89,11 @@ export function DoubtChatView({ onOpenVip }: { onOpenVip: () => void }) {
   const handleStartListening = () => {
     const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
     if (!SpeechRecognition) {
-      alert('आपका ब्राउज़र वॉइस रिकॉर्डिंग (Speech Recognition) सपोर्ट नहीं करता है। कृपया लिखकर या फोटो खींचकर पूछें।');
+      const spoken = prompt('माइक उपलब्ध नहीं है। कृपया अपना प्रश्न यहाँ बोलकर या टाइप करके दर्ज करें:');
+      if (spoken && spoken.trim()) {
+        setInput(spoken.trim());
+        handleSend(spoken.trim());
+      }
       return;
     }
 
@@ -111,8 +115,13 @@ export function DoubtChatView({ onOpenVip }: { onOpenVip: () => void }) {
         handleSend(speechText);
       };
 
-      recognition.onerror = () => {
+      recognition.onerror = (event: any) => {
         setIsListening(false);
+        const spoken = prompt('माइक्रोफ़ोन से आवाज नहीं सुन पाए। कृपया अपना प्रश्न बोलकर या लिखकर टाइप करें:');
+        if (spoken && spoken.trim()) {
+          setInput(spoken.trim());
+          handleSend(spoken.trim());
+        }
       };
 
       recognition.onend = () => {
@@ -122,7 +131,11 @@ export function DoubtChatView({ onOpenVip }: { onOpenVip: () => void }) {
       recognition.start();
     } catch (e) {
       setIsListening(false);
-      alert('माइक्रोफ़ोन चालू करने में त्रुटि हुई।');
+      const spoken = prompt('माइक्रोफ़ोन चालू करने में बाधा आई। अपना प्रश्न यहाँ लिखें:');
+      if (spoken && spoken.trim()) {
+        setInput(spoken.trim());
+        handleSend(spoken.trim());
+      }
     }
   };
 

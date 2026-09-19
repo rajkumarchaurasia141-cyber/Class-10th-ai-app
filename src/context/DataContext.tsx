@@ -333,43 +333,71 @@ export const DataProvider = ({ children }: any) => {
         };
       }
 
-      // Merge: Start with default subjects, then overlay firestore data
-      const merged: Record<string, Subject> = { ...defaultSubjectsData };
+      // Merge: Start with default subjects, then overlay firestore data safely
+      const merged: Record<string, Subject> = {};
 
+      Object.keys(defaultSubjectsData).forEach((subKey) => {
+        const defaultSub = defaultSubjectsData[subKey];
+        const firestoreSub = firestoreData[subKey] || {};
+        
+        const chapterMap = new Map<number, any>();
+        
+        // 1. Add all default chapters first (guarantees chapter 3 and all rich notes exist)
+        if (defaultSub.chapters) {
+          defaultSub.chapters.forEach((ch: any) => {
+            chapterMap.set(ch.chapter_no, { ...ch });
+          });
+        }
+
+        // 2. Overlay firestore chapters if present, but keep the richer content
+        if (firestoreSub.chapters && Array.isArray(firestoreSub.chapters)) {
+          firestoreSub.chapters.forEach((fCh: any) => {
+            const existing = chapterMap.get(fCh.chapter_no);
+            if (!existing) {
+              chapterMap.set(fCh.chapter_no, fCh);
+            } else {
+              const fNotes = fCh.notes_hindi || '';
+              const eNotes = existing.notes_hindi || '';
+              const bestNotes = fNotes.length > eNotes.length ? fNotes : eNotes;
+
+              const fIntro = fCh.intro_hindi || '';
+              const eIntro = existing.intro_hindi || '';
+              const bestIntro = fIntro.length > eIntro.length ? fIntro : eIntro;
+
+              const fTips = fCh.topper_tips || '';
+              const eTips = existing.topper_tips || '';
+              const bestTips = fTips.length > eTips.length ? fTips : eTips;
+
+              const bestMcq = (fCh.mcq && fCh.mcq.length >= (existing.mcq?.length || 0)) ? fCh.mcq : existing.mcq;
+              const bestSubQa = (fCh.subjective_qa && fCh.subjective_qa.length >= (existing.subjective_qa?.length || 0)) ? fCh.subjective_qa : existing.subjective_qa;
+
+              chapterMap.set(fCh.chapter_no, {
+                ...fCh,
+                ...existing,
+                intro_hindi: bestIntro,
+                notes_hindi: bestNotes,
+                topper_tips: bestTips,
+                mcq: bestMcq,
+                subjective_qa: bestSubQa
+              });
+            }
+          });
+        }
+
+        const chaptersArray = Array.from(chapterMap.values());
+        chaptersArray.sort((a, b) => a.chapter_no - b.chapter_no);
+
+        merged[subKey] = {
+          ...defaultSub,
+          ...firestoreSub,
+          chapters: chaptersArray
+        };
+      });
+
+      // Include any extra subjects from firestore
       Object.keys(firestoreData).forEach((subKey) => {
         if (!merged[subKey]) {
           merged[subKey] = firestoreData[subKey];
-        } else {
-          // Merge chapters
-          const existingChapters = [...(merged[subKey].chapters || [])];
-          const firestoreChapters = firestoreData[subKey].chapters || [];
-
-          firestoreChapters.forEach((fCh: any) => {
-            const idx = existingChapters.findIndex(c => c.chapter_no === fCh.chapter_no);
-            if (idx >= 0) {
-              const current = existingChapters[idx];
-              existingChapters[idx] = {
-                ...current,
-                ...fCh,
-                chapter_name_hindi: fCh.chapter_name_hindi || current.chapter_name_hindi,
-                intro_hindi: fCh.intro_hindi || current.intro_hindi || '',
-                notes_hindi: fCh.notes_hindi || current.notes_hindi || '',
-                topper_tips: fCh.topper_tips || current.topper_tips || '',
-                mcq: (current.mcq && current.mcq.length > (fCh.mcq?.length || 0)) ? current.mcq : ((fCh.mcq && fCh.mcq.length > 0) ? fCh.mcq : (current.mcq || [])),
-                subjective_qa: (current.subjective_qa && current.subjective_qa.length > (fCh.subjective_qa?.length || 0)) ? current.subjective_qa : ((fCh.subjective_qa && fCh.subjective_qa.length > 0) ? fCh.subjective_qa : (current.subjective_qa || []))
-              };
-            } else {
-              existingChapters.push(fCh);
-            }
-          });
-
-          existingChapters.sort((a, b) => a.chapter_no - b.chapter_no);
-
-          merged[subKey] = {
-            ...merged[subKey],
-            ...firestoreData[subKey],
-            chapters: existingChapters
-          };
         }
       });
 

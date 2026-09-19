@@ -43,32 +43,81 @@ async function startServer() {
         return res.status(400).json({ error: 'प्रश्न (question) या फोटो (image) आवश्यक है।' });
       }
 
-      const ai = getAI();
+      const systemInstruction = `आप "पढ़ेगा बिहार (टॉपर बैच 2027)" के कक्षा 10वीं (BSEB - Bihar School Examination Board) के सर्वश्रेष्ठ, अत्यधिक अनुभवी और स्नेही शिक्षक एवं AI डाउट सॉल्वर हैं।
 
+आपका मुख्य लक्ष्य:
+विद्यार्थी के किसी भी प्रश्न (चाहे वह हिंदी, संस्कृत, गणित, विज्ञान, सामाजिक विज्ञान, अंग्रेजी, व्याकरण, सामान्य अनुवाद या दुनिया का कोई भी सामान्य ज्ञान/पढ़ाई का सवाल हो) का एकदम सटीक, सीधा, स्पष्ट और सरल हिंदी में उत्तर देना।
+
+निर्देश:
+1. विद्यार्थी द्वारा पूछे गए सवाल का सीधा और सटीक उत्तर दें। उदाहरण के लिए, यदि "मंगलम का हिंदी" पूछा जाए तो केवल मंगलम पाठ के मंत्रों का स्पष्ट हिंदी अनुवाद/अर्थ दें, पूरा चैप्टर का लंबा इतिहास या सारांश न दें जब तक कि विशेष रूप से न पूछा जाए।
+2. भाषा: शुद्ध, सरल और विद्यार्थी-मित्रवत हिंदी।
+3. उत्तर व्यवस्थित, पठनीय (bullet points, bold text) और टू-द-पॉइंट रखें।`;
+
+      // 1. Check if Groq API key or OpenAI API key is provided
+      const groqKey = process.env.GROQ_API_KEY || process.env.OPENAI_API_KEY;
+      if (groqKey) {
+        try {
+          const messages: Array<any> = [
+            { role: 'system', content: systemInstruction }
+          ];
+
+          if (Array.isArray(history) && history.length > 0) {
+            for (const h of history.slice(-4)) {
+              if (h && h.text) {
+                messages.push({
+                  role: h.sender === 'user' ? 'user' : 'assistant',
+                  content: String(h.text)
+                });
+              }
+            }
+          }
+
+          let userContent: any = qText || 'इस प्रश्न का उत्तर दें।';
+          if (image) {
+            userContent = [
+              { type: 'text', text: qText || 'इस चित्र में दिए गए प्रश्न का हल दें:' },
+              { type: 'image_url', image_url: { url: image } }
+            ];
+          }
+
+          messages.push({ role: 'user', content: userContent });
+
+          const groqRes = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${groqKey}`
+            },
+            body: JSON.stringify({
+              model: 'llama-3.3-70b-versatile',
+              messages,
+              temperature: 0.3,
+              max_tokens: 1200
+            })
+          });
+
+          if (groqRes.ok) {
+            const groqData = await groqRes.json();
+            const reply = groqData.choices?.[0]?.message?.content;
+            if (reply && reply.trim()) {
+              return res.json({ answer: reply.trim() });
+            }
+          }
+        } catch (groqErr) {
+          console.error('Groq API error:', groqErr);
+        }
+      }
+
+      // 2. Fallback / Primary with Gemini
+      const ai = getAI();
       if (!ai) {
-        // High quality BSEB knowledge engine if GEMINI_API_KEY is not configured
         const fallbackReply = getAccurateDoubtAnswer(qText || 'इस प्रश्न का हल दें');
         return res.json({ answer: fallbackReply });
       }
 
-      const systemInstruction = `आप "पढ़ेगा बिहार (टॉपर बैच 2027)" के कक्षा 10वीं (BSEB - Bihar School Examination Board) के सर्वश्रेष्ठ, अत्यधिक अनुभवी और स्नेही शिक्षक एवं AI डाउट सॉल्वर हैं।
-
-आपका मुख्य लक्ष्य:
-विद्यार्थी के किसी भी प्रश्न (सभी विषय: संस्कृत, हिन्दी, गणित, विज्ञान, सामाजिक विज्ञान, अंग्रेजी, व्याकरण, सामान्य अनुवाद या पढ़ाई से जुड़े संदेह) या फोटो में दिए गए प्रश्न का एकदम सटीक, स्पष्ट, सरल एवं उच्च अंक दिलाने वाला उत्तर तुरंत देना।
-
-निर्देश:
-1. प्रश्न या फोटो में पूछे गए सवाल का सीधा और सटीक उत्तर सबसे पहले दें।
-2. भाषा: शुद्ध, सरल और विद्यार्थी-मित्रवत हिंदी (यदि छात्र ने अंग्रेजी/अनुवाद पूछा है तो अंग्रेजी शब्द + हिंदी अर्थ दोनों दें)।
-3. यदि गणित/विज्ञान का सवाल हो या फोटो में न्यूमेरिकल हो: सूत्र, चरणबद्ध (step-by-step) हल और मुख्य बिंदु लिखें।
-4. बिहार बोर्ड 2027 की परीक्षा में आने वाले VVI पॉइंट्स या ट्रिक्स को आवश्यकतानुसार संक्षेप में हाइलाइट करें।
-5. उत्तर व्यवस्थित, पठनीय (bullet points, bold text) और टू-द-पॉइंट रखें।`;
-
-      // Build conversation contents including short history if available
       const contents: Array<any> = [];
-
       if (Array.isArray(history) && history.length > 0) {
-        const recentHistory = history.slice(-4);
-        for (const item of recentHistory) {
+        for (const item of history.slice(-4)) {
           if (item && item.text) {
             contents.push({
               role: item.sender === 'user' ? 'user' : 'model',
