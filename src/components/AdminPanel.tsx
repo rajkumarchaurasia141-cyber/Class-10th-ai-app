@@ -56,19 +56,37 @@ export function AdminPanel({ onBack }: any) {
   const [pendingRequestsCount, setPendingRequestsCount] = useState<number>(0);
 
   useEffect(() => {
+    const updateCount = (remoteDocs: any[]) => {
+      let count = 0;
+      const remoteIds = new Set<string>();
+      remoteDocs.forEach((d) => {
+        remoteIds.add(d.id);
+        if (d.data()?.status === 'pending') count++;
+      });
+
+      try {
+        const localItems = JSON.parse(localStorage.getItem('bseb_payment_requests') || '[]');
+        for (const loc of localItems) {
+          if (!remoteIds.has(loc.id) && loc.status === 'pending') {
+            count++;
+          }
+        }
+      } catch {}
+
+      setPendingRequestsCount(count);
+    };
+
     try {
       const unsub = onSnapshot(collection(db, 'payment_requests'), (snapshot) => {
-        let count = 0;
-        snapshot.forEach((d) => {
-          if (d.data()?.status === 'pending') count++;
-        });
-        setPendingRequestsCount(count);
+        updateCount(snapshot.docs);
       }, (err) => {
         console.warn("Payment requests notice:", err?.message || String(err));
+        updateCount([]);
       });
       return () => unsub();
     } catch (e: any) {
       console.warn("Admin payment snapshot error:", e?.message || String(e));
+      updateCount([]);
     }
   }, []);
   
@@ -126,7 +144,8 @@ export function AdminPanel({ onBack }: any) {
       const cleanEmail = email.trim().toLowerCase();
       const expiry = calculateVipExpiry(vipPlan);
 
-      await safeSetDoc(doc(db, 'vip_users', cleanEmail), {
+      const vipData = {
+        email: cleanEmail,
         isVip: true,
         plan: vipPlan,
         planDuration: expiry.planDurationText,
@@ -134,7 +153,16 @@ export function AdminPanel({ onBack }: any) {
         validFrom: expiry.validFrom,
         expiresAt: expiry.expiresAt,
         addedAt: new Date().toISOString()
-      }, { merge: true });
+      };
+
+      // Save locally immediately
+      try {
+        const localVips = JSON.parse(localStorage.getItem('bseb_vip_users') || '{}');
+        localVips[cleanEmail] = vipData;
+        localStorage.setItem('bseb_vip_users', JSON.stringify(localVips));
+      } catch {}
+
+      await safeSetDoc(doc(db, 'vip_users', cleanEmail), vipData, { merge: true });
 
       const expiryDateFormatted = new Date(expiry.expiresAt).toLocaleDateString('hi-IN', {
         day: 'numeric',

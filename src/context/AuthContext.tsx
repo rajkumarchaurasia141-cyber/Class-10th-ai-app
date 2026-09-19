@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { db } from '../lib/firebase';
 import { doc, onSnapshot } from 'firebase/firestore';
-import { safeSetDoc } from '../utils/firestoreSafe';
+import { safeSetDoc, isFirestoreQuotaExceeded } from '../utils/firestoreSafe';
 import { checkVipExpiryStatus } from '../utils/vipHelper';
 
 const AuthContext = createContext<any>(null);
@@ -203,16 +203,30 @@ export const AuthProvider = ({ children }: any) => {
     // Set user synchronously immediately so UI updates instantly
     setUser(userData);
 
-    // Save student in Firestore in background completely detached
+    // Save student profile locally for offline & quota-proof access
     try {
-      setTimeout(() => {
-        safeSetDoc(doc(db, 'students', cleanEmail), {
-          name: cleanName,
-          email: cleanEmail,
-          lastLogin: new Date().toISOString()
-        }, { merge: true }).catch(() => {});
-      }, 50);
+      const storedStudents = JSON.parse(localStorage.getItem('bseb_registered_students') || '{}');
+      storedStudents[cleanEmail] = {
+        id: cleanEmail,
+        name: cleanName,
+        email: cleanEmail,
+        lastLogin: new Date().toISOString()
+      };
+      localStorage.setItem('bseb_registered_students', JSON.stringify(storedStudents));
     } catch {}
+
+    // Only attempt Firestore background sync if quota is NOT exceeded
+    if (!isFirestoreQuotaExceeded()) {
+      try {
+        setTimeout(() => {
+          safeSetDoc(doc(db, 'students', cleanEmail), {
+            name: cleanName,
+            email: cleanEmail,
+            lastLogin: new Date().toISOString()
+          }, { merge: true }).catch(() => {});
+        }, 50);
+      } catch {}
+    }
 
     return true;
   };

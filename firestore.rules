@@ -30,6 +30,41 @@ service cloud.firestore {
     match /paid_notes/{noteId} {
       allow read, write: if true;
     }
+
+    // Allow read/write to live_classes
+    match /live_classes/{classId} {
+      allow read, write: if true;
+    }
+
+    // Allow read/write to leaderboard
+    match /leaderboard/{entryId} {
+      allow read, write: if true;
+    }
+
+    // Allow read/write to routine
+    match /routine/{routineId} {
+      allow read, write: if true;
+    }
+
+    // Allow read/write to motivational_quotes
+    match /motivational_quotes/{quoteId} {
+      allow read, write: if true;
+    }
+
+    // Allow read/write to notifications
+    match /notifications/{notifId} {
+      allow read, write: if true;
+    }
+
+    // Allow read/write to settings
+    match /settings/{docId} {
+      allow read, write: if true;
+    }
+
+    // Allow read/write to admin_courses
+    match /admin_courses/{courseId} {
+      allow read, write: if true;
+    }
   }
 }
 

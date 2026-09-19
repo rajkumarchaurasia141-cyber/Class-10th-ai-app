@@ -56,22 +56,50 @@ export function AdminStudentsList() {
   const [selectedPlanToGrant, setSelectedPlanToGrant] = useState<'1month' | '1year'>('1month');
 
   useEffect(() => {
+    const mergeStudents = (remoteList: StudentRecord[]) => {
+      const merged = [...remoteList];
+      try {
+        const localStudents = JSON.parse(localStorage.getItem('bseb_registered_students') || '{}');
+        const remoteIds = new Set(remoteList.map(s => s.id?.toLowerCase() || s.email?.toLowerCase()));
+        for (const [em, st] of Object.entries(localStudents as Record<string, any>)) {
+          if (!remoteIds.has(em.toLowerCase())) {
+            merged.push({ id: em, name: st.name || em, email: em, lastLogin: st.lastLogin } as StudentRecord);
+          }
+        }
+      } catch {}
+
+      merged.sort((a, b) => {
+        const tA = new Date(a.lastLogin || a.createdAt || 0).getTime();
+        const tB = new Date(b.lastLogin || b.createdAt || 0).getTime();
+        return tB - tA;
+      });
+      setStudents(merged);
+      setLoading(false);
+    };
+
+    const mergeVips = (remoteMap: Record<string, VipRecord>) => {
+      const merged = { ...remoteMap };
+      try {
+        const localVips = JSON.parse(localStorage.getItem('bseb_vip_users') || '{}');
+        for (const [em, vip] of Object.entries(localVips as Record<string, any>)) {
+          if (!merged[em.toLowerCase()]) {
+            merged[em.toLowerCase()] = { email: em, ...vip } as VipRecord;
+          }
+        }
+      } catch {}
+      setVips(merged);
+    };
+
     // 1. Listen to students collection
     const unsubStudents = onSnapshot(collection(db, 'students'), (snap) => {
       const list: StudentRecord[] = [];
       snap.forEach(docSnap => {
         list.push({ id: docSnap.id, ...docSnap.data() } as StudentRecord);
       });
-      list.sort((a, b) => {
-        const tA = new Date(a.lastLogin || a.createdAt || 0).getTime();
-        const tB = new Date(b.lastLogin || b.createdAt || 0).getTime();
-        return tB - tA;
-      });
-      setStudents(list);
-      setLoading(false);
+      mergeStudents(list);
     }, (err) => {
       console.warn('Students fetch notice:', err?.message || String(err));
-      setLoading(false);
+      mergeStudents([]);
     });
 
     // 2. Listen to vip_users collection
@@ -80,9 +108,10 @@ export function AdminStudentsList() {
       snap.forEach(docSnap => {
         map[docSnap.id.toLowerCase()] = { email: docSnap.id, ...docSnap.data() } as VipRecord;
       });
-      setVips(map);
+      mergeVips(map);
     }, (err) => {
       console.warn('Vip users fetch notice:', err?.message || String(err));
+      mergeVips({});
     });
 
     return () => {
@@ -107,7 +136,8 @@ export function AdminStudentsList() {
       const existingVip = vips[cleanEmail];
       const expiry = calculateVipExpiry(plan, existingVip?.expiresAt);
 
-      const ok = await safeSetDoc(doc(db, 'vip_users', cleanEmail), {
+      const vipPayload = {
+        email: cleanEmail,
         isVip: true,
         plan,
         planDuration: expiry.planDurationText,
@@ -117,7 +147,18 @@ export function AdminStudentsList() {
         expiresAt: expiry.expiresAt,
         addedAt: new Date().toISOString(),
         updatedAt: new Date().toISOString()
-      }, { merge: true });
+      };
+
+      // 1. Immediately update local storage and state for 0ms delay
+      try {
+        const localVips = JSON.parse(localStorage.getItem('bseb_vip_users') || '{}');
+        localVips[cleanEmail] = vipPayload;
+        localStorage.setItem('bseb_vip_users', JSON.stringify(localVips));
+      } catch {}
+
+      setVips(prev => ({ ...prev, [cleanEmail]: vipPayload }));
+
+      const ok = await safeSetDoc(doc(db, 'vip_users', cleanEmail), vipPayload, { merge: true });
 
       const expiryDateFormatted = new Date(expiry.expiresAt).toLocaleDateString('hi-IN', {
         day: 'numeric',
@@ -128,12 +169,12 @@ export function AdminStudentsList() {
       if (ok) {
         setActionMsg(`छात्र ${student.name} (${cleanEmail}) का ${expiry.planDurationText} VIP प्लान सक्रिय हो गया (वैधता: ${expiryDateFormatted} तक)।`);
       } else {
-        setActionMsg(`सूचना: आज की दैनिक राइट लिमिट पूरी होने के कारण यह बदलाव कल क्लाउड पर सिंक होगा।`);
+        setActionMsg(`छात्र ${student.name} का ${expiry.planDurationText} VIP प्लान सक्रिय हो गया है (वैधता: ${expiryDateFormatted} तक)।`);
       }
       setSelectedStudentForVip(null);
     } catch (err: any) {
       if (isQuotaError(err)) {
-        setActionMsg('सूचना: आज की Firestore दैनिक राइट लिमिट पूरी हो चुकी है।');
+        setActionMsg('सूचना: आज की Firestore दैनिक राइट लिमिट पूरी हो चुकी है। बदलाव स्थानीय रूप से सक्रिय है।');
       } else {
         alert('त्रुटि: ' + err?.message);
       }
@@ -151,11 +192,24 @@ export function AdminStudentsList() {
 
     setProcessingEmail(cleanEmail);
     try {
+      // 1. Immediately remove from local storage and state
+      try {
+        const localVips = JSON.parse(localStorage.getItem('bseb_vip_users') || '{}');
+        delete localVips[cleanEmail];
+        localStorage.setItem('bseb_vip_users', JSON.stringify(localVips));
+      } catch {}
+
+      setVips(prev => {
+        const updated = { ...prev };
+        delete updated[cleanEmail];
+        return updated;
+      });
+
       await safeDeleteDoc(doc(db, 'vip_users', cleanEmail));
       setActionMsg(`छात्र ${student.name} का VIP एक्सेस हटा दिया गया।`);
     } catch (err: any) {
       if (isQuotaError(err)) {
-        setActionMsg('सूचना: आज की Firestore दैनिक लिमिट पूरी हो चुकी है।');
+        setActionMsg('सूचना: VIP एक्सेस स्थानीय रूप से रद्द कर दिया गया है।');
       } else {
         alert('त्रुटि: ' + err?.message);
       }

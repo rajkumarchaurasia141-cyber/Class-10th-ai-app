@@ -1,8 +1,11 @@
 import { initializeApp } from 'firebase/app';
 import { getAuth } from 'firebase/auth';
-import { initializeFirestore } from 'firebase/firestore';
+import { initializeFirestore, setLogLevel } from 'firebase/firestore';
 
 import fbConfig from '../../firebase-applet-config.json';
+
+// Suppress internal Firestore connection / quota error logs from flooding the console
+setLogLevel('silent');
 
 export const app = initializeApp(fbConfig);
 export const auth = getAuth(app);

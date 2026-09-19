@@ -120,6 +120,27 @@
     "/students/{studentId}": {
       "schema": "Student",
       "description": "Registered students database"
+    },
+    "/live_classes/{classId}": {
+      "description": "Live and recorded YouTube classes"
+    },
+    "/leaderboard/{entryId}": {
+      "description": "Student test scores and leaderboard rankings"
+    },
+    "/routine/{routineId}": {
+      "description": "Study routine and time table schedule"
+    },
+    "/motivational_quotes/{quoteId}": {
+      "description": "Motivational quotes for students"
+    },
+    "/notifications/{notifId}": {
+      "description": "Real-time announcements and alerts"
+    },
+    "/settings/{docId}": {
+      "description": "Global application configuration, UPI ID, prices, banners"
+    },
+    "/admin_courses/{courseId}": {
+      "description": "Course catalog managed by administrator"
     }
   }
 }
