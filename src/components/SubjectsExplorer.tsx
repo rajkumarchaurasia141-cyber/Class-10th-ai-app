@@ -54,7 +54,11 @@ export function SubjectsExplorer({ subjectId, onBack }: any) {
             बिहार बोर्ड वर्ग 10
           </span>
           <h2 className="text-xl sm:text-2xl font-black mt-1 text-white">
-            {subject.subject_name_hindi || subject.subject_name}
+            {subjectId === 'hindi' ? (
+              selectedCh <= 12 ? 'हिंदी गोधूलि (गद्य खंड)' :
+              selectedCh <= 24 ? 'हिंदी गोधूलि (काव्य खंड)' :
+              'हिंदी वर्णिका'
+            ) : (subject.subject_name_hindi || subject.subject_name)}
           </h2>
         </div>
         <div className="text-xs text-amber-100 bg-black/30 border border-white/20 px-3 py-1.5 rounded-xl shrink-0 font-medium">
