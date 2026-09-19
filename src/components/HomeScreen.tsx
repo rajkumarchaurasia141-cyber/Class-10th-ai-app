@@ -25,13 +25,16 @@ import { PaidTestHubModal } from './PaidTestHubModal';
 import { PaidCourseModal } from './PaidCourseModal';
 
 interface HomeScreenProps {
-  onSelect: (subjectId: string) => void;
+  onSelect?: (subjectId: string) => void;
+  onOpenSubject?: (subjectId: string) => void;
   onNavigateTab?: (tab: string) => void;
+  onOpenVip?: () => void;
 }
 
-export function HomeScreen({ onSelect, onNavigateTab }: HomeScreenProps) {
-  const { subjects, loading, motivationalQuotes } = useData();
+export function HomeScreen({ onSelect, onOpenSubject, onNavigateTab, onOpenVip }: HomeScreenProps) {
+  const { subjects, motivationalQuotes } = useData();
   const { isVIP, vipDetails } = useAuth();
+  const handleSelectSubject = onSelect || onOpenSubject || (() => {});
 
   // Modals state
   const [showPaywall, setShowPaywall] = useState(false);
@@ -88,14 +91,6 @@ export function HomeScreen({ onSelect, onNavigateTab }: HomeScreenProps) {
         break;
     }
   };
-
-  if (loading) {
-    return (
-      <div className="p-8 text-center text-stone-500 text-sm">
-        विषय एवं पाठ्यक्रम लोड हो रहे हैं...
-      </div>
-    );
-  }
 
   const subList = Object.values(subjects);
 
@@ -178,14 +173,14 @@ export function HomeScreen({ onSelect, onNavigateTab }: HomeScreenProps) {
       {/* 5. Modals */}
       {showPaywall && <PaywallModal onClose={() => setShowPaywall(false)} />}
       {showRoutine && <ClassRoutineModal onClose={() => setShowRoutine(false)} />}
-      {showNcert && <NcertBooksModal onClose={() => setShowNcert(false)} onOpenSubject={(id) => onSelect(id)} />}
+      {showNcert && <NcertBooksModal onClose={() => setShowNcert(false)} onOpenSubject={(id) => handleSelectSubject(id)} />}
       {showSocial && <SocialMediaModal onClose={() => setShowSocial(false)} />}
       {showFreeTest && <FreeTestModal onClose={() => setShowFreeTest(false)} onOpenVip={() => setShowPaywall(true)} />}
       {showFreeNotes && (
         <FreeNotesModal 
           onClose={() => setShowFreeNotes(false)} 
           onOpenVip={() => setShowPaywall(true)} 
-          onOpenSubject={(id) => onSelect(id)} 
+          onOpenSubject={(id) => handleSelectSubject(id)} 
         />
       )}
       {showPaidTest && (
@@ -199,7 +194,7 @@ export function HomeScreen({ onSelect, onNavigateTab }: HomeScreenProps) {
         <PaidCourseModal
           isOpen={showPaidCourse}
           onClose={() => setShowPaidCourse(false)}
-          onSelectSubject={(id) => onSelect(id)}
+          onSelectSubject={(id) => handleSelectSubject(id)}
           onOpenPaidTest={() => setShowPaidTest(true)}
         />
       )}

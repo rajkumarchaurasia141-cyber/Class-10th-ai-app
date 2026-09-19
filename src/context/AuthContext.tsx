@@ -7,10 +7,23 @@ import { checkVipExpiryStatus } from '../utils/vipHelper';
 const AuthContext = createContext<any>(null);
 
 export const AuthProvider = ({ children }: any) => {
-  const [user, setUser] = useState<{ name: string; email: string } | null>(null);
+  const [user, setUser] = useState<{ name: string; email: string } | null>(() => {
+    try {
+      const saved = localStorage.getItem('bseb_user');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (parsed && parsed.email) {
+          return parsed;
+        }
+      }
+    } catch (e) {
+      console.warn("Failed to parse cached user:", e);
+    }
+    return null;
+  });
   const [isVIP, setIsVIP] = useState(false);
   const [vipDetails, setVipDetails] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const getAdminEmails = (): string[] => {
@@ -28,17 +41,16 @@ export const AuthProvider = ({ children }: any) => {
   const isAdmin = cleanUserEmail === 'rajkumarchaurasia141@gmail.com' || getAdminEmails().includes(cleanUserEmail);
 
   useEffect(() => {
+    // Secondary sync from localStorage if needed
     try {
       const saved = localStorage.getItem('bseb_user');
-      if (saved) {
+      if (saved && !user) {
         const parsed = JSON.parse(saved);
         if (parsed && parsed.email) {
           setUser(parsed);
         }
       }
-    } catch (e) {
-      console.error("Failed to read user from localStorage", e);
-    }
+    } catch (e) {}
     setLoading(false);
   }, []);
 
@@ -126,15 +138,26 @@ export const AuthProvider = ({ children }: any) => {
 
     const userData = { name: cleanName, email: cleanEmail };
 
-    // Save student in Firestore (safe & non-blocking)
-    safeSetDoc(doc(db, 'students', cleanEmail), {
-      name: cleanName,
-      email: cleanEmail,
-      lastLogin: new Date().toISOString()
-    }, { merge: true }).catch(e => console.warn("Background student save notice:", e?.message || String(e)));
+    try {
+      localStorage.setItem('bseb_user', JSON.stringify(userData));
+    } catch (e) {
+      console.warn("LocalStorage save notice:", e);
+    }
 
-    localStorage.setItem('bseb_user', JSON.stringify(userData));
+    // Set user synchronously immediately so UI updates instantly
     setUser(userData);
+
+    // Save student in Firestore in background completely detached
+    try {
+      setTimeout(() => {
+        safeSetDoc(doc(db, 'students', cleanEmail), {
+          name: cleanName,
+          email: cleanEmail,
+          lastLogin: new Date().toISOString()
+        }, { merge: true }).catch(() => {});
+      }, 50);
+    } catch {}
+
     return true;
   };
 
@@ -148,11 +171,7 @@ export const AuthProvider = ({ children }: any) => {
 
   return (
     <AuthContext.Provider value={{ user, isAdmin, isVIP, vipDetails, loading, login, logout, error, setError }}>
-      {loading ? (
-        <div className="min-h-screen bg-stone-950 flex items-center justify-center text-amber-500 font-bold">
-          लोड हो रहा है...
-        </div>
-      ) : children}
+      {children}
     </AuthContext.Provider>
   );
 };

@@ -317,20 +317,30 @@ export const DataProvider = ({ children }: any) => {
   const [loading, setLoading] = useState(false);
 
   const fetchData = async () => {
-    setLoading(true);
     try {
-      const subsSnap = await getDocs(collection(db, 'subjects'));
-      const firestoreData: Record<string, any> = {};
+      const fetchOperation = async () => {
+        const subsSnap = await getDocs(collection(db, 'subjects'));
+        const firestoreData: Record<string, any> = {};
 
-      for (const docSnap of subsSnap.docs) {
-        const sub = docSnap.data();
-        const subId = docSnap.id;
-        const chSnap = await getDocs(query(collection(db, 'subjects', subId, 'chapters'), orderBy('chapter_no', 'asc')));
-        firestoreData[subId] = {
-          ...sub,
-          id: subId,
-          chapters: chSnap.docs.map(d => ({ id: d.id, ...d.data() }))
-        };
+        for (const docSnap of subsSnap.docs) {
+          const sub = docSnap.data();
+          const subId = docSnap.id;
+          const chSnap = await getDocs(query(collection(db, 'subjects', subId, 'chapters'), orderBy('chapter_no', 'asc')));
+          firestoreData[subId] = {
+            ...sub,
+            id: subId,
+            chapters: chSnap.docs.map(d => ({ id: d.id, ...d.data() }))
+          };
+        }
+        return firestoreData;
+      };
+
+      // Strict 2-second timeout race so that quota exhaustion or slow networks NEVER hang the UI
+      const timeoutPromise = new Promise<null>((resolve) => setTimeout(() => resolve(null), 2000));
+      const firestoreData = await Promise.race([fetchOperation(), timeoutPromise]);
+
+      if (!firestoreData) {
+        return;
       }
 
       // Merge: Start with default subjects, then overlay firestore data safely
@@ -404,10 +414,7 @@ export const DataProvider = ({ children }: any) => {
       setSubjects(merged);
     } catch (e: any) {
       console.warn("Data Fetch Notice:", e?.message || String(e));
-      // Fallback to default data on network/permission error
-      setSubjects(defaultSubjectsData);
     }
-    setLoading(false);
   };
 
   // Real-time listener for paid_notes collection

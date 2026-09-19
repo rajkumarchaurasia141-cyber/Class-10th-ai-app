@@ -21,14 +21,24 @@ import { LiveClassesView } from './components/LiveClassesView';
 import { TopperLeaderboardView } from './components/TopperLeaderboardView';
 import { DownloadPage } from './components/DownloadPage';
 import { InstallAppBanner } from './components/InstallAppBanner';
+import { ErrorBoundary } from './components/ErrorBoundary';
 
 function MainApp() {
   const { user, isAdmin, isVIP, vipDetails } = useAuth();
   const [activeTab, setActiveTab] = useState('home');
   const [selectedSubject, setSelectedSubject] = useState<string | null>(null);
 
-  const isDownloadQuery = window.location.search.includes('download=apk') || window.location.pathname.includes('/download');
+  const isDownloadQuery = typeof window !== 'undefined' && 
+    (window.location.search.includes('download=apk') || window.location.pathname.includes('/download'));
   const [forceDownloadMode, setForceDownloadMode] = useState(isDownloadQuery);
+
+  // Modals
+  const [showVipModal, setShowVipModal] = useState(false);
+  const [showDrawer, setShowDrawer] = useState(false);
+  const [showNotifications, setShowNotifications] = useState(false);
+  const [showRoutine, setShowRoutine] = useState(false);
+  const [showSocial, setShowSocial] = useState(false);
+  const [showNcert, setShowNcert] = useState(false);
 
   if (forceDownloadMode) {
     return (
@@ -38,14 +48,6 @@ function MainApp() {
       }} />
     );
   }
-
-  // Modals
-  const [showVipModal, setShowVipModal] = useState(false);
-  const [showDrawer, setShowDrawer] = useState(false);
-  const [showNotifications, setShowNotifications] = useState(false);
-  const [showRoutine, setShowRoutine] = useState(false);
-  const [showSocial, setShowSocial] = useState(false);
-  const [showNcert, setShowNcert] = useState(false);
 
   if (!user) return <LoginScreen />;
 
@@ -237,10 +239,12 @@ function MainApp() {
 
 export default function App() {
   return (
-    <AuthProvider>
-      <DataProvider>
-        <MainApp />
-      </DataProvider>
-    </AuthProvider>
+    <ErrorBoundary>
+      <AuthProvider>
+        <DataProvider>
+          <MainApp />
+        </DataProvider>
+      </AuthProvider>
+    </ErrorBoundary>
   );
 }
