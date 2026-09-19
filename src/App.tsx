@@ -176,6 +176,23 @@ function MainApp() {
           {activeTab === 'admin' && isAdmin && (
             <AdminPanel onBack={() => setActiveTab('home')} />
           )}
+          {activeTab === 'admin' && !isAdmin && (
+            <div className="p-8 text-center max-w-md mx-auto my-12 bg-white rounded-3xl border border-stone-200 shadow-xl space-y-4">
+              <div className="w-16 h-16 bg-amber-50 text-amber-600 rounded-2xl flex items-center justify-center mx-auto text-2xl font-bold">
+                🔒
+              </div>
+              <h2 className="text-xl font-black text-stone-900">प्रतिबंधित क्षेत्र (Admin Only)</h2>
+              <p className="text-stone-600 text-sm">
+                यह एडमिन पैनल केवल अधिकृत एडमिन के लिए है। कृपया अपने एडमिन जीमेल से लॉगिन करें।
+              </p>
+              <button
+                onClick={() => setActiveTab('home')}
+                className="w-full bg-stone-900 text-white font-bold py-3 rounded-xl hover:bg-stone-800 transition-colors cursor-pointer"
+              >
+                होम पर वापस जाएँ
+              </button>
+            </div>
+          )}
         </main>
 
         {/* Bottom Navigation Bar (Sticky Native App Footer) */}

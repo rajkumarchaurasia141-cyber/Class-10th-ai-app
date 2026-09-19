@@ -19,7 +19,8 @@ import {
   FileCode,
   Receipt,
   Users,
-  Settings
+  Settings,
+  GraduationCap
 } from 'lucide-react';
 import { useData } from '../context/DataContext';
 import { defaultSubjectsData } from '../data/defaultCurriculum';
