@@ -3,6 +3,7 @@ import { hindiChapter1Data } from './hindiChapter1Data';
 import { hindiChapter2Data } from './hindiChapter2Data';
 import { hindiChapter3Data } from './hindiChapter3Data';
 import { hindiChapter4Data } from './hindiChapter4Data';
+import { hindiChapter5Data } from './hindiChapter5Data';
 import { sanskritChapter1Data } from './sanskritChapter1Data';
 
 export const defaultSubjectsData: Record<string, Subject> = {
@@ -289,7 +290,7 @@ export const defaultSubjectsData: Record<string, Subject> = {
     id: 'hindi',
     subject_name: 'Hindi',
     subject_name_hindi: 'हिन्दी (गोधूलि भाग-2)',
-    chapters: [hindiChapter1Data, hindiChapter2Data, hindiChapter3Data, hindiChapter4Data]
+    chapters: [hindiChapter1Data, hindiChapter2Data, hindiChapter3Data, hindiChapter4Data, hindiChapter5Data]
   },
   math: {
     id: 'math',
