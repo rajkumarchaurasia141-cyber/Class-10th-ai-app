@@ -19,11 +19,25 @@ import { ProfileView } from './components/ProfileView';
 import { MyCoursesView } from './components/MyCoursesView';
 import { LiveClassesView } from './components/LiveClassesView';
 import { TopperLeaderboardView } from './components/TopperLeaderboardView';
+import { DownloadPage } from './components/DownloadPage';
+import { InstallAppBanner } from './components/InstallAppBanner';
 
 function MainApp() {
   const { user, isAdmin, isVIP, vipDetails } = useAuth();
   const [activeTab, setActiveTab] = useState('home');
   const [selectedSubject, setSelectedSubject] = useState<string | null>(null);
+
+  const isDownloadQuery = window.location.search.includes('download=apk') || window.location.pathname.includes('/download');
+  const [forceDownloadMode, setForceDownloadMode] = useState(isDownloadQuery);
+
+  if (forceDownloadMode) {
+    return (
+      <DownloadPage onBackToApp={() => {
+        window.history.replaceState({}, '', window.location.origin);
+        setForceDownloadMode(false);
+      }} />
+    );
+  }
 
   // Modals
   const [showVipModal, setShowVipModal] = useState(false);
@@ -198,6 +212,7 @@ function MainApp() {
             }}
           />
         )}
+        <InstallAppBanner />
       </div>
     </div>
   );

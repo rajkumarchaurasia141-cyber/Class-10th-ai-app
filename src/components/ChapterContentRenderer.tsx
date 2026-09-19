@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   BookOpen, 
   Award, 
@@ -12,8 +12,11 @@ import {
   Bookmark,
   Share2,
   Copy,
-  ChevronRight
+  ChevronRight,
+  Volume2,
+  VolumeX
 } from 'lucide-react';
+import { speakHindiText, stopHindiSpeech } from '../utils/speechHelper';
 
 interface ChapterContentRendererProps {
   activeTab: 'intro' | 'notes' | 'tips' | 'qna' | 'mcq';
@@ -28,6 +31,48 @@ export const ChapterContentRenderer: React.FC<ChapterContentRendererProps> = ({
 }) => {
   const [selectedAnswers, setSelectedAnswers] = useState<Record<number, number>>({});
   const [copiedIndex, setCopiedIndex] = useState<number | null>(null);
+  const [isPlayingAudio, setIsPlayingAudio] = useState(false);
+
+  // Stop speech when switching chapters or tabs
+  useEffect(() => {
+    stopHindiSpeech();
+    setIsPlayingAudio(false);
+    return () => {
+      stopHindiSpeech();
+    };
+  }, [activeTab, currentChapter]);
+
+  const handleReadAloud = () => {
+    if (isPlayingAudio) {
+      stopHindiSpeech();
+      setIsPlayingAudio(false);
+      return;
+    }
+
+    let textToRead = '';
+    if (activeTab === 'intro') {
+      textToRead = currentChapter?.intro_hindi || currentChapter?.chapter_name_hindi || '';
+    } else if (activeTab === 'notes') {
+      textToRead = currentChapter?.notes_hindi || '';
+    } else if (activeTab === 'tips') {
+      textToRead = Array.isArray(currentChapter?.tips) ? currentChapter.tips.join('. ') : (currentChapter?.tips || '');
+    } else if (activeTab === 'qna') {
+      textToRead = Array.isArray(currentChapter?.important_qna) 
+        ? currentChapter.important_qna.map((q: any) => `प्रश्न: ${q.question}. उत्तर: ${q.answer}`).join('. ') 
+        : '';
+    }
+
+    if (!textToRead.trim()) {
+      textToRead = 'इस खंड में अभी कोई पाठ्य सामग्री उपलब्ध नहीं है।';
+    }
+
+    setIsPlayingAudio(true);
+    speakHindiText(
+      textToRead,
+      () => setIsPlayingAudio(true),
+      () => setIsPlayingAudio(false)
+    );
+  };
 
   const handleCopyQA = (text: string, idx: number) => {
     navigator.clipboard?.writeText(text);
@@ -138,6 +183,40 @@ export const ChapterContentRenderer: React.FC<ChapterContentRendererProps> = ({
 
   return (
     <div className="space-y-4">
+      {/* Audio Read-Aloud Floating Banner */}
+      <div className="bg-gradient-to-r from-red-700 via-rose-600 to-amber-600 text-white p-3.5 rounded-2xl shadow-md flex items-center justify-between">
+        <div className="flex items-center gap-2.5">
+          <div className={`w-9 h-9 rounded-xl bg-white/20 flex items-center justify-center ${isPlayingAudio ? 'animate-pulse bg-white text-red-700' : 'text-white'}`}>
+            {isPlayingAudio ? <Volume2 className="w-5 h-5" /> : <Volume2 className="w-5 h-5" />}
+          </div>
+          <div>
+            <h5 className="font-extrabold text-xs sm:text-sm">ऑडियो नोट्स शिक्षक (AI Voice Teacher)</h5>
+            <p className="text-[11px] text-amber-100">
+              {isPlayingAudio ? 'ऑडियो बज रहा है... ध्यान से सुनें' : 'बटन दबाकर इस पाठ को बोलकर सुनें'}
+            </p>
+          </div>
+        </div>
+
+        <button
+          onClick={handleReadAloud}
+          className={`px-4 py-2 rounded-xl text-xs font-black shadow transition-all cursor-pointer flex items-center gap-1.5 ${
+            isPlayingAudio 
+              ? 'bg-white text-red-700 hover:bg-amber-50 animate-bounce' 
+              : 'bg-amber-500 hover:bg-amber-400 text-stone-950'
+          }`}
+        >
+          {isPlayingAudio ? (
+            <>
+              <VolumeX className="w-4 h-4" /> बंद करें (Stop)
+            </>
+          ) : (
+            <>
+              <Volume2 className="w-4 h-4" /> ऑडियो सुनें (Play Aloud)
+            </>
+          )}
+        </button>
+      </div>
+
       {/* 1. पाठ परिचय (INTRO) */}
       {activeTab === 'intro' && (
         <div className="space-y-4 animate-fade-in">

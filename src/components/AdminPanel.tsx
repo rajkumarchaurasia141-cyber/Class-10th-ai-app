@@ -35,6 +35,7 @@ import { AdminSettingsManager } from './AdminSettingsManager';
 import { AdminBannersManager } from './AdminBannersManager';
 import { AdminAdminsManager } from './AdminAdminsManager';
 import { AdminApkManager } from './AdminApkManager';
+import { AdminMasterContentManager } from './AdminMasterContentManager';
 import { Radio, Calendar, Bell, Layout, Smartphone } from 'lucide-react';
 import { calculateVipExpiry } from '../utils/vipHelper';
 
@@ -48,7 +49,7 @@ const PRESET_SUBJECTS = [
 
 export function AdminPanel({ onBack }: any) {
   const { refreshData } = useData();
-  const [activeTab, setActiveTab] = useState<'requests' | 'students' | 'vip' | 'content' | 'pdf_notes' | 'live_classes' | 'routine' | 'quotes' | 'notifications' | 'settings' | 'banners' | 'admins' | 'apk' | 'sync'>('requests');
+  const [activeTab, setActiveTab] = useState<'requests' | 'students' | 'vip' | 'content' | 'pdf_notes' | 'live_classes' | 'routine' | 'quotes' | 'notifications' | 'settings' | 'banners' | 'admins' | 'apk' | 'sync' | 'master'>('requests');
   const [pendingRequestsCount, setPendingRequestsCount] = useState<number>(0);
 
   useEffect(() => {
@@ -470,7 +471,22 @@ export function AdminPanel({ onBack }: any) {
           >
             <RefreshCw className="w-4 h-4" /> क्लाउड सिंक (1-क्लिक)
           </button>
+          <button 
+            onClick={() => setActiveTab('master')} 
+            className={`pb-3 px-4 font-bold text-sm flex items-center gap-2 transition-colors cursor-pointer whitespace-nowrap ${
+              activeTab === 'master' ? 'border-b-2 border-amber-500 text-amber-500' : 'text-stone-400 hover:text-stone-200'
+            }`}
+          >
+            <Database className="w-4 h-4 text-indigo-400" /> 🛠️ मास्टर डेटा & टेक्स्ट एडिटर
+          </button>
         </div>
+
+        {/* Master Content & Text Editor Tab */}
+        {activeTab === 'master' && (
+          <div className="relative z-10">
+            <AdminMasterContentManager />
+          </div>
+        )}
 
         {/* Payment Requests (Screenshots) Tab */}
         {activeTab === 'requests' && <AdminPaymentRequests />}
