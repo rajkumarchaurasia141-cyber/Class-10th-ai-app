@@ -165,6 +165,136 @@ export const ChapterContentRenderer: React.FC<ChapterContentRendererProps> = ({
     return elements;
   };
 
+  // Helper specifically for gorgeous large font design of Chapter Intro & Author context (1-12)
+  const renderIntroContent = (rawText: string) => {
+    if (!rawText) return null;
+
+    const lines = String(rawText).split('\n');
+    const elements: React.ReactNode[] = [];
+    let currentParagraphs: string[] = [];
+
+    const flushParagraphs = (key: string) => {
+      if (currentParagraphs.length > 0) {
+        const joinedText = currentParagraphs.join('\n').trim();
+        if (joinedText) {
+          elements.push(
+            <div key={key} className="p-5 sm:p-6 rounded-3xl bg-white border-2 border-slate-200/90 shadow-xs hover:border-slate-300 transition-all leading-relaxed text-slate-800 text-[15px] sm:text-base font-normal space-y-3.5">
+              {joinedText.split('\n').map((para, pIdx) => {
+                const trimmedPara = para.trim();
+                if (!trimmedPara) return null;
+                // Check if line is a bullet
+                if (trimmedPara.startsWith('●') || trimmedPara.startsWith('•') || trimmedPara.startsWith('-')) {
+                  const cleanText = trimmedPara.replace(/^[●•\-]\s*/, '');
+                  const colonSplit = cleanText.split(/:\s*(.*)/);
+                  const label = colonSplit.length > 1 ? colonSplit[0] : '';
+                  const rest = colonSplit.length > 1 ? colonSplit[1] : cleanText;
+
+                  return (
+                    <div key={`intro-bullet-${pIdx}`} className="flex items-start gap-3 my-3 p-3.5 rounded-2xl bg-amber-50/40 border border-amber-200/60">
+                      <span className="w-2.5 h-2.5 rounded-full bg-rose-600 mt-2 shrink-0"></span>
+                      <div className="flex-1">
+                        {label ? (
+                          <span className="font-black text-stone-900 text-sm sm:text-[15px] block sm:inline sm:mr-2">
+                            {label}:
+                          </span>
+                        ) : null}
+                        <span className="text-stone-800 font-medium text-sm sm:text-[15px] leading-relaxed">
+                          {highlightKeywords(rest)}
+                        </span>
+                      </div>
+                    </div>
+                  );
+                }
+                return (
+                  <p key={`intro-p-${pIdx}`} className="mb-3 last:mb-0 leading-relaxed text-slate-800 text-[15px] sm:text-base font-normal">
+                    {highlightKeywords(trimmedPara)}
+                  </p>
+                );
+              })}
+            </div>
+          );
+        }
+        currentParagraphs = [];
+      }
+    };
+
+    lines.forEach((line, idx) => {
+      const trimmed = line.trim();
+
+      // 1. Top Section Banners: 【 ... 】
+      if (trimmed.startsWith('【') && trimmed.endsWith('】')) {
+        flushParagraphs(`flush-before-${idx}`);
+        const title = trimmed.replace(/[【】]/g, '');
+        elements.push(
+          <div key={`intro-banner-${idx}`} className="my-4 p-4 sm:p-6 rounded-3xl bg-gradient-to-r from-red-700 via-rose-600 to-amber-600 text-white shadow-md flex items-center gap-4 border-2 border-amber-300">
+            <div className="p-3.5 rounded-2xl bg-white/20 text-white shrink-0 shadow-inner">
+              <Sparkles className="w-6 h-6 sm:w-7 sm:h-7" />
+            </div>
+            <div>
+              <span className="text-[11px] uppercase font-black tracking-widest text-amber-200 block">
+                BSEB 2027 • आधिकारिक पाठ्यक्रम परिचय
+              </span>
+              <h3 className="font-black text-base sm:text-xl text-white tracking-wide mt-0.5">
+                {title}
+              </h3>
+            </div>
+          </div>
+        );
+        return;
+      }
+
+      // 2. Major Headings: "लेखक परिचय:", "पाठ का सारांश एवं मूल संवेदना:", etc.
+      const isIntroHeading = 
+        trimmed === 'लेखक परिचय:' || 
+        trimmed === 'लेखक परिचय' ||
+        trimmed === 'पाठ का सारांश एवं मूल संवेदना:' || 
+        trimmed === 'पाठ का सारांश एवं मूल संवेदना' ||
+        trimmed === 'पाठ का ऐतिहासिक संदर्भ:' ||
+        trimmed === 'पाठ का मूल संदेश:';
+
+      if (isIntroHeading || (trimmed.endsWith(':') && trimmed.length < 40 && !trimmed.startsWith('●') && !trimmed.startsWith('-'))) {
+        flushParagraphs(`flush-before-heading-${idx}`);
+        const headingText = trimmed.replace(/:$/, '');
+        
+        let iconBg = 'bg-rose-600 text-white';
+        let borderColor = 'border-rose-600';
+        let gradientBg = 'from-rose-100/80 via-orange-50/50 to-transparent';
+
+        if (headingText.includes('लेखक') || headingText.includes('संदर्भ')) {
+          iconBg = 'bg-indigo-700 text-white';
+          borderColor = 'border-indigo-600';
+          gradientBg = 'from-indigo-100/80 via-blue-50/50 to-transparent';
+        } else if (headingText.includes('सारांश') || headingText.includes('संवेदना') || headingText.includes('संदेश')) {
+          iconBg = 'bg-amber-600 text-stone-950';
+          borderColor = 'border-amber-500';
+          gradientBg = 'from-amber-100/80 via-orange-50/50 to-transparent';
+        }
+
+        elements.push(
+          <div key={`intro-heading-${idx}`} className={`mt-6 mb-3 p-4 sm:p-5 bg-gradient-to-r ${gradientBg} border-l-6 ${borderColor} rounded-r-3xl shadow-xs flex items-center gap-4`}>
+            <div className={`p-3 rounded-2xl ${iconBg} shadow-sm shrink-0`}>
+              {headingText.includes('लेखक') ? <BookOpen className="w-6 h-6" /> : <Sparkles className="w-6 h-6" />}
+            </div>
+            <div>
+              <span className="text-[10px] uppercase font-black tracking-wider text-stone-600 block">
+                अध्याय मुख्य बिंदु (Key Section)
+              </span>
+              <h4 className="font-black text-stone-950 text-lg sm:text-xl tracking-tight mt-0.5">
+                {headingText}
+              </h4>
+            </div>
+          </div>
+        );
+        return;
+      }
+
+      currentParagraphs.push(line);
+    });
+
+    flushParagraphs('flush-final-intro');
+    return elements;
+  };
+
   // Helper to highlight terms in quotes or specific keywords
   const highlightKeywords = (str: any) => {
     const safeStr = typeof str === 'string' ? str : String(str || '');
@@ -274,7 +404,7 @@ export const ChapterContentRenderer: React.FC<ChapterContentRendererProps> = ({
           {/* Formatted Content */}
           <div className="space-y-3.5">
             {currentChapter.intro_hindi ? (
-              renderFormattedNotes(currentChapter.intro_hindi)
+              renderIntroContent(currentChapter.intro_hindi)
             ) : (
               <div className="p-6 bg-white rounded-2xl border border-slate-200 text-center text-slate-500 text-xs">
                 इस अध्याय का पाठ परिचय जल्द ही उपलब्ध होगा।
