@@ -1,7 +1,8 @@
 {
   "name": "Padhega Bihar - 10th BSEB Topper App",
-  "short_name": "BSEB 10th Topper",
+  "short_name": "BSEB Topper",
   "start_url": "/",
+  "scope": "/",
   "display": "standalone",
   "background_color": "#ffffff",
   "theme_color": "#b91c1c",
