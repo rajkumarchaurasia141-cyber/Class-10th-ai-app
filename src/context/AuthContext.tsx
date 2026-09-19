@@ -126,12 +126,12 @@ export const AuthProvider = ({ children }: any) => {
     const userData = { name: cleanName, email: cleanEmail };
 
     try {
-      // Save student in Firestore
-      await setDoc(doc(db, 'students', cleanEmail), {
+      // Save student in Firestore (non-blocking)
+      setDoc(doc(db, 'students', cleanEmail), {
         name: cleanName,
         email: cleanEmail,
         lastLogin: new Date().toISOString()
-      }, { merge: true });
+      }, { merge: true }).catch(e => console.warn("Background student record save notice:", e?.message || String(e)));
     } catch (e: any) {
       console.warn("Student record save notice:", e?.message || String(e));
     }
