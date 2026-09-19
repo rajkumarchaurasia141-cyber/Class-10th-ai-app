@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { db } from '../lib/firebase';
-import { collection, doc, setDoc, deleteDoc, onSnapshot } from 'firebase/firestore';
+import { collection, doc, onSnapshot } from 'firebase/firestore';
+import { safeSetDoc, safeDeleteDoc, isQuotaError } from '../utils/firestoreSafe';
 import { BookOpen, Plus, Trash2, Edit2, CheckCircle2, Sparkles, GraduationCap } from 'lucide-react';
 import { useData } from '../context/DataContext';
 
@@ -87,7 +88,7 @@ export function AdminCoursesManager() {
         createdAt: new Date().toISOString()
       };
 
-      await setDoc(doc(db, 'admin_courses', courseId), newCourse, { merge: true });
+      await safeSetDoc(doc(db, 'admin_courses', courseId), newCourse, { merge: true });
       
       // Also save to localStorage
       const updated = editingId 
@@ -104,7 +105,11 @@ export function AdminCoursesManager() {
       setDescription('');
       setEditingId(null);
     } catch (err: any) {
-      setMsg('कोर्स सहेजने में त्रुटि: ' + err.message);
+      if (isQuotaError(err)) {
+        setMsg(`कोर्स "${name}" स्थानीय रूप से सहेज लिया गया है (आज की क्लाउड लिमिट पूरी है)।`);
+      } else {
+        setMsg('कोर्स सहेजने में त्रुटि: ' + err.message);
+      }
     }
     setLoading(false);
   };
@@ -124,13 +129,20 @@ export function AdminCoursesManager() {
   const handleDelete = async (id: string) => {
     if (!confirm('क्या आप वाकई इस कोर्स को हटाना चाहते हैं?')) return;
     try {
-      await deleteDoc(doc(db, 'admin_courses', id));
+      await safeDeleteDoc(doc(db, 'admin_courses', id));
       const updated = courses.filter(c => c.id !== id);
       setCourses(updated);
       localStorage.setItem('admin_custom_courses', JSON.stringify(updated));
       setMsg('कोर्स सफलतापूर्वक हटा दिया गया।');
     } catch (err: any) {
-      setMsg('कोर्स हटाने में त्रुटि: ' + err.message);
+      if (isQuotaError(err)) {
+        const updated = courses.filter(c => c.id !== id);
+        setCourses(updated);
+        localStorage.setItem('admin_custom_courses', JSON.stringify(updated));
+        setMsg('कोर्स स्थानीय रूप से हटा दिया गया है।');
+      } else {
+        setMsg('कोर्स हटाने में त्रुटि: ' + err.message);
+      }
     }
   };
 

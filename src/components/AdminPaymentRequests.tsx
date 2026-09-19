@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { db } from '../lib/firebase';
-import { collection, onSnapshot, doc, setDoc, deleteDoc } from 'firebase/firestore';
+import { collection, onSnapshot, doc } from 'firebase/firestore';
+import { safeSetDoc, safeDeleteDoc, isQuotaError } from '../utils/firestoreSafe';
 import { 
   Receipt, 
   CheckCircle2, 
@@ -94,7 +95,7 @@ export function AdminPaymentRequests() {
       const expiry = calculateVipExpiry(planKey);
 
       // 1. Grant VIP in vip_users collection with expiry
-      await setDoc(doc(db, 'vip_users', cleanEmail), {
+      await safeSetDoc(doc(db, 'vip_users', cleanEmail), {
         isVip: true,
         plan: planKey,
         planDuration: expiry.planDurationText,
@@ -107,7 +108,7 @@ export function AdminPaymentRequests() {
       }, { merge: true });
 
       // 2. Mark request as approved in payment_requests
-      await setDoc(doc(db, 'payment_requests', req.id), {
+      await safeSetDoc(doc(db, 'payment_requests', req.id), {
         status: 'approved',
         approvedAt: new Date().toISOString(),
         expiresAt: expiry.expiresAt
@@ -124,8 +125,12 @@ export function AdminPaymentRequests() {
         setSelectedImage(prev => prev ? { ...prev, status: 'approved' } : null);
       }
     } catch (err: any) {
-      console.warn('Approve failed notice:', err?.message || String(err));
-      alert('स्वीकृति में त्रुटि: ' + (err?.message || 'पुनः प्रयास करें'));
+      if (isQuotaError(err)) {
+        setActionMsg('सूचना: आज की Firestore दैनिक लिमिट पूरी हो चुकी है।');
+      } else {
+        console.warn('Approve failed notice:', err?.message || String(err));
+        alert('स्वीकृति में त्रुटि: ' + (err?.message || 'पुनः प्रयास करें'));
+      }
     } finally {
       setProcessingId(null);
     }
@@ -136,14 +141,18 @@ export function AdminPaymentRequests() {
     if (!confirm(`क्या आप ${req.studentName} के इस पेमेंट रिक्वेस्ट को अस्वीकृत करना चाहते हैं?`)) return;
     setProcessingId(req.id);
     try {
-      await setDoc(doc(db, 'payment_requests', req.id), {
+      await safeSetDoc(doc(db, 'payment_requests', req.id), {
         status: 'rejected'
       }, { merge: true });
       if (selectedImage?.id === req.id) {
         setSelectedImage(prev => prev ? { ...prev, status: 'rejected' } : null);
       }
     } catch (err: any) {
-      alert('त्रुटि: ' + err?.message);
+      if (isQuotaError(err)) {
+        alert('सूचना: आज की Firestore दैनिक लिमिट पूरी हो चुकी है।');
+      } else {
+        alert('त्रुटि: ' + err?.message);
+      }
     } finally {
       setProcessingId(null);
     }
@@ -153,10 +162,14 @@ export function AdminPaymentRequests() {
   const handleDelete = async (id: string) => {
     if (!confirm('क्या आप इस पेमेंट रिक्वेस्ट रिकॉर्ड को हटाना चाहते हैं?')) return;
     try {
-      await deleteDoc(doc(db, 'payment_requests', id));
+      await safeDeleteDoc(doc(db, 'payment_requests', id));
       if (selectedImage?.id === id) setSelectedImage(null);
     } catch (err: any) {
-      alert('डिलीट में त्रुटि: ' + err?.message);
+      if (isQuotaError(err)) {
+        alert('सूचना: आज की Firestore दैनिक लिमिट पूरी हो चुकी है।');
+      } else {
+        alert('डिलीट में त्रुटि: ' + err?.message);
+      }
     }
   };
 

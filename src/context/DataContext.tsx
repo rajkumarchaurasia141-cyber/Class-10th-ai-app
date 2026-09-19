@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { db } from '../lib/firebase';
-import { collection, getDocs, query, orderBy, onSnapshot, doc, setDoc, deleteDoc } from 'firebase/firestore';
+import { collection, getDocs, query, orderBy, onSnapshot, doc } from 'firebase/firestore';
+import { safeSetDoc, safeDeleteDoc } from '../utils/firestoreSafe';
 import { useAuth } from './AuthContext';
 import { defaultSubjectsData } from '../data/defaultCurriculum';
 import { defaultPaidPdfNotes } from '../data/defaultPdfNotes';
@@ -456,7 +457,7 @@ export const DataProvider = ({ children }: any) => {
     } catch {}
 
     try {
-      await setDoc(doc(db, 'paid_notes', id), newNote);
+      await safeSetDoc(doc(db, 'paid_notes', id), newNote);
     } catch (e: any) {
       console.warn("Firestore note save notice:", e?.message || String(e));
     }
@@ -471,7 +472,7 @@ export const DataProvider = ({ children }: any) => {
     } catch {}
 
     try {
-      await deleteDoc(doc(db, 'paid_notes', id));
+      await safeDeleteDoc(doc(db, 'paid_notes', id));
     } catch (e: any) {
       console.warn("Firestore note delete notice:", e?.message || String(e));
     }
@@ -534,7 +535,7 @@ export const DataProvider = ({ children }: any) => {
     } catch {}
 
     try {
-      await setDoc(doc(db, 'live_classes', id), newClass);
+      await safeSetDoc(doc(db, 'live_classes', id), newClass);
     } catch (e: any) {
       console.warn("Firestore live class save notice:", e?.message || String(e));
     }
@@ -549,7 +550,7 @@ export const DataProvider = ({ children }: any) => {
     } catch {}
 
     try {
-      await deleteDoc(doc(db, 'live_classes', id));
+      await safeDeleteDoc(doc(db, 'live_classes', id));
     } catch (e: any) {
       console.warn("Firestore live class delete notice:", e?.message || String(e));
     }
@@ -617,7 +618,7 @@ export const DataProvider = ({ children }: any) => {
     });
 
     try {
-      await setDoc(doc(db, 'leaderboard', id), newEntry);
+      await safeSetDoc(doc(db, 'leaderboard', id), newEntry);
     } catch (e: any) {
       console.warn("Firestore leaderboard save notice:", e?.message || String(e));
     }
@@ -701,7 +702,7 @@ export const DataProvider = ({ children }: any) => {
       return updated;
     });
     try {
-      await setDoc(doc(db, 'routine', id), newItem);
+      await safeSetDoc(doc(db, 'routine', id), newItem);
     } catch (e: any) {
       console.warn("Firestore routine save notice:", e?.message);
     }
@@ -717,7 +718,7 @@ export const DataProvider = ({ children }: any) => {
     try {
       const target = routine.find(r => r.id === id);
       if (target) {
-        await setDoc(doc(db, 'routine', id), { ...target, ...itemData });
+        await safeSetDoc(doc(db, 'routine', id), { ...target, ...itemData });
       }
     } catch (e: any) {
       console.warn("Firestore routine update notice:", e?.message);
@@ -731,7 +732,7 @@ export const DataProvider = ({ children }: any) => {
       return updated;
     });
     try {
-      await deleteDoc(doc(db, 'routine', id));
+      await safeDeleteDoc(doc(db, 'routine', id));
     } catch (e: any) {
       console.warn("Firestore routine delete notice:", e?.message);
     }
@@ -746,7 +747,7 @@ export const DataProvider = ({ children }: any) => {
       return updated;
     });
     try {
-      await setDoc(doc(db, 'motivational_quotes', id), newQuote);
+      await safeSetDoc(doc(db, 'motivational_quotes', id), newQuote);
     } catch (e: any) {
       console.warn("Firestore quote save notice:", e?.message);
     }
@@ -760,7 +761,7 @@ export const DataProvider = ({ children }: any) => {
       return updated;
     });
     try {
-      await deleteDoc(doc(db, 'motivational_quotes', id));
+      await safeDeleteDoc(doc(db, 'motivational_quotes', id));
     } catch (e: any) {
       console.warn("Firestore quote delete notice:", e?.message);
     }
@@ -775,7 +776,7 @@ export const DataProvider = ({ children }: any) => {
     try {
       const target = motivationalQuotes.find(q => q.id === id);
       if (target) {
-        await setDoc(doc(db, 'motivational_quotes', id), { ...target, isActive });
+        await safeSetDoc(doc(db, 'motivational_quotes', id), { ...target, isActive });
       }
     } catch (e: any) {
       console.warn("Firestore quote toggle notice:", e?.message);
@@ -825,7 +826,7 @@ export const DataProvider = ({ children }: any) => {
       return updated;
     });
     try {
-      await setDoc(doc(db, 'notifications', id), newItem);
+      await safeSetDoc(doc(db, 'notifications', id), newItem);
     } catch (e: any) {
       console.warn("Firestore notification save notice:", e?.message);
     }
@@ -839,7 +840,7 @@ export const DataProvider = ({ children }: any) => {
       return updated;
     });
     try {
-      await deleteDoc(doc(db, 'notifications', id));
+      await safeDeleteDoc(doc(db, 'notifications', id));
     } catch (e: any) {
       console.warn("Firestore notification delete notice:", e?.message);
     }
@@ -878,7 +879,7 @@ export const DataProvider = ({ children }: any) => {
       localStorage.setItem('bseb_app_config_cache', JSON.stringify(newConfig));
     } catch {}
     try {
-      await setDoc(doc(db, 'settings', 'app_config'), newConfig);
+      await safeSetDoc(doc(db, 'settings', 'app_config'), newConfig);
     } catch (e: any) {
       console.warn("Firestore settings update notice:", e?.message);
     }

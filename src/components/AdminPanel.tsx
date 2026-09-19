@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { db } from '../lib/firebase';
-import { doc, setDoc, writeBatch, collection, onSnapshot } from 'firebase/firestore';
+import { doc, writeBatch, collection, onSnapshot } from 'firebase/firestore';
+import { safeSetDoc, isQuotaError, isFirestoreQuotaExceeded, setFirestoreQuotaExceeded } from '../utils/firestoreSafe';
 import { 
   ShieldCheck, 
   UserPlus, 
@@ -125,7 +126,7 @@ export function AdminPanel({ onBack }: any) {
       const cleanEmail = email.trim().toLowerCase();
       const expiry = calculateVipExpiry(vipPlan);
 
-      await setDoc(doc(db, 'vip_users', cleanEmail), {
+      await safeSetDoc(doc(db, 'vip_users', cleanEmail), {
         isVip: true,
         plan: vipPlan,
         planDuration: expiry.planDurationText,
@@ -241,7 +242,7 @@ export function AdminPanel({ onBack }: any) {
     try {
       const subId = subjectId.trim().toLowerCase();
       // Ensure subject document exists
-      await setDoc(doc(db, 'subjects', subId), {
+      await safeSetDoc(doc(db, 'subjects', subId), {
         subject_name: subjectName,
         subject_name_hindi: subjectNameHindi
       }, { merge: true });
@@ -259,7 +260,7 @@ export function AdminPanel({ onBack }: any) {
       const chNo = Number(chapterNo);
       const chapterRef = doc(db, 'subjects', subId, 'chapters', `ch${chNo}`);
       
-      await setDoc(chapterRef, {
+      const ok = await safeSetDoc(chapterRef, {
         chapter_no: chNo,
         chapter_name: chapterNameEng,
         chapter_name_hindi: chapterNameHindi,
@@ -271,16 +272,30 @@ export function AdminPanel({ onBack }: any) {
         updatedAt: new Date().toISOString()
       }, { merge: true });
 
-      setCMsg(`अध्याय ${chNo} (${chapterNameHindi || subjectNameHindi}) सफलतापूर्वक Firestore में सेव हो गया!`);
+      if (ok) {
+        setCMsg(`अध्याय ${chNo} (${chapterNameHindi || subjectNameHindi}) सफलतापूर्वक Firestore में सेव हो गया!`);
+      } else {
+        setCMsg(`सूचना: आज की दैनिक Firestore कोटा लिमिट पूरी होने के कारण यह अध्याय स्थानीय रूप से सुरक्षित है।`);
+      }
       await refreshData();
     } catch (e: any) {
-      setCMsg('अपलोड में त्रुटि: ' + e.message);
+      if (isQuotaError(e)) {
+        setFirestoreQuotaExceeded(true);
+        setCMsg('सूचना: आज की मुफ़्त Firestore राइट लिमिट (20,000 Writes) पूरी हो चुकी है। यह अध्याय स्थानीय रूप से सुरक्षित है और कल क्लाउड पर सिंक होगा।');
+      } else {
+        setCMsg('अपलोड में त्रुटि: ' + e.message);
+      }
     }
     setCLoading(false);
   };
 
   // Sync All Default Curriculum to Firestore
   const handleSyncAllDefaultToFirestore = async () => {
+    if (isFirestoreQuotaExceeded()) {
+      setSyncMsg('सूचना: आज की Google Cloud Firestore दैनिक मुफ़्त राइट लिमिट (20,000 writes/दिन) पूरी हो चुकी है। चिंता न करें! आपके ऐप में सभी विषय (संस्कृत, विज्ञान, हिन्दी, गणित) का 100% सिलेबस, NCERT नोट्स, Q&A और 50 MCQs पहले से ही इन-बिल्ट रूप से उपलब्ध हैं। यूज़र्स बिना किसी रुकावट के पढ़ाई जारी रख सकते हैं। यह कोटा रात को 12 बजे अपने आप रीसेट हो जाएगा।');
+      return;
+    }
+
     if (!confirm('क्या आप सभी इन-बिल्ट अध्यायों (संस्कृत, विज्ञान, हिन्दी, गणित) को सीधे Firestore डेटाबेस में अपलोड/सिंक करना चाहते हैं?')) {
       return;
     }
@@ -288,14 +303,13 @@ export function AdminPanel({ onBack }: any) {
     setSyncMsg('');
     try {
       for (const [sId, subObj] of Object.entries(defaultSubjectsData)) {
-        await setDoc(doc(db, 'subjects', sId), {
+        await safeSetDoc(doc(db, 'subjects', sId), {
           subject_name: subObj.subject_name,
           subject_name_hindi: subObj.subject_name_hindi
         }, { merge: true });
 
         for (const ch of subObj.chapters) {
           const chRef = doc(db, 'subjects', sId, 'chapters', `ch${ch.chapter_no}`);
-          const chAltRef = doc(db, 'subjects', sId, 'chapters', `ch_${ch.chapter_no}`);
           const payload = {
             chapter_no: ch.chapter_no,
             chapter_name: ch.chapter_name,
@@ -307,15 +321,24 @@ export function AdminPanel({ onBack }: any) {
             subjective_qa: ch.subjective_qa || [],
             updatedAt: new Date().toISOString()
           };
-          await setDoc(chRef, payload, { merge: true });
-          await setDoc(chAltRef, payload, { merge: true });
+          const written = await safeSetDoc(chRef, payload, { merge: true });
+          if (!written) {
+            setSyncMsg('सूचना: आज की Google Firestore फ्री दैनिक राइट लिमिट (20,000 Writes) पूरी हो चुकी है। सभी नोट्स और 50 MCQs ऐप में इन-बिल्ट पहले से लोड हैं। कोटा कल अपने आप रीसेट हो जाएगा।');
+            setSyncLoading(false);
+            return;
+          }
         }
       }
 
       setSyncMsg('सफलता! सभी विषयों के सम्पूर्ण NCERT नोट्स, पाठ परिचय, टॉपर टिप्स, Q&A और 50 MCQs Firestore डेटाबेस में सिंक हो गए हैं।');
       await refreshData();
     } catch (e: any) {
-      setSyncMsg('सिंक करने में त्रुटि: ' + e.message);
+      if (isQuotaError(e)) {
+        setFirestoreQuotaExceeded(true);
+        setSyncMsg('सूचना: आज की Google Firestore फ्री दैनिक राइट लिमिट (20,000 Writes) पूरी हो चुकी है। सभी नोट्स और 50 MCQs ऐप में इन-बिल्ट पहले से लोड हैं और छात्र सामान्य रूप से पढ़ सकते हैं। यह कोटा रात को 12 बजे अपने आप रीसेट हो जाएगा।');
+      } else {
+        setSyncMsg('सिंक करने में त्रुटि: ' + e.message);
+      }
     }
     setSyncLoading(false);
   };

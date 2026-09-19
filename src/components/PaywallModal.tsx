@@ -21,7 +21,8 @@ import {
 import { useAuth } from '../context/AuthContext';
 import { useData } from '../context/DataContext';
 import { db } from '../lib/firebase';
-import { doc, setDoc } from 'firebase/firestore';
+import { doc } from 'firebase/firestore';
+import { safeSetDoc, isQuotaError } from '../utils/firestoreSafe';
 
 export function PaywallModal({ onClose }: { onClose: () => void }) {
   const { user, isVIP, vipDetails } = useAuth();
@@ -160,7 +161,7 @@ export function PaywallModal({ onClose }: { onClose: () => void }) {
       const timestamp = Date.now();
       const requestId = `${cleanEmail.replace(/[^a-zA-Z0-9]/g, '_')}_${timestamp}`;
 
-      await setDoc(doc(db, 'payment_requests', requestId), {
+      const saved = await safeSetDoc(doc(db, 'payment_requests', requestId), {
         id: requestId,
         studentName: user?.name?.trim() || 'अज्ञात छात्र',
         studentEmail: cleanEmail,
@@ -174,10 +175,18 @@ export function PaywallModal({ onClose }: { onClose: () => void }) {
         submittedAt: new Date().toISOString()
       });
 
-      setUploadSuccess(true);
+      if (!saved) {
+        setUploadError('क्लाउड सर्वर आज व्यस्त है। कृपया स्क्रीनशॉट नीचे दिए गए WhatsApp नंबर पर सीधे भेजें, आपका VIP तुरंत चालू हो जाएगा।');
+      } else {
+        setUploadSuccess(true);
+      }
     } catch (err: any) {
-      console.warn('Payment screenshot upload notice:', err?.message || String(err));
-      setUploadError('स्क्रीनशॉट अपलोड करने में समस्या आई: ' + (err?.message || 'पुनः प्रयास करें'));
+      if (isQuotaError(err)) {
+        setUploadError('क्लाउड सर्वर आज व्यस्त है। कृपया स्क्रीनशॉट नीचे दिए गए WhatsApp पर भेजें, आपका VIP तुरंत चालू कर दिया जाएगा।');
+      } else {
+        console.warn('Payment screenshot upload notice:', err?.message || String(err));
+        setUploadError('स्क्रीनशॉट अपलोड करने में समस्या आई: ' + (err?.message || 'पुनः प्रयास करें'));
+      }
     } finally {
       setUploading(false);
     }

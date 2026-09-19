@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { db } from '../lib/firebase';
-import { collection, onSnapshot, doc, setDoc, deleteDoc } from 'firebase/firestore';
+import { collection, onSnapshot, doc } from 'firebase/firestore';
+import { safeSetDoc, safeDeleteDoc, isQuotaError } from '../utils/firestoreSafe';
 import { 
   Users, 
   Search, 
@@ -106,7 +107,7 @@ export function AdminStudentsList() {
       const existingVip = vips[cleanEmail];
       const expiry = calculateVipExpiry(plan, existingVip?.expiresAt);
 
-      await setDoc(doc(db, 'vip_users', cleanEmail), {
+      const ok = await safeSetDoc(doc(db, 'vip_users', cleanEmail), {
         isVip: true,
         plan,
         planDuration: expiry.planDurationText,
@@ -124,10 +125,18 @@ export function AdminStudentsList() {
         year: 'numeric'
       });
 
-      setActionMsg(`छात्र ${student.name} (${cleanEmail}) का ${expiry.planDurationText} VIP प्लान सक्रिय हो गया (वैधता: ${expiryDateFormatted} तक)।`);
+      if (ok) {
+        setActionMsg(`छात्र ${student.name} (${cleanEmail}) का ${expiry.planDurationText} VIP प्लान सक्रिय हो गया (वैधता: ${expiryDateFormatted} तक)।`);
+      } else {
+        setActionMsg(`सूचना: आज की दैनिक राइट लिमिट पूरी होने के कारण यह बदलाव कल क्लाउड पर सिंक होगा।`);
+      }
       setSelectedStudentForVip(null);
     } catch (err: any) {
-      alert('त्रुटि: ' + err?.message);
+      if (isQuotaError(err)) {
+        setActionMsg('सूचना: आज की Firestore दैनिक राइट लिमिट पूरी हो चुकी है।');
+      } else {
+        alert('त्रुटि: ' + err?.message);
+      }
     } finally {
       setProcessingEmail(null);
     }
@@ -142,10 +151,14 @@ export function AdminStudentsList() {
 
     setProcessingEmail(cleanEmail);
     try {
-      await deleteDoc(doc(db, 'vip_users', cleanEmail));
+      await safeDeleteDoc(doc(db, 'vip_users', cleanEmail));
       setActionMsg(`छात्र ${student.name} का VIP एक्सेस हटा दिया गया।`);
     } catch (err: any) {
-      alert('त्रुटि: ' + err?.message);
+      if (isQuotaError(err)) {
+        setActionMsg('सूचना: आज की Firestore दैनिक लिमिट पूरी हो चुकी है।');
+      } else {
+        alert('त्रुटि: ' + err?.message);
+      }
     } finally {
       setProcessingEmail(null);
     }

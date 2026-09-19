@@ -1,5 +1,6 @@
 import { db } from '../lib/firebase';
-import { doc, setDoc } from 'firebase/firestore';
+import { doc } from 'firebase/firestore';
+import { safeSetDoc } from './firestoreSafe';
 import { defaultSubjectsData } from '../data/defaultCurriculum';
 
 /**
@@ -10,7 +11,7 @@ export async function syncInitialCurriculumToFirestore() {
   try {
     for (const [subKey, subject] of Object.entries(defaultSubjectsData)) {
       const subRef = doc(db, 'subjects', subKey);
-      await setDoc(subRef, {
+      await safeSetDoc(subRef, {
         id: subject.id,
         subject_name: subject.subject_name,
         subject_name_hindi: subject.subject_name_hindi,
@@ -20,18 +21,12 @@ export async function syncInitialCurriculumToFirestore() {
       if (subject.chapters && Array.isArray(subject.chapters)) {
         for (const chapter of subject.chapters) {
           const chNo = chapter.chapter_no || 1;
-          const chRef = doc(db, 'subjects', subKey, 'chapters', `ch_${chNo}`);
-          await setDoc(chRef, {
+          const chRef = doc(db, 'subjects', subKey, 'chapters', `ch${chNo}`);
+          const written = await safeSetDoc(chRef, {
             ...chapter,
             updated_at: new Date().toISOString()
           }, { merge: true });
-
-          // Also support alt 'chX' format
-          const chAltRef = doc(db, 'subjects', subKey, 'chapters', `ch${chNo}`);
-          await setDoc(chAltRef, {
-            ...chapter,
-            updated_at: new Date().toISOString()
-          }, { merge: true });
+          if (!written) return;
         }
       }
     }
