@@ -41,7 +41,26 @@ export function LoginScreen() {
     }
   };
 
-  const isAdminEmail = email.trim().toLowerCase() === 'rajkumarchaurasia141@gmail.com';
+  const getAdminEmails = (): string[] => {
+    try {
+      const stored = localStorage.getItem('bseb_admin_emails');
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        if (Array.isArray(parsed)) return parsed.map(e => e.trim().toLowerCase());
+      }
+      const config = localStorage.getItem('bseb_app_config_cache');
+      if (config) {
+        const parsedConfig = JSON.parse(config);
+        if (Array.isArray(parsedConfig?.adminEmails)) {
+          return parsedConfig.adminEmails.map((e: string) => e.trim().toLowerCase());
+        }
+      }
+    } catch (e) {}
+    return ['rajkumarchaurasia141@gmail.com'];
+  };
+
+  const cleanInputEmail = email.trim().toLowerCase();
+  const isAdminEmail = cleanInputEmail === 'rajkumarchaurasia141@gmail.com' || getAdminEmails().includes(cleanInputEmail);
 
   return (
     <div className="min-h-screen w-full bg-gradient-to-b from-slate-900 via-slate-950 to-slate-900 flex flex-col items-center justify-center p-3.5 sm:p-6 selection:bg-red-500/30 overflow-x-hidden">
@@ -81,7 +100,7 @@ export function LoginScreen() {
           <div className="mb-5">
             <div className="flex items-center justify-between">
               <h2 className="text-lg sm:text-xl font-black text-stone-900">
-                विद्यार्थी प्रवेश (Student Login)
+                पोर्टल में प्रवेश (Portal Login)
               </h2>
               <span className="text-[10px] font-extrabold text-red-700 bg-red-50 border border-red-200 px-2.5 py-0.5 rounded-full flex items-center gap-1">
                 <Sparkles className="w-3 h-3 text-amber-500" />
@@ -89,7 +108,7 @@ export function LoginScreen() {
               </span>
             </div>
             <p className="text-xs text-stone-500 mt-1">
-              अध्ययन शुरू करने के लिए अपना नाम व ईमेल दर्ज करें — बिना किसी जटिल पासवर्ड के।
+              आगे बढ़ने के लिए अपना नाम व जीमेल दर्ज करें — बिना किसी जटिल पासवर्ड के।
             </p>
           </div>
 
@@ -111,7 +130,7 @@ export function LoginScreen() {
               <div className="relative">
                 <input
                   type="text"
-                  placeholder="उदा. राहुल कुमार"
+                  placeholder="उदा. राहुल कुमार / आपका नाम"
                   value={name}
                   onChange={e => { setName(e.target.value); setError(null); }}
                   className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-4 py-3 text-stone-900 placeholder-stone-400 focus:outline-none focus:border-red-600 focus:bg-white transition-all text-sm font-medium shadow-inner"
@@ -136,14 +155,14 @@ export function LoginScreen() {
                 />
               </div>
               <p className="text-[10px] text-stone-400 mt-1 pl-1">
-                * इसी जीमेल से आपका VIP कोर्स और नोट्स सुरक्षित रहेंगे।
+                * इसी जीमेल से आपकी प्रोफ़ाइल व कोर्स सामग्री सुरक्षित रहेगी।
               </p>
             </div>
 
             {isAdminEmail && (
-              <div className="p-3 bg-amber-50 border border-amber-300 rounded-2xl flex items-center gap-2 text-xs text-amber-900 font-bold animate-fade-in">
+              <div className="p-3 bg-amber-50 border border-amber-300 rounded-2xl flex items-center gap-2 text-xs text-amber-900 font-bold animate-fade-in shadow-xs">
                 <ShieldCheck className="w-4 h-4 text-amber-600 shrink-0" />
-                <span>पहचाना गया: आप <strong>सुपर एडमिन</strong> के रूप में लॉगिन कर रहे हैं।</span>
+                <span>पहचाना गया: <strong>एडमिन जीमेल</strong> — आपको सीधे सभी एडमिन अधिकार व कंट्रोल प्राप्त होंगे।</span>
               </div>
             )}
 
@@ -159,7 +178,7 @@ export function LoginScreen() {
                 </div>
               ) : (
                 <>
-                  <span>पढ़ाई शुरू करें (Start Learning)</span>
+                  <span>{isAdminEmail ? 'एडमिन पोर्टल में प्रवेश करें (Enter Portal)' : 'पोर्टल में प्रवेश करें (Enter Portal)'}</span>
                   <ArrowRight className="w-4 h-4" />
                 </>
               )}
@@ -216,7 +235,7 @@ export function LoginScreen() {
 
         {/* Footer info */}
         <p className="text-[11px] text-stone-400 text-center font-medium">
-          बिहार विद्यालय परीक्षा समिति (BSEB 2027) के विद्यार्थियों द्वारा 100% विश्वसनीय
+          बिहार विद्यालय परीक्षा समिति (BSEB 2027) का 100% विश्वसनीय डिजिटल पोर्टल
         </p>
 
       </div>

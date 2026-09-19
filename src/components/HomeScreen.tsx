@@ -11,7 +11,8 @@ import {
   GraduationCap, 
   Award,
   ArrowRight,
-  BookOpen
+  BookOpen,
+  ShieldCheck
 } from 'lucide-react';
 import { HeroCarouselBanner } from './HeroCarouselBanner';
 import { FeatureGrid } from './FeatureGrid';
@@ -33,7 +34,7 @@ interface HomeScreenProps {
 
 export function HomeScreen({ onSelect, onOpenSubject, onNavigateTab, onOpenVip }: HomeScreenProps) {
   const { subjects, motivationalQuotes } = useData();
-  const { isVIP, vipDetails } = useAuth();
+  const { isVIP, vipDetails, isAdmin, user } = useAuth();
   const handleSelectSubject = onSelect || onOpenSubject || (() => {});
 
   // Modals state
@@ -96,6 +97,33 @@ export function HomeScreen({ onSelect, onOpenSubject, onNavigateTab, onOpenVip }
 
   return (
     <div className="p-3 sm:p-4 w-full max-w-2xl mx-auto space-y-4 pb-20">
+      {/* Admin Quick Access Banner (Automatically shown when logged in with Admin Gmail) */}
+      {isAdmin && (
+        <div className="bg-gradient-to-r from-stone-900 via-stone-850 to-stone-900 border border-amber-500/40 rounded-2xl p-3.5 text-white flex items-center justify-between shadow-md">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-amber-500 text-stone-950 flex items-center justify-center font-bold shadow-xs shrink-0">
+              <ShieldCheck className="w-5 h-5" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-black text-amber-400 uppercase tracking-wider">एडमिन मोड सक्रिय</span>
+                <span className="text-[10px] bg-amber-500/20 text-amber-300 px-2 py-0.5 rounded-full font-bold">सुपर एडमिन</span>
+              </div>
+              <p className="text-xs text-stone-300 mt-0.5 font-medium">
+                नमस्ते {user?.name || 'एडमिन'}! आप सीधे एडमिन कंट्रोल में जा सकते हैं।
+              </p>
+            </div>
+          </div>
+          <button
+            onClick={() => onNavigateTab && onNavigateTab('admin')}
+            className="px-3.5 py-2 bg-gradient-to-r from-amber-500 to-amber-400 hover:from-amber-400 hover:to-amber-300 text-stone-950 font-black text-xs rounded-xl transition-all flex items-center gap-1.5 shrink-0 cursor-pointer shadow-sm active:scale-95 ml-2"
+          >
+            <span>एडमिन पैनल</span>
+            <ArrowRight className="w-3.5 h-3.5" />
+          </button>
+        </div>
+      )}
+
       {/* 0. Motivational Quote Banner (Dynamic from Admin Panel) */}
       {motivationalQuotes.filter(q => q.isActive).length > 0 && (
         <div className="bg-gradient-to-r from-amber-500/15 via-amber-400/10 to-amber-500/15 border border-amber-300/80 rounded-2xl p-3 flex items-center gap-3 shadow-xs">
