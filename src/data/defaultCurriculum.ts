@@ -12,6 +12,29 @@ import { hindiChapter10Data } from './hindiChapter10Data';
 import { hindiChapter11Data } from './hindiChapter11Data';
 import { hindiChapter12Data } from './hindiChapter12Data';
 import { sanskritChapter1Data } from './sanskritChapter1Data';
+import { 
+  hindiPadhyaChapter1, 
+  hindiPadhyaChapter2, 
+  hindiPadhyaChapter3, 
+  hindiPadhyaChapter4, 
+  hindiPadhyaChapter5, 
+  hindiPadhyaChapter6 
+} from './hindiPadhyaChapters1to6';
+import { 
+  hindiPadhyaChapter7, 
+  hindiPadhyaChapter8, 
+  hindiPadhyaChapter9, 
+  hindiPadhyaChapter10, 
+  hindiPadhyaChapter11, 
+  hindiPadhyaChapter12 
+} from './hindiPadhyaChapters7to12';
+import {
+  hindiVarnikaChapter25,
+  hindiVarnikaChapter26,
+  hindiVarnikaChapter27,
+  hindiVarnikaChapter28,
+  hindiVarnikaChapter29
+} from './hindiVarnikaChapters1to5';
 
 export const defaultSubjectsData: Record<string, Subject> = {
   sanskrit: {
@@ -295,9 +318,17 @@ export const defaultSubjectsData: Record<string, Subject> = {
   },
   hindi: {
     id: 'hindi',
-    subject_name: 'Hindi',
-    subject_name_hindi: 'हिन्दी (गोधूलि भाग-2)',
-    chapters: [hindiChapter1Data, hindiChapter2Data, hindiChapter3Data, hindiChapter4Data, hindiChapter5Data, hindiChapter6Data, hindiChapter7Data, hindiChapter8Data, hindiChapter9Data, hindiChapter10Data, hindiChapter11Data, hindiChapter12Data]
+    subject_name: 'Hindi (Complete 29 Chapters)',
+    subject_name_hindi: 'हिन्दी (गोधूलि एवं वर्णिका - संपूर्ण 29 अध्याय)',
+    chapters: [
+      hindiChapter1Data, hindiChapter2Data, hindiChapter3Data, hindiChapter4Data, 
+      hindiChapter5Data, hindiChapter6Data, hindiChapter7Data, hindiChapter8Data, 
+      hindiChapter9Data, hindiChapter10Data, hindiChapter11Data, hindiChapter12Data,
+      hindiPadhyaChapter1, hindiPadhyaChapter2, hindiPadhyaChapter3, hindiPadhyaChapter4, 
+      hindiPadhyaChapter5, hindiPadhyaChapter6, hindiPadhyaChapter7, hindiPadhyaChapter8, 
+      hindiPadhyaChapter9, hindiPadhyaChapter10, hindiPadhyaChapter11, hindiPadhyaChapter12,
+      hindiVarnikaChapter25, hindiVarnikaChapter26, hindiVarnikaChapter27, hindiVarnikaChapter28, hindiVarnikaChapter29
+    ]
   },
   math: {
     id: 'math',

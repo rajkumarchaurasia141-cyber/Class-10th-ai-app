@@ -5,7 +5,6 @@ import { useAuth } from './AuthContext';
 import { defaultSubjectsData } from '../data/defaultCurriculum';
 import { defaultPaidPdfNotes } from '../data/defaultPdfNotes';
 import { Subject, PaidPdfNote, LiveClass, LeaderboardEntry, RoutineItem, MotivationalQuote, NotificationItem, AppConfig, BannerItem } from '../types';
-import { syncInitialCurriculumToFirestore } from '../utils/firestoreCurriculumSync';
 
 export const defaultBanners: BannerItem[] = [
   {
@@ -887,8 +886,6 @@ export const DataProvider = ({ children }: any) => {
 
   useEffect(() => {
     fetchData();
-    // Silently sync Sanskrit & Hindi Chapter 1 to Firestore if connected
-    syncInitialCurriculumToFirestore().catch(() => {});
   }, [user]);
 
   return (
