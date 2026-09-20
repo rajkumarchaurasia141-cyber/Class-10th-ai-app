@@ -21,21 +21,6 @@ let quotaExceededState = (() => {
 })();
 
 export function isFirestoreQuotaExceeded(): boolean {
-  if (quotaExceededState) return true;
-  try {
-    const saved = localStorage.getItem(QUOTA_STORAGE_KEY);
-    if (saved) {
-      const parsed = JSON.parse(saved);
-      const elapsed = Date.now() - (parsed.exceededAt || 0);
-      if (elapsed < 24 * 60 * 60 * 1000) {
-        quotaExceededState = true;
-        return true;
-      } else {
-        localStorage.removeItem(QUOTA_STORAGE_KEY);
-        quotaExceededState = false;
-      }
-    }
-  } catch {}
   return false;
 }
 

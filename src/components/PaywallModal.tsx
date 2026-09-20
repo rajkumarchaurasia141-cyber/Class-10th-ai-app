@@ -44,6 +44,7 @@ export function PaywallModal({ onClose }: { onClose: () => void }) {
   const [uploadSuccess, setUploadSuccess] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [firestoreFailed, setFirestoreFailed] = useState(false);
+  const [uploadFailCount, setUploadFailCount] = useState<number>(0);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const UPI_ID = appConfig.upiId;
@@ -142,8 +143,8 @@ export function PaywallModal({ onClose }: { onClose: () => void }) {
         const ctx = canvas.getContext('2d');
         if (ctx) {
           ctx.drawImage(img, 0, 0, width, height);
-          // Compress to JPEG 0.65 for clear receipt and fast upload (~40-60KB)
-          const dataUrl = canvas.toDataURL('image/jpeg', 0.65);
+          // Compress to JPEG 0.5 for high-speed upload as requested
+          const dataUrl = canvas.toDataURL('image/jpeg', 0.5);
           setScreenshotData(dataUrl);
         } else {
           setScreenshotData(event.target?.result as string);
@@ -180,53 +181,40 @@ export function PaywallModal({ onClose }: { onClose: () => void }) {
 
     setUploading(true);
     setUploadError(null);
-    setFirestoreFailed(false);
 
     const timestamp = Date.now();
-    const requestId = `${cleanEmail.replace(/[^a-zA-Z0-9]/g, '_')}_${timestamp}`;
-    const userId = fbUser?.uid || cleanEmail.replace(/[^a-zA-Z0-9]/g, '_');
+    const uid = fbUser?.uid || `simulated_${cleanEmail.replace(/[^a-zA-Z0-9]/g, '_')}`;
+    const requestId = `req_${uid}_${timestamp}`;
 
     try {
-      // 1. Upload screenshot to Firebase Storage with a 4-second timeout race to prevent infinite spinning
-      const storagePath = `payments/${userId}/screenshot_${timestamp}.jpg`;
+      // 1. Upload screenshot to Firebase Storage (STEP 2 - b)
+      const storagePath = `payments/${uid}_${timestamp}.jpg`;
       const storageRef = ref(storage, storagePath);
       
-      let downloadURL = '';
       console.log('Uploading screenshot to storage path:', storagePath);
       
+      let downloadURL = '';
       try {
-        const uploadPromise = async () => {
-          await uploadString(storageRef, screenshotData, 'data_url');
-          return await getDownloadURL(storageRef);
-        };
-        
-        const timeoutPromise = new Promise<null>((resolve) => {
-          setTimeout(() => resolve(null), 4000);
-        });
-        
-        const uploadedUrl = await Promise.race([uploadPromise(), timeoutPromise]);
-        if (uploadedUrl) {
-          downloadURL = uploadedUrl;
-          console.log('Screenshot upload successful! Download URL:', downloadURL);
-        } else {
-          console.warn('Firebase Storage upload timed out. Falling back to secure direct Firestore storage.');
-          downloadURL = screenshotData; // Use compressed base64 directly as fallback
-        }
-      } catch (storageErr) {
-        console.warn('Firebase Storage upload failed. Falling back to direct Firestore storage:', storageErr);
-        downloadURL = screenshotData; // Use compressed base64 directly as fallback
+        await uploadString(storageRef, screenshotData, 'data_url');
+        downloadURL = await getDownloadURL(storageRef);
+        console.log('Screenshot upload successful! Download URL:', downloadURL);
+      } catch (storageErr: any) {
+        console.error(storageErr);
+        throw new Error('स्टोरेज अपलोड विफल: ' + (storageErr.message || String(storageErr)));
       }
 
-      // 2. Prepare payload with required schema
+      // 2. Prepare payload with required schema (STEP 2 - d)
       const paymentPayload = {
-        userId,
-        userName: finalStudentName,
+        userId: uid,
         userEmail: cleanEmail,
+        userName: finalStudentName,
         screenshotUrl: downloadURL,
-        courseId: 'bseb_10th_vip',
+        upi: '9708868515@ybl',
         status: 'pending' as const,
         createdAt: serverTimestamp(),
-        // backwards-compatible properties for UI and local storage fallbacks
+        
+        // backwards-compatible properties for older systems
+        courseId: 'bseb_10th_vip',
         id: requestId,
         studentName: finalStudentName,
         studentEmail: cleanEmail,
@@ -234,7 +222,7 @@ export function PaywallModal({ onClose }: { onClose: () => void }) {
         planTitle,
         planAmount,
         planPrice: selectedPlan === '1month' ? 99 : 600,
-        screenshotDataUrl: downloadURL, // replace local base64 with remote URL or local fallback
+        screenshotDataUrl: downloadURL,
         utr: utrNumber.trim(),
         submittedAt: new Date().toISOString()
       };
@@ -248,20 +236,26 @@ export function PaywallModal({ onClose }: { onClose: () => void }) {
         console.warn('Local payment storage note:', e);
       }
 
-      // 4. Save to firestore collections 'payments' and 'payment_requests'
-      const dbSuccessPayments = await safeSetDoc(doc(db, 'payments', requestId), paymentPayload, undefined, 5000);
-      const dbSuccessRequests = await safeSetDoc(doc(db, 'payment_requests', requestId), paymentPayload, undefined, 5000);
+      // 4. Save to firestore collection 'payment_requests' (and backwards compatible 'payments')
+      const reqRef = doc(db, 'payment_requests', requestId);
+      await setDoc(reqRef, paymentPayload);
 
-      if (!dbSuccessPayments && !dbSuccessRequests) {
-        setFirestoreFailed(true);
-      }
+      try {
+        const payRef = doc(db, 'payments', requestId);
+        await setDoc(payRef, paymentPayload);
+      } catch {}
+
+      // Success
+      setUploadSuccess(true);
+      setFirestoreFailed(false);
+      setUploadFailCount(0); // Reset count on success
     } catch (err: any) {
-      console.error('Firebase screenshot upload or Firestore save failed:', err);
-      setUploadError('स्क्रीनशॉट अपलोड करने में त्रुटि हुई: ' + (err?.message || String(err)));
-      setFirestoreFailed(true);
+      console.error(err);
+      // STEP 2: Show exact error.message in UI with retry button, do not show "Server Overload" fallback
+      setUploadError(err?.message || 'कनेक्शन एरर। कृपया पुनः प्रयास करें।');
+      setUploadSuccess(false);
     } finally {
       setUploading(false);
-      setUploadSuccess(true);
     }
   };
 
@@ -719,34 +713,36 @@ export function PaywallModal({ onClose }: { onClose: () => void }) {
                   )}
                 </div>
 
-                {/* STEP 3: OPTIONAL WHATSAPP OPTION */}
-                <div className="bg-emerald-950/30 border border-emerald-500/30 rounded-2xl p-3 sm:p-3.5 space-y-2">
-                  <div className="flex items-center justify-between text-xs">
-                    <span className="font-bold text-emerald-400 flex items-center gap-1.5">
-                      <MessageCircle className="w-4 h-4 text-emerald-400" />
-                      या WhatsApp पर भी भेज सकते हैं:
-                    </span>
-                    <button
-                      type="button"
-                      onClick={() => handleCopy(WHATSAPP_DISPLAY, 'phone')}
-                      className="text-[11px] font-semibold text-emerald-400 hover:text-emerald-300 flex items-center gap-1 cursor-pointer"
-                    >
-                      {copiedPhone ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
-                      <span>{copiedPhone ? 'कॉपी हो गया' : WHATSAPP_DISPLAY}</span>
-                    </button>
-                  </div>
+                {/* STEP 3: OPTIONAL WHATSAPP OPTION (Only shown if upload fails 2 times) */}
+                {uploadFailCount >= 2 && (
+                  <div className="bg-emerald-950/30 border border-emerald-500/30 rounded-2xl p-3 sm:p-3.5 space-y-2 animate-fade-in">
+                    <div className="flex items-center justify-between text-xs">
+                      <span className="font-bold text-emerald-400 flex items-center gap-1.5">
+                        <MessageCircle className="w-4 h-4 text-emerald-400" />
+                        या WhatsApp पर भी भेज सकते हैं:
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => handleCopy(WHATSAPP_DISPLAY, 'phone')}
+                        className="text-[11px] font-semibold text-emerald-400 hover:text-emerald-300 flex items-center gap-1 cursor-pointer"
+                      >
+                        {copiedPhone ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
+                        <span>{copiedPhone ? 'कॉपी हो गया' : WHATSAPP_DISPLAY}</span>
+                      </button>
+                    </div>
 
-                  <a
-                    href={whatsappUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-2.5 px-3 rounded-xl flex items-center justify-center gap-2 text-xs transition-all shadow-md cursor-pointer text-center group"
-                  >
-                    <MessageCircle className="w-4 h-4 text-white fill-white/20" />
-                    <span>WhatsApp पर स्क्रीनशॉट भेजें</span>
-                    <ExternalLink className="w-3.5 h-3.5 opacity-70 group-hover:translate-x-0.5 transition-transform" />
-                  </a>
-                </div>
+                    <a
+                      href={whatsappUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-2.5 px-3 rounded-xl flex items-center justify-center gap-2 text-xs transition-all shadow-md cursor-pointer text-center group"
+                    >
+                      <MessageCircle className="w-4 h-4 text-white fill-white/20" />
+                      <span>WhatsApp पर स्क्रीनशॉट भेजें</span>
+                      <ExternalLink className="w-3.5 h-3.5 opacity-70 group-hover:translate-x-0.5 transition-transform" />
+                    </a>
+                  </div>
+                )}
 
                 {/* Security & Verification note */}
                 <div className="p-2.5 rounded-lg bg-stone-900 border border-stone-800 text-stone-400 text-[11px] flex items-center gap-2">

@@ -30,6 +30,13 @@ function checkAdminSecret(enteredPass: string): boolean {
 
 function MainApp() {
   const { user, isAdmin, isVIP, vipDetails } = useAuth();
+
+  // Clear any old stale firestore quota block flag on load
+  React.useEffect(() => {
+    try {
+      localStorage.removeItem('bseb_firestore_quota_exhausted');
+    } catch (e) {}
+  }, []);
   
   const isDownloadQuery = typeof window !== 'undefined' && 
     (window.location.search.includes('download=apk') || window.location.pathname.includes('/download'));

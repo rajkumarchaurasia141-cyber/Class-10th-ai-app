@@ -162,7 +162,7 @@ export function AdminPanel({ onBack }: any) {
         localStorage.setItem('bseb_vip_users', JSON.stringify(localVips));
       } catch {}
 
-      await safeSetDoc(doc(db, 'vip_users', cleanEmail), vipData, { merge: true });
+      await safeSetDoc(doc(db, 'vip_users', cleanEmail), vipData, { merge: true }, 5000, true);
 
       const expiryDateFormatted = new Date(expiry.expiresAt).toLocaleDateString('hi-IN', {
         day: 'numeric',

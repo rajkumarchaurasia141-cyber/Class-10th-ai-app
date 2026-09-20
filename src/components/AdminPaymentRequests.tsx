@@ -49,6 +49,7 @@ export function AdminPaymentRequests() {
   const [actionMsg, setActionMsg] = useState<string | null>(null);
   const [copiedEmail, setCopiedEmail] = useState<string | null>(null);
   const [processingId, setProcessingId] = useState<string | null>(null);
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
 
   useEffect(() => {
     const mergeWithLocal = (remoteItems: PaymentRequestItem[]) => {
@@ -77,16 +78,17 @@ export function AdminPaymentRequests() {
     };
 
     try {
-      // Query the 'payments' collection where status == 'pending' as requested
-      const q = query(collection(db, 'payments'), where('status', '==', 'pending'));
+      // Query the 'payment_requests' collection where status == 'pending' as requested (STEP 3)
+      const q = query(collection(db, 'payment_requests'), where('status', '==', 'pending'));
       const unsub = onSnapshot(q, (snapshot) => {
         const items: PaymentRequestItem[] = [];
         snapshot.forEach((docSnap) => {
           const data = docSnap.data();
           items.push({
             id: docSnap.id,
+            userId: data.userId || data.uid || '',
             studentName: data.userName || data.studentName || 'विद्यार्थी',
-            studentEmail: data.userEmail || data.studentEmail || '',
+            studentEmail: data.userEmail || data.studentEmail || data.email || '',
             plan: data.plan || '1year',
             planTitle: data.planTitle || '1 वर्ष बैच',
             planAmount: data.planAmount || '₹600',
@@ -118,18 +120,31 @@ export function AdminPaymentRequests() {
   };
 
   // 1-Click Approve VIP
-  const handleApprove = async (req: PaymentRequestItem) => {
+  const handleApprove = async (req: any) => {
     setProcessingId(req.id);
     setActionMsg(null);
     try {
       const cleanEmail = req.studentEmail.trim().toLowerCase();
       const planKey = req.plan === '1year' ? '1year' : '1month';
       const expiry = calculateVipExpiry(planKey);
+      const userId = req.userId || `simulated_${cleanEmail.replace(/[^a-zA-Z0-9]/g, '_')}`;
 
       let dbSuccess1 = false;
       let dbSuccess2 = false;
 
-      // 1. Grant VIP in vip_users collection with expiry
+      // 1. Grant VIP in users collection (STEP 3 - Approve: isActive = true)
+      try {
+        await safeSetDoc(doc(db, 'users', userId), {
+          isActive: true,
+          email: cleanEmail,
+          name: req.studentName || ''
+        }, { merge: true }, 5000, true);
+        dbSuccess1 = true;
+      } catch (err) {
+        console.warn('Firestore active status update failed:', err);
+      }
+
+      // Also support legacy vip_users collection
       try {
         await safeSetDoc(doc(db, 'vip_users', cleanEmail), {
           isVip: true,
@@ -141,10 +156,9 @@ export function AdminPaymentRequests() {
           expiresAt: expiry.expiresAt,
           addedAt: new Date().toISOString(),
           activatedByAdmin: true
-        }, { merge: true });
-        dbSuccess1 = true;
+        }, { merge: true }, 5000, true);
       } catch (err) {
-        console.warn('Firestore grant VIP failed:', err);
+        console.warn('Legacy VIP user grant failed:', err);
       }
 
       // 2. Mark request as approved in payments and payment_requests
@@ -154,8 +168,8 @@ export function AdminPaymentRequests() {
           approvedAt: new Date().toISOString(),
           expiresAt: expiry.expiresAt
         };
-        await safeSetDoc(doc(db, 'payments', req.id), updatePayload, { merge: true });
-        await safeSetDoc(doc(db, 'payment_requests', req.id), updatePayload, { merge: true });
+        await safeSetDoc(doc(db, 'payments', req.id), updatePayload, { merge: true }, 5000, true);
+        await safeSetDoc(doc(db, 'payment_requests', req.id), updatePayload, { merge: true }, 5000, true);
         dbSuccess2 = true;
       } catch (err) {
         console.warn('Firestore update request status failed:', err);
@@ -185,6 +199,10 @@ export function AdminPaymentRequests() {
       // Update in-memory state immediately
       setRequests(prev => prev.map(item => item.id === req.id ? { ...item, status: 'approved' as const, approvedAt: new Date().toISOString() } : item));
 
+      // Trigger "Baccha Active Ho Gaya" Toast (STEP 3)
+      setToastMessage("🎉 Baccha Active Ho Gaya!");
+      setTimeout(() => setToastMessage(null), 3000);
+
       const expiryDateFormatted = new Date(expiry.expiresAt).toLocaleDateString('hi-IN', {
         day: 'numeric',
         month: 'short',
@@ -192,16 +210,16 @@ export function AdminPaymentRequests() {
       });
 
       if (dbSuccess1 && dbSuccess2) {
-        setActionMsg(`सफलता! छात्र ${req.studentName} (${cleanEmail}) का ${expiry.planDurationText} VIP बैच अनलॉक हो गया (वैधता: ${expiryDateFormatted} तक)।`);
+        setActionMsg(`सफलता! छात्र ${req.studentName} का VIP बैच अनलॉक हो गया (वैधता: ${expiryDateFormatted} तक)।`);
       } else {
-        setActionMsg(`सूचना: छात्र ${req.studentName} (${cleanEmail}) का VIP बैच स्थानीय रूप से अनलॉक कर दिया गया है (आज की क्लाउड लिमिट पूरी है, कल ऑटो-सिंक हो जाएगा)।`);
+        setActionMsg(`सूचना: छात्र ${req.studentName} का VIP बैच स्थानीय रूप से अनलॉक कर दिया गया है।`);
       }
       if (selectedImage?.id === req.id) {
         setSelectedImage(prev => prev ? { ...prev, status: 'approved' } : null);
       }
     } catch (err: any) {
       if (isQuotaError(err)) {
-        setActionMsg('सूचना: आज की Firestore दैनिक लिमिट पूरी हो चुकी है। बदलाव स्थानीय रूप से सहेज लिया गया है।');
+        setActionMsg('सूचना: दैनिक लिमिट पूरी हो चुकी है। बदलाव स्थानीय रूप से सहेज लिया गया है।');
       } else {
         console.warn('Approve failed notice:', err?.message || String(err));
         alert('स्वीकृति में त्रुटि: ' + (err?.message || 'पुनः प्रयास करें'));
@@ -288,6 +306,14 @@ export function AdminPaymentRequests() {
 
   return (
     <div className="space-y-6 relative z-10">
+      {/* Real-time Toast Notification (STEP 3) */}
+      {toastMessage && (
+        <div className="fixed top-6 right-6 z-50 bg-emerald-500 text-stone-950 font-black px-6 py-4 rounded-2xl shadow-2xl flex items-center gap-3 animate-bounce border-2 border-white">
+          <CheckCircle2 className="w-6 h-6 text-stone-950 shrink-0" />
+          <span className="text-sm tracking-wide">{toastMessage}</span>
+        </div>
+      )}
+
       {/* Overview Statistics Cards */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         <div className="bg-stone-950 p-4 rounded-2xl border border-stone-800">

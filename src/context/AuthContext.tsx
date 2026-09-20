@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { db, auth } from '../lib/firebase';
-import { doc, onSnapshot } from 'firebase/firestore';
+import { doc, onSnapshot, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { signInAnonymously, onAuthStateChanged } from 'firebase/auth';
 import { safeSetDoc, isFirestoreQuotaExceeded } from '../utils/firestoreSafe';
 import { checkVipExpiryStatus } from '../utils/vipHelper';
@@ -46,9 +46,37 @@ export const AuthProvider = ({ children }: any) => {
 
   useEffect(() => {
     // Listen to Firebase Auth state changes
-    const unsubAuth = onAuthStateChanged(auth, (firebaseUser) => {
+    const unsubAuth = onAuthStateChanged(auth, async (firebaseUser) => {
       if (firebaseUser) {
         setFbUser(firebaseUser);
+        
+        // Auto save Google or authenticated real users to Firestore
+        if (firebaseUser.email && !firebaseUser.isAnonymous) {
+          try {
+            const userRef = doc(db, 'users', firebaseUser.uid);
+            const userSnap = await getDoc(userRef);
+            if (!userSnap.exists()) {
+              await setDoc(userRef, {
+                uid: firebaseUser.uid,
+                name: firebaseUser.displayName || firebaseUser.email.split('@')[0] || 'Unknown',
+                email: firebaseUser.email,
+                photo: firebaseUser.photoURL || '',
+                createdAt: serverTimestamp(),
+                isActive: false
+              });
+            } else {
+              // Merge updates without losing active state
+              await setDoc(userRef, {
+                uid: firebaseUser.uid,
+                name: firebaseUser.displayName || firebaseUser.email.split('@')[0] || 'Unknown',
+                email: firebaseUser.email,
+                photo: firebaseUser.photoURL || ''
+              }, { merge: true });
+            }
+          } catch (err) {
+            console.error("Error auto-saving user on auth state change:", err);
+          }
+        }
       } else {
         setFbUser(null);
         // Automatically sign in anonymously to satisfy request.auth != null rule for storage
@@ -96,45 +124,35 @@ export const AuthProvider = ({ children }: any) => {
       return;
     }
 
-    // Immediate local VIP cache check for instantaneous activation
-    try {
-      const localVips = JSON.parse(localStorage.getItem('bseb_vip_users') || '{}');
-      if (localVips[cleanEmail]?.isVip) {
-        const data = localVips[cleanEmail];
-        const expiryStatus = checkVipExpiryStatus(data.expiresAt);
-        if (!expiryStatus.isExpired) {
+    const uid = fbUser?.uid || `simulated_${cleanEmail.replace(/[^a-zA-Z0-9]/g, '_')}`;
+
+    // STEP 1 & STEP 3: Listen to 'users' collection at user.uid for active state
+    const userDocRef = doc(db, 'users', uid);
+    const unsubUser = onSnapshot(userDocRef, (snap) => {
+      if (snap.exists()) {
+        const data = snap.data();
+        if (data?.isActive === true) {
           setIsVIP(true);
           setVipDetails({
-            ...data,
+            isVip: true,
+            plan: '1year',
+            planDurationText: '1 वर्ष प्लान',
             isExpired: false,
-            daysRemaining: expiryStatus.daysRemaining,
-            statusText: expiryStatus.statusText,
-            formattedExpiry: expiryStatus.formattedExpiry
+            daysRemaining: 365,
+            formattedExpiry: 'सक्रिय (Real-time)'
           });
+          return;
         }
       }
-    } catch {}
 
-    try {
-      const docRef = doc(db, 'vip_users', cleanEmail);
-      const unsub = onSnapshot(docRef, (docSnap) => {
+      // Legacy fallback: also check vip_users
+      const legacyDocRef = doc(db, 'vip_users', cleanEmail);
+      getDoc(legacyDocRef).then((docSnap) => {
         if (docSnap.exists()) {
           const data = docSnap.data();
           if (data?.isVip === true) {
             const expiryStatus = checkVipExpiryStatus(data.expiresAt);
-
-            if (expiryStatus.isExpired) {
-              // Time has passed -> auto de-activate VIP
-              setIsVIP(false);
-              setVipDetails({
-                ...data,
-                isExpired: true,
-                daysRemaining: 0,
-                statusText: expiryStatus.statusText,
-                formattedExpiry: expiryStatus.formattedExpiry
-              });
-            } else {
-              // Still valid
+            if (!expiryStatus.isExpired) {
               setIsVIP(true);
               setVipDetails({
                 ...data,
@@ -143,60 +161,22 @@ export const AuthProvider = ({ children }: any) => {
                 statusText: expiryStatus.statusText,
                 formattedExpiry: expiryStatus.formattedExpiry
               });
+              return;
             }
-            return;
           }
         }
-        // If doc doesn't exist in Firestore, double check local VIP before revoking
-        try {
-          const localVips = JSON.parse(localStorage.getItem('bseb_vip_users') || '{}');
-          if (localVips[cleanEmail]?.isVip) {
-            const data = localVips[cleanEmail];
-            const expiryStatus = checkVipExpiryStatus(data.expiresAt);
-            if (!expiryStatus.isExpired) {
-              setIsVIP(true);
-              setVipDetails({
-                ...data,
-                isExpired: false,
-                daysRemaining: expiryStatus.daysRemaining,
-                statusText: expiryStatus.statusText,
-                formattedExpiry: expiryStatus.formattedExpiry
-              });
-              return;
-            }
-          }
-        } catch {}
-        // Not a VIP
         setIsVIP(false);
         setVipDetails(null);
-      }, (err) => {
-        console.warn("VIP listener notice:", err?.message || String(err));
-        try {
-          const localVips = JSON.parse(localStorage.getItem('bseb_vip_users') || '{}');
-          if (localVips[cleanEmail]?.isVip) {
-            const data = localVips[cleanEmail];
-            const expiryStatus = checkVipExpiryStatus(data.expiresAt);
-            if (!expiryStatus.isExpired) {
-              setIsVIP(true);
-              setVipDetails({
-                ...data,
-                isExpired: false,
-                daysRemaining: expiryStatus.daysRemaining,
-                statusText: expiryStatus.statusText,
-                formattedExpiry: expiryStatus.formattedExpiry
-              });
-              return;
-            }
-          }
-        } catch {}
+      }).catch(() => {
         setIsVIP(false);
         setVipDetails(null);
       });
-      return () => unsub();
-    } catch (e: any) {
-      console.warn("VIP snapshot setup notice:", e?.message || String(e));
-    }
-  }, [user?.email]);
+    }, (err) => {
+      console.warn("User status listener notice:", err);
+    });
+
+    return () => unsubUser();
+  }, [user?.email, fbUser?.uid]);
 
   const login = async (name: string, email: string) => {
     setError(null);
@@ -235,17 +215,29 @@ export const AuthProvider = ({ children }: any) => {
       localStorage.setItem('bseb_registered_students', JSON.stringify(storedStudents));
     } catch {}
 
-    // Only attempt Firestore background sync if quota is NOT exceeded
-    if (!isFirestoreQuotaExceeded()) {
-      try {
-        setTimeout(() => {
-          safeSetDoc(doc(db, 'students', cleanEmail), {
-            name: cleanName,
-            email: cleanEmail,
-            lastLogin: new Date().toISOString()
-          }, { merge: true }).catch(() => {});
-        }, 50);
-      } catch {}
+    // STEP 1: USER LOGIN PE AUTO SAVE (TURANT ADMIN PANEL ME JAYE)
+    const uid = fbUser?.uid || `simulated_${cleanEmail.replace(/[^a-zA-Z0-9]/g, '_')}`;
+    try {
+      const userRef = doc(db, 'users', uid);
+      const userSnap = await getDoc(userRef);
+      if (!userSnap.exists()) {
+        await setDoc(userRef, {
+          uid,
+          name: cleanName,
+          email: cleanEmail,
+          photo: '',
+          createdAt: serverTimestamp(),
+          isActive: false
+        });
+      } else {
+        // update basic info if already registered, keeping isActive intact
+        await setDoc(userRef, {
+          name: cleanName,
+          email: cleanEmail
+        }, { merge: true });
+      }
+    } catch (err) {
+      console.error("Error auto-saving user to users collection in login:", err);
     }
 
     return true;
