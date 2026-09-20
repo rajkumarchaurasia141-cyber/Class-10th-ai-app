@@ -46,6 +46,7 @@ export function AdminPaymentRequests() {
   const [copiedEmail, setCopiedEmail] = useState<string | null>(null);
   const [processingId, setProcessingId] = useState<string | null>(null);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [quotaExceeded, setQuotaExceeded] = useState(false);
 
   useEffect(() => {
     const mergeWithLocal = (remoteItems: PaymentRequestItem[]) => {
@@ -80,6 +81,7 @@ export function AdminPaymentRequests() {
       // Query the 'payment_requests' collection in real-time
       const q = collection(db, 'payment_requests');
       const unsub = onSnapshot(q, (snapshot) => {
+        setQuotaExceeded(false);
         const items: PaymentRequestItem[] = [];
         snapshot.forEach((docSnap) => {
           const data = docSnap.data();
@@ -100,12 +102,18 @@ export function AdminPaymentRequests() {
         mergeWithLocal(items);
       }, (err) => {
         console.warn('Payment requests fetch notice:', err?.message || String(err));
+        if (isQuotaError(err)) {
+          setQuotaExceeded(true);
+        }
         mergeWithLocal([]);
       });
 
       return () => unsub();
     } catch (e: any) {
       console.warn('Payment requests setup notice:', e?.message || String(e));
+      if (isQuotaError(e)) {
+        setQuotaExceeded(true);
+      }
       mergeWithLocal([]);
     }
   }, []);
@@ -272,6 +280,33 @@ export function AdminPaymentRequests() {
         <div className="fixed top-6 right-6 z-50 bg-emerald-600 text-white font-black px-6 py-4 rounded-2xl shadow-2xl flex items-center gap-3 animate-bounce border-2 border-emerald-400">
           <CheckCircle2 className="w-6 h-6 text-white shrink-0" />
           <span className="text-sm tracking-wide">{toastMessage}</span>
+        </div>
+      )}
+
+      {quotaExceeded && (
+        <div className="p-4 rounded-2xl bg-amber-50 border-2 border-amber-300 text-amber-900 space-y-2 animate-fade-in shadow-md">
+          <div className="flex items-start gap-2.5">
+            <span className="text-xl shrink-0">⚠️</span>
+            <div>
+              <h4 className="font-black text-sm text-amber-950">फ़ायरबेस दैनिक लिमिट समाप्त (Firebase Free Read Quota Exceeded)</h4>
+              <p className="text-xs font-semibold text-amber-800 leading-relaxed mt-0.5">
+                आपके फ़ायरबेस डेटाबेस की मुफ्त दैनिक रीड लिमिट (Free Daily Read Quota of 50,000 reads) पूरी तरह से समाप्त हो गई है। इसके कारण नए पेमेंट रिक्वेस्ट या पंजीकृत छात्रों की सूची अभी क्लाउड से लोड नहीं हो पा रही है और सारा डेटा 0 दिख रहा है। यह लिमिट कल दोपहर/रात भारतीय समयानुसार स्वतः रीसेट हो जाएगी।
+              </p>
+              <div className="mt-3 text-xs font-bold flex flex-wrap gap-x-4 gap-y-2">
+                <a 
+                  href="https://console.firebase.google.com/project/gen-lang-client-0482021639/firestore/databases/ai-studio-timetravelphotob-400dc69e-09d3-46d5-bd2e-7f7e4260b43c/data?openUpgradeDialog=true"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="bg-amber-600 text-white px-3 py-1.5 rounded-lg shadow-xs hover:bg-amber-700 transition-colors inline-block"
+                >
+                  फ़ायरबेस कंसोल खोलें और सीमाएँ बढ़ाएँ ↗
+                </a>
+                <span className="text-amber-800 bg-amber-100 px-2 py-1.5 rounded-lg">
+                  डेटाबेस ID: ai-studio-timetravelphotob-400dc69e-09d3-46d5-bd2e-7f7e4260b43c
+                </span>
+              </div>
+            </div>
+          </div>
         </div>
       )}
 

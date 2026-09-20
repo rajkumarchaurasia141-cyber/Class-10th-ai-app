@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { db } from '../lib/firebase';
 import { collection, onSnapshot, doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
-import { safeSetDoc, safeDeleteDoc } from '../utils/firestoreSafe';
+import { safeSetDoc, safeDeleteDoc, isQuotaError } from '../utils/firestoreSafe';
 import { 
   Users, 
   Search, 
@@ -38,6 +38,7 @@ export function AdminStudentsList() {
   const [filterType, setFilterType] = useState<'all' | 'paid' | 'free'>('all');
   const [processingId, setProcessingId] = useState<string | null>(null);
   const [actionMsg, setActionMsg] = useState<string | null>(null);
+  const [quotaExceeded, setQuotaExceeded] = useState(false);
 
   // Manual Add Student Modal / Form State
   const [showManualForm, setShowManualForm] = useState(false);
@@ -50,6 +51,7 @@ export function AdminStudentsList() {
     try {
       const q = collection(db, 'users');
       const unsub = onSnapshot(q, (snapshot) => {
+        setQuotaExceeded(false);
         const list: StudentUser[] = [];
         snapshot.forEach((docSnap) => {
           const data = docSnap.data();
@@ -75,12 +77,18 @@ export function AdminStudentsList() {
         setLoading(false);
       }, (err) => {
         console.warn("Could not load real-time users collection:", err);
+        if (isQuotaError(err)) {
+          setQuotaExceeded(true);
+        }
         setLoading(false);
       });
 
       return () => unsub();
-    } catch (e) {
+    } catch (e: any) {
       console.warn("Error setting up users listener:", e);
+      if (isQuotaError(e)) {
+        setQuotaExceeded(true);
+      }
       setLoading(false);
     }
   }, []);
@@ -239,6 +247,33 @@ export function AdminStudentsList() {
   return (
     <div className="space-y-5 relative z-10 text-stone-900">
       
+      {quotaExceeded && (
+        <div className="p-4 rounded-2xl bg-amber-50 border-2 border-amber-300 text-amber-900 space-y-2 animate-fade-in shadow-md">
+          <div className="flex items-start gap-2.5">
+            <span className="text-xl shrink-0">⚠️</span>
+            <div>
+              <h4 className="font-black text-sm text-amber-950">फ़ायरबेस दैनिक लिमिट समाप्त (Firebase Free Read Quota Exceeded)</h4>
+              <p className="text-xs font-semibold text-amber-800 leading-relaxed mt-0.5">
+                आपके फ़ायरबेस डेटाबेस की मुफ्त दैनिक रीड लिमिट (Free Daily Read Quota) समाप्त हो गई है। इसके कारण पंजीकृत छात्रों की सूची तथा अन्य विवरण अभी क्लाउड से लोड नहीं हो पा रहे हैं और सूची खाली दिख रही है। यह लिमिट कल दोपहर/रात भारतीय समयानुसार स्वतः रीसेट हो जाएगी।
+              </p>
+              <div className="mt-3 text-xs font-bold flex flex-wrap gap-x-4 gap-y-2">
+                <a 
+                  href="https://console.firebase.google.com/project/gen-lang-client-0482021639/firestore/databases/ai-studio-timetravelphotob-400dc69e-09d3-46d5-bd2e-7f7e4260b43c/data?openUpgradeDialog=true"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="bg-amber-600 text-white px-3 py-1.5 rounded-lg shadow-xs hover:bg-amber-700 transition-colors inline-block"
+                >
+                  फ़ायरबेस कंसोल खोलें और सीमाएँ बढ़ाएँ ↗
+                </a>
+                <span className="text-amber-800 bg-amber-100 px-2 py-1.5 rounded-lg">
+                  डेटाबेस ID: ai-studio-timetravelphotob-400dc69e-09d3-46d5-bd2e-7f7e4260b43c
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Overview stats cards */}
       <div className="grid grid-cols-3 gap-3">
         <div className="bg-white p-3.5 rounded-2xl border border-stone-200 shadow-xs">

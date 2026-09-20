@@ -195,7 +195,12 @@ export function PaywallModal({ onClose }: { onClose: () => void }) {
       onClose();
     } catch (err: any) {
       console.error("Payment submission failed:", err);
-      setErrorMessage(err?.message || 'कनेक्शन एरर। कृपया दोबारा सबमिट करने का प्रयास करें।');
+      const isQuota = err?.code === 'resource-exhausted' || err?.message?.includes('Quota') || err?.message?.includes('resource-exhausted');
+      if (isQuota) {
+        setErrorMessage('⚠️ सर्वर दैनिक लिमिट समाप्त (Daily Quota Reached): हमारे डेटाबेस की आज की अपलोड सीमा समाप्त हो गई है। आप चिंता न करें - कृपया सीधे एडमिन के फोन नंबर या व्हाट्सएप (9708868515) पर पेमेंट स्क्रीनशॉट भेजकर अपना कोर्स तुरंत अनलॉक करवा लें!');
+      } else {
+        setErrorMessage(err?.message || 'कनेक्शन एरर। कृपया दोबारा सबमिट करने का प्रयास करें।');
+      }
     } finally {
       setSubmitting(false);
     }
