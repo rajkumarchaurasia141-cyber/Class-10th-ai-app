@@ -94,9 +94,27 @@
         "uploadedAt": { "type": "string" }
       },
       "required": ["subjectId", "title", "pdfUrl"]
+    },
+    "User": {
+      "title": "User",
+      "description": "User account registration details",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string" },
+        "name": { "type": "string" },
+        "email": { "type": "string" },
+        "photo": { "type": "string" },
+        "createdAt": { "type": "string" },
+        "isActive": { "type": "boolean" }
+      },
+      "required": ["uid", "email"]
     }
   },
   "firestore": {
+    "/users/{userId}": {
+      "schema": "User",
+      "description": "User registration status and active settings"
+    },
     "/subjects/{subjectId}": {
       "schema": "Subject",
       "description": "Subjects list"

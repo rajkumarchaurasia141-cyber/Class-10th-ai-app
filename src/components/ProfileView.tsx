@@ -99,54 +99,32 @@ export function ProfileView({
       )}
 
       {/* Subscription Status Card */}
-      <div className={`rounded-3xl p-5 border shadow-xs space-y-3 ${
-        isVIP
-          ? 'bg-gradient-to-br from-amber-500/10 via-amber-100/40 to-white border-amber-300'
-          : vipDetails?.isExpired
-          ? 'bg-gradient-to-br from-rose-500/10 to-white border-rose-300'
-          : 'bg-white border-slate-200'
-      }`}>
+      <div className="rounded-3xl p-5 border shadow-xs space-y-3 bg-gradient-to-br from-emerald-500/10 via-emerald-100/40 to-white border-emerald-300">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <div className={`w-9 h-9 rounded-xl flex items-center justify-center ${
-              isVIP ? 'bg-amber-500 text-stone-950' : 'bg-slate-100 text-stone-600'
-            }`}>
+            <div className="w-9 h-9 rounded-xl flex items-center justify-center bg-emerald-500 text-stone-950">
               <Crown className="w-5 h-5 fill-current" />
             </div>
             <div>
               <h4 className="font-extrabold text-stone-900 text-sm">
-                {isVIP ? 'टॉपर VIP मेंबरशिप' : vipDetails?.isExpired ? 'VIP प्लान समाप्त' : 'फ्री मेंबरशिप'}
+                मुफ़्त शिक्षा अभियान मेंबरशिप
               </h4>
-              <p className="text-[11px] text-stone-500">
-                {isVIP ? 'सम्पूर्ण स्टडी मैटेरियल अनलॉक है' : 'सभी नोट्स & 50 MCQs पाने हेतु'}
+              <p className="text-[11px] text-stone-600">
+                बोर्ड परीक्षा की तैयारी हेतु सम्पूर्ण स्टडी मैटेरियल पूर्ण रूप से अनलॉक है
               </p>
             </div>
           </div>
-
-          <button
-            onClick={onOpenVip}
-            className={`px-3.5 py-1.5 rounded-xl text-xs font-black shadow-xs transition-all cursor-pointer ${
-              isVIP
-                ? 'bg-amber-500 hover:bg-amber-400 text-stone-950'
-                : 'bg-red-700 hover:bg-red-800 text-white'
-            }`}
-          >
-            {isVIP ? 'वैधता बढ़ाएँ' : vipDetails?.isExpired ? 'पुनः रिन्यू करें' : 'VIP खरीदें'}
-          </button>
         </div>
 
-        {/* Validity Info if VIP or Expired */}
-        {vipDetails && (
-          <div className="pt-2 border-t border-slate-200/80 text-xs flex items-center justify-between text-stone-600">
-            <span className="flex items-center gap-1">
-              <Hourglass className="w-3.5 h-3.5 text-amber-600" />
-              <span>वैधता: <strong>{vipDetails.formattedExpiry} तक</strong></span>
-            </span>
-            <span className={`font-bold ${isVIP ? 'text-emerald-600' : 'text-rose-600'}`}>
-              {isVIP ? `${daysLeft} दिन बाकी` : 'अवधि पूर्ण'}
-            </span>
-          </div>
-        )}
+        <div className="pt-2 border-t border-slate-200/80 text-xs flex items-center justify-between text-stone-600">
+          <span className="flex items-center gap-1">
+            <Hourglass className="w-3.5 h-3.5 text-emerald-600" />
+            <span>वैधता: <strong>असीमित (फ्री स्टडी)</strong></span>
+          </span>
+          <span className="font-bold text-emerald-600">
+            सक्रिय
+          </span>
+        </div>
       </div>
 
       {/* Menu Options */}

@@ -151,50 +151,23 @@ export function HomeScreen({ onSelect, onOpenSubject, onNavigateTab, onOpenVip }
       {/* 2. 3x3 Feature Grid (Matches exact 9 icons & labels in user screenshot) */}
       <FeatureGrid onNavigate={handleFeatureNavigate} />
 
-      {/* 3. VIP Status Banner / Teaser */}
-      {isVIP ? (
-        <div className="bg-gradient-to-r from-amber-500/15 via-white to-amber-500/10 border border-amber-300 rounded-2xl p-3.5 flex items-center justify-between shadow-xs">
-          <div className="flex items-center gap-2.5">
-            <div className="w-9 h-9 rounded-xl bg-amber-400 text-stone-950 flex items-center justify-center font-bold shadow-xs">
-              <Crown className="w-5 h-5 fill-current" />
-            </div>
-            <div>
-              <div className="flex items-center gap-1.5">
-                <span className="text-xs font-black text-stone-900">VIP एक्सेस सक्रिय</span>
-                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
-              </div>
-              <p className="text-[11px] text-stone-600">
-                वैधता: {vipDetails?.formattedExpiry} तक ({vipDetails?.daysRemaining} दिन बाकी)
-              </p>
-            </div>
+      {/* 3. Free Study Campaign Announcement */}
+      <div className="bg-gradient-to-r from-emerald-600/10 via-emerald-500/15 to-emerald-600/10 border border-emerald-300 rounded-2xl p-3.5 flex items-center justify-between shadow-xs">
+        <div className="flex items-center gap-2.5">
+          <div className="w-9 h-9 rounded-xl bg-emerald-500 text-stone-950 flex items-center justify-center font-bold shadow-xs">
+            <Sparkles className="w-5 h-5 fill-current" />
           </div>
-          <button
-            onClick={() => setShowPaywall(true)}
-            className="text-xs font-bold text-amber-800 hover:text-amber-900 underline cursor-pointer"
-          >
-            विवरण
-          </button>
-        </div>
-      ) : (
-        <div 
-          onClick={() => setShowPaywall(true)}
-          className="bg-gradient-to-r from-red-700 to-amber-700 text-white rounded-2xl p-3.5 shadow-sm flex items-center justify-between cursor-pointer hover:brightness-105 transition-all"
-        >
-          <div className="flex items-center gap-2.5">
-            <div className="w-9 h-9 rounded-xl bg-white/20 flex items-center justify-center text-amber-300 font-bold border border-white/20">
-              <Crown className="w-5 h-5 fill-current" />
+          <div>
+            <div className="flex items-center gap-1.5">
+              <span className="text-xs font-black text-stone-900">मुफ़्त शिक्षा अभियान (All Courses Unlocked)</span>
+              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
             </div>
-            <div>
-              <div className="text-xs font-black text-white">टॉपर VIP प्लान अनलॉक करें</div>
-              <p className="text-[11px] text-amber-100">1 माह: ₹99 | 1 पूरा वर्ष: ₹600 मात्र</p>
-            </div>
+            <p className="text-[11px] text-stone-600">
+              बोर्ड परीक्षा की तैयारी के लिए सभी वीआईपी नोट्स, टेस्ट सीरीज और क्लासेज पूर्ण रूप से फ्री कर दी गई हैं।
+            </p>
           </div>
-          <span className="text-xs font-bold bg-white text-red-700 px-3 py-1 rounded-full shadow-xs flex items-center gap-1">
-            <span>देखें</span>
-            <ChevronRight className="w-3.5 h-3.5" />
-          </span>
         </div>
-      )}
+      </div>
 
 
 

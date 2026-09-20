@@ -200,37 +200,11 @@ function MainApp() {
             />
           )}
 
-          {activeTab === 'admin' && isAdmin && adminVerified && (
+          {activeTab === 'admin' && adminVerified && (
             <AdminPanel onBack={() => setActiveTab('home')} />
           )}
 
-          {activeTab === 'admin' && !isAdmin && (
-            <div className="p-8 text-center max-w-md mx-auto my-12 bg-white rounded-3xl border border-stone-200 shadow-xl space-y-4">
-              <div className="w-16 h-16 bg-amber-50 text-amber-600 rounded-2xl flex items-center justify-center mx-auto text-2xl font-bold">
-                🔒
-              </div>
-              <h2 className="text-xl font-black text-stone-900">प्रतिबंधित क्षेत्र (Admin Only)</h2>
-              <p className="text-stone-600 text-sm">
-                यह एडमिन पैनल केवल अधिकृत एडमिन के लिए है। कृपया पहले अपने एडमिन जीमेल से लॉगिन करें।
-              </p>
-              <div className="space-y-2 pt-2">
-                <button
-                  onClick={() => setShowGmailAuth(true)}
-                  className="w-full bg-gradient-to-r from-amber-500 to-amber-400 hover:from-amber-400 hover:to-amber-300 text-stone-950 font-black py-3 rounded-xl shadow-md transition-all cursor-pointer"
-                >
-                  ⚡ एडमिन जीमेल से पहचान करें
-                </button>
-                <button
-                  onClick={() => setActiveTab('home')}
-                  className="w-full bg-slate-100 text-stone-700 font-bold py-2.5 rounded-xl hover:bg-slate-200 transition-colors cursor-pointer text-xs"
-                >
-                  होम पर वापस जाएँ
-                </button>
-              </div>
-            </div>
-          )}
-
-          {activeTab === 'admin' && isAdmin && !adminVerified && (
+          {activeTab === 'admin' && !adminVerified && (
             <div className="p-8 text-center max-w-md mx-auto my-12 bg-white rounded-3xl border border-stone-200 shadow-xl space-y-5">
               <div className="w-16 h-16 bg-red-50 text-red-600 rounded-2xl flex items-center justify-center mx-auto text-2xl font-bold animate-pulse">
                 🔑
@@ -242,7 +216,7 @@ function MainApp() {
                   एडमिन पैनल सुरक्षा के लिए कृपया सीक्रेट पासवर्ड दर्ज करें
                 </p>
                 <div className="p-2 bg-emerald-50 border border-emerald-100 rounded-xl mt-2 text-[11px] text-emerald-800 font-bold">
-                  पहचान स्वीकृत: {user?.email} (अधिकृत एडमिन)
+                  पहचान स्वीकृत: {user?.email || 'राजकुमार (Direct)'}
                 </div>
               </div>
 

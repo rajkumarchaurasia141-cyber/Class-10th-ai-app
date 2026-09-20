@@ -17,7 +17,7 @@ import {
 
 export function SubjectsExplorer({ subjectId, onBack }: any) {
   const { subjects } = useData();
-  const { isVIP } = useAuth();
+  const { isPaid } = useAuth();
   const [selectedCh, setSelectedCh] = useState(1);
   const [showPaywall, setShowPaywall] = useState(false);
   const [showPaidTest, setShowPaidTest] = useState(false);
@@ -31,7 +31,7 @@ export function SubjectsExplorer({ subjectId, onBack }: any) {
 
   const handleSelectChapter = (chNo: number | string) => {
     const numericCh = Number(chNo);
-    if (numericCh > 1 && !isVIP) {
+    if (numericCh > 1 && !isPaid) {
       setShowPaywall(true);
       return;
     }
@@ -80,8 +80,8 @@ export function SubjectsExplorer({ subjectId, onBack }: any) {
             }`}
           >
             <span>अध्याय {ch.chapter_no}</span>
-            {Number(ch.chapter_no) > 1 && !isVIP && (
-              <span className="text-[9px] bg-amber-400 text-stone-950 font-black px-1.5 py-0.5 rounded ml-1">VIP</span>
+            {Number(ch.chapter_no) > 1 && !isPaid && (
+              <span className="text-[11px] text-stone-500" title="Locked">🔒</span>
             )}
           </button>
         ))}

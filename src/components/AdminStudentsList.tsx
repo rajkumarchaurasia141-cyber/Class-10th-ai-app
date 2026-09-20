@@ -1,11 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { db } from '../lib/firebase';
-import { collection, onSnapshot, doc } from 'firebase/firestore';
-import { safeSetDoc, safeDeleteDoc, isQuotaError } from '../utils/firestoreSafe';
+import { collection, onSnapshot, doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
+import { safeSetDoc, safeDeleteDoc } from '../utils/firestoreSafe';
 import { 
   Users, 
   Search, 
-  Crown, 
   Mail, 
   Calendar, 
   ShieldCheck, 
@@ -14,167 +13,76 @@ import {
   Check, 
   Sparkles,
   AlertCircle,
-  Hourglass,
-  Clock,
   Plus,
   RefreshCw,
-  X
+  X,
+  Clock,
+  Trash2
 } from 'lucide-react';
-import { calculateVipExpiry, checkVipExpiryStatus } from '../utils/vipHelper';
 
-interface StudentRecord {
-  id: string;
+interface StudentUser {
+  id: string; // Document ID (usually uid)
+  uid: string;
   name: string;
   email: string;
-  lastLogin?: string;
-  createdAt?: string;
-}
-
-interface VipRecord {
-  email: string;
-  isVip: boolean;
-  plan?: string;
-  planDuration?: string;
-  planPrice?: number;
-  validFrom?: string;
-  expiresAt?: string;
-  addedAt?: string;
+  isPaid?: boolean;
+  createdAt?: any;
+  lastLogin?: any;
 }
 
 export function AdminStudentsList() {
-  const [students, setStudents] = useState<StudentRecord[]>([]);
-  const [vips, setVips] = useState<Record<string, VipRecord>>({});
+  const [students, setStudents] = useState<StudentUser[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [copiedEmail, setCopiedEmail] = useState<string | null>(null);
-  const [filterVip, setFilterVip] = useState<'all' | 'active_vip' | 'expired_vip' | 'free'>('all');
-  const [processingEmail, setProcessingEmail] = useState<string | null>(null);
+  const [filterType, setFilterType] = useState<'all' | 'paid' | 'free'>('all');
+  const [processingId, setProcessingId] = useState<string | null>(null);
   const [actionMsg, setActionMsg] = useState<string | null>(null);
 
-  // Modal for granting / extending VIP
-  const [selectedStudentForVip, setSelectedStudentForVip] = useState<StudentRecord | null>(null);
-  const [selectedPlanToGrant, setSelectedPlanToGrant] = useState<'1month' | '1year'>('1month');
-
-  // Manual direct VIP activation form state
+  // Manual Add Student Modal / Form State
+  const [showManualForm, setShowManualForm] = useState(false);
   const [manualName, setManualName] = useState('');
   const [manualEmail, setManualEmail] = useState('');
-  const [manualPlan, setManualPlan] = useState<'1month' | '1year'>('1year');
-  const [showManualForm, setShowManualForm] = useState(false);
+  const [manualIsPaid, setManualIsPaid] = useState(false);
 
-  const handleManualSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!manualName.trim() || !manualEmail.trim()) {
-      alert('कृपया छात्र का नाम और जीमेल दोनों दर्ज करें।');
-      return;
-    }
-    const cleanEmail = manualEmail.trim().toLowerCase();
-    if (!cleanEmail.includes('@')) {
-      alert('कृपया एक वैध जीमेल (Gmail) आईडी दर्ज करें।');
-      return;
-    }
-
-    const dummyStudent: StudentRecord = {
-      id: cleanEmail,
-      name: manualName.trim(),
-      email: cleanEmail,
-      createdAt: new Date().toISOString(),
-      lastLogin: new Date().toISOString()
-    };
-
-    // 1. Add to student list in state immediately if not already present
-    setStudents(prev => {
-      if (prev.some(s => s.email.toLowerCase() === cleanEmail)) {
-        return prev;
-      }
-      return [dummyStudent, ...prev];
-    });
-
-    // Save student to local storage bseb_registered_students
-    try {
-      const localStudents = JSON.parse(localStorage.getItem('bseb_registered_students') || '{}');
-      localStudents[cleanEmail] = dummyStudent;
-      localStorage.setItem('bseb_registered_students', JSON.stringify(localStudents));
-    } catch {}
-
-    // Save student to Firestore if possible
-    try {
-      await safeSetDoc(doc(db, 'students', cleanEmail), dummyStudent, { merge: true });
-    } catch (err) {
-      console.warn('Manual student register Firestore notice:', err);
-    }
-
-    // 2. Grant VIP
-    await handleGrantVip(dummyStudent, manualPlan);
-
-    // Reset fields
-    setManualName('');
-    setManualEmail('');
-    setShowManualForm(false);
-  };
-
+  // Real-time listener on the 'users' collection
   useEffect(() => {
-    const mergeStudents = (remoteList: StudentRecord[]) => {
-      const merged = [...remoteList];
-      try {
-        const localStudents = JSON.parse(localStorage.getItem('bseb_registered_students') || '{}');
-        const remoteIds = new Set(remoteList.map(s => s.id?.toLowerCase() || s.email?.toLowerCase()));
-        for (const [em, st] of Object.entries(localStudents as Record<string, any>)) {
-          if (!remoteIds.has(em.toLowerCase())) {
-            merged.push({ id: em, name: st.name || em, email: em, lastLogin: st.lastLogin } as StudentRecord);
-          }
-        }
-      } catch {}
+    try {
+      const q = collection(db, 'users');
+      const unsub = onSnapshot(q, (snapshot) => {
+        const list: StudentUser[] = [];
+        snapshot.forEach((docSnap) => {
+          const data = docSnap.data();
+          list.push({
+            id: docSnap.id,
+            uid: data.uid || docSnap.id,
+            name: data.name || 'Unknown student',
+            email: data.email || '',
+            isPaid: data.isPaid === true,
+            createdAt: data.createdAt,
+            lastLogin: data.lastLogin
+          });
+        });
 
-      merged.sort((a, b) => {
-        const tA = new Date(a.lastLogin || a.createdAt || 0).getTime();
-        const tB = new Date(b.lastLogin || b.createdAt || 0).getTime();
-        return tB - tA;
+        // Sort by creation date or alphabetically as fallback
+        list.sort((a, b) => {
+          const tA = a.createdAt?.toDate?.()?.getTime() || 0;
+          const tB = b.createdAt?.toDate?.()?.getTime() || 0;
+          return tB - tA; // Newest registered students first
+        });
+
+        setStudents(list);
+        setLoading(false);
+      }, (err) => {
+        console.warn("Could not load real-time users collection:", err);
+        setLoading(false);
       });
-      setStudents(merged);
+
+      return () => unsub();
+    } catch (e) {
+      console.warn("Error setting up users listener:", e);
       setLoading(false);
-    };
-
-    const mergeVips = (remoteMap: Record<string, VipRecord>) => {
-      const merged = { ...remoteMap };
-      try {
-        const localVips = JSON.parse(localStorage.getItem('bseb_vip_users') || '{}');
-        for (const [em, vip] of Object.entries(localVips as Record<string, any>)) {
-          if (!merged[em.toLowerCase()]) {
-            merged[em.toLowerCase()] = { email: em, ...vip } as VipRecord;
-          }
-        }
-      } catch {}
-      setVips(merged);
-    };
-
-    // 1. Listen to students collection
-    const unsubStudents = onSnapshot(collection(db, 'students'), (snap) => {
-      const list: StudentRecord[] = [];
-      snap.forEach(docSnap => {
-        list.push({ id: docSnap.id, ...docSnap.data() } as StudentRecord);
-      });
-      mergeStudents(list);
-    }, (err) => {
-      console.warn('Students fetch notice:', err?.message || String(err));
-      mergeStudents([]);
-    });
-
-    // 2. Listen to vip_users collection
-    const unsubVips = onSnapshot(collection(db, 'vip_users'), (snap) => {
-      const map: Record<string, VipRecord> = {};
-      snap.forEach(docSnap => {
-        map[docSnap.id.toLowerCase()] = { email: docSnap.id, ...docSnap.data() } as VipRecord;
-      });
-      mergeVips(map);
-    }, (err) => {
-      console.warn('Vip users fetch notice:', err?.message || String(err));
-      mergeVips({});
-    });
-
-    return () => {
-      unsubStudents();
-      unsubVips();
-    };
+    }
   }, []);
 
   const handleCopy = (email: string) => {
@@ -183,530 +91,440 @@ export function AdminStudentsList() {
     setTimeout(() => setCopiedEmail(null), 2000);
   };
 
-  // Grant or Renew VIP with specified plan
-  const handleGrantVip = async (student: StudentRecord, plan: '1month' | '1year') => {
-    const cleanEmail = student.email.trim().toLowerCase();
-    setProcessingEmail(cleanEmail);
+  // Toggle paid status in real-time
+  const handleTogglePaidStatus = async (student: StudentUser) => {
+    const nextStatus = !student.isPaid;
+    setProcessingId(student.id);
     setActionMsg(null);
 
     try {
-      const existingVip = vips[cleanEmail];
-      const expiry = calculateVipExpiry(plan, existingVip?.expiresAt);
+      // 1. Update users collection
+      const userRef = doc(db, 'users', student.id);
+      await safeSetDoc(userRef, {
+        isPaid: nextStatus,
+        isActive: nextStatus // Maintain isActive compatibility
+      }, { merge: true }, 5000, true);
 
-      const vipPayload = {
-        email: cleanEmail,
-        isVip: true,
-        plan,
-        planDuration: expiry.planDurationText,
-        planPrice: plan === '1month' ? 99 : 600,
-        studentName: student.name,
-        validFrom: expiry.validFrom,
-        expiresAt: expiry.expiresAt,
-        addedAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
-      };
-
-      // 1. Immediately update local storage and state for 0ms delay
+      // Also set in legacy vip_users collection to maintain wide-ranging backward compatibility
       try {
-        const localVips = JSON.parse(localStorage.getItem('bseb_vip_users') || '{}');
-        localVips[cleanEmail] = vipPayload;
-        localStorage.setItem('bseb_vip_users', JSON.stringify(localVips));
-      } catch {}
-
-      setVips(prev => ({ ...prev, [cleanEmail]: vipPayload }));
-
-      const ok = await safeSetDoc(doc(db, 'vip_users', cleanEmail), vipPayload, { merge: true });
-
-      const expiryDateFormatted = new Date(expiry.expiresAt).toLocaleDateString('hi-IN', {
-        day: 'numeric',
-        month: 'short',
-        year: 'numeric'
-      });
-
-      if (ok) {
-        setActionMsg(`छात्र ${student.name} (${cleanEmail}) का ${expiry.planDurationText} VIP प्लान सक्रिय हो गया (वैधता: ${expiryDateFormatted} तक)।`);
-      } else {
-        setActionMsg(`छात्र ${student.name} का ${expiry.planDurationText} VIP प्लान सक्रिय हो गया है (वैधता: ${expiryDateFormatted} तक)।`);
+        const cleanEmail = student.email.trim().toLowerCase();
+        if (cleanEmail) {
+          if (nextStatus) {
+            await safeSetDoc(doc(db, 'vip_users', cleanEmail), {
+              isVip: true,
+              plan: '1year',
+              planDuration: 'Board Crash Course',
+              planPrice: 299,
+              studentName: student.name,
+              validFrom: new Date().toISOString(),
+              addedAt: new Date().toISOString(),
+              activatedByAdmin: true
+            }, { merge: true }, 5000, true);
+          } else {
+            await safeDeleteDoc(doc(db, 'vip_users', cleanEmail));
+          }
+        }
+      } catch (err) {
+        console.warn('Legacy VIP user sync failed:', err);
       }
-      setSelectedStudentForVip(null);
+
+      setActionMsg(`सफलता! छात्र ${student.name} का एक्सेस ${nextStatus ? 'चालू' : 'बंद'} कर दिया गया है।`);
     } catch (err: any) {
-      if (isQuotaError(err)) {
-        setActionMsg('सूचना: आज की Firestore दैनिक राइट लिमिट पूरी हो चुकी है। बदलाव स्थानीय रूप से सक्रिय है।');
-      } else {
-        alert('त्रुटि: ' + err?.message);
-      }
+      console.error("Failed to toggle isPaid status:", err);
+      alert("एक्सेस बदलने में त्रुटि: " + (err?.message || "पुनः प्रयास करें"));
     } finally {
-      setProcessingEmail(null);
+      setProcessingId(null);
     }
   };
 
-  // Revoke VIP
-  const handleRevokeVip = async (student: StudentRecord) => {
-    const cleanEmail = student.email.trim().toLowerCase();
-    if (!confirm(`क्या आप ${student.name} (${cleanEmail}) का VIP एक्सेस रद्द करना चाहते हैं?`)) {
+  // Delete student record
+  const handleDeleteStudent = async (student: StudentUser) => {
+    if (!confirm(`क्या आप ${student.name} (${student.email}) का पूरा रिकॉर्ड हटाना चाहते हैं?`)) return;
+    setProcessingId(student.id);
+    try {
+      await safeDeleteDoc(doc(db, 'users', student.id));
+      
+      // Also delete from legacy vip_users if matching
+      try {
+        const cleanEmail = student.email.trim().toLowerCase();
+        if (cleanEmail) {
+          await safeDeleteDoc(doc(db, 'vip_users', cleanEmail));
+        }
+      } catch {}
+
+      setActionMsg(`छात्र ${student.name} का रिकॉर्ड डिलीट कर दिया गया है।`);
+    } catch (err: any) {
+      alert("हटाने में त्रुटि: " + err.message);
+    } finally {
+      setProcessingId(null);
+    }
+  };
+
+  // Handle manual additions
+  const handleManualAddStudent = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!manualName.trim() || !manualEmail.trim()) {
+      alert('कृपया छात्र का नाम और ईमेल आईडी दर्ज करें।');
       return;
     }
 
-    setProcessingEmail(cleanEmail);
+    const cleanEmail = manualEmail.trim().toLowerCase();
+    if (!cleanEmail.includes('@')) {
+      alert('कृपया वैध ईमेल आईडी (Gmail ID) दर्ज करें।');
+      return;
+    }
+
+    setLoading(true);
+    const generatedUid = `manual_${cleanEmail.replace(/[^a-zA-Z0-9]/g, '_')}`;
+
     try {
-      // 1. Immediately remove from local storage and state
-      try {
-        const localVips = JSON.parse(localStorage.getItem('bseb_vip_users') || '{}');
-        delete localVips[cleanEmail];
-        localStorage.setItem('bseb_vip_users', JSON.stringify(localVips));
-      } catch {}
+      const userRef = doc(db, 'users', generatedUid);
+      await safeSetDoc(userRef, {
+        uid: generatedUid,
+        name: manualName.trim(),
+        email: cleanEmail,
+        isPaid: manualIsPaid,
+        isActive: manualIsPaid,
+        createdAt: serverTimestamp(),
+        lastLogin: serverTimestamp()
+      }, { merge: true }, 5000, true);
 
-      setVips(prev => {
-        const updated = { ...prev };
-        delete updated[cleanEmail];
-        return updated;
-      });
-
-      await safeDeleteDoc(doc(db, 'vip_users', cleanEmail));
-      setActionMsg(`छात्र ${student.name} का VIP एक्सेस हटा दिया गया।`);
-    } catch (err: any) {
-      if (isQuotaError(err)) {
-        setActionMsg('सूचना: VIP एक्सेस स्थानीय रूप से रद्द कर दिया गया है।');
-      } else {
-        alert('त्रुटि: ' + err?.message);
+      // Set legacy vip_users as well if isPaid is true
+      if (manualIsPaid) {
+        try {
+          await safeSetDoc(doc(db, 'vip_users', cleanEmail), {
+            isVip: true,
+            plan: '1year',
+            planDuration: 'Board Crash Course',
+            planPrice: 299,
+            studentName: manualName.trim(),
+            validFrom: new Date().toISOString(),
+            addedAt: new Date().toISOString(),
+            activatedByAdmin: true
+          }, { merge: true }, 5000, true);
+        } catch {}
       }
+
+      setActionMsg(`सफलता! छात्र ${manualName} को जोड़ दिया गया है और कोर्स ${manualIsPaid ? 'अनलॉक' : 'लॉक'} है।`);
+      setManualName('');
+      setManualEmail('');
+      setManualIsPaid(false);
+      setShowManualForm(false);
+    } catch (err: any) {
+      alert("छात्र जोड़ने में त्रुटि: " + err.message);
     } finally {
-      setProcessingEmail(null);
+      setLoading(false);
     }
   };
 
-  // Categorize students
-  const studentStatuses = students.map(s => {
-    const cleanEmail = s.email?.toLowerCase();
-    const vip = vips[cleanEmail];
-    if (!vip || !vip.isVip) {
-      return { ...s, isVipActive: false, isVipExpired: false, vipInfo: null };
-    }
-    const expiry = checkVipExpiryStatus(vip.expiresAt);
-    return {
-      ...s,
-      isVipActive: !expiry.isExpired,
-      isVipExpired: expiry.isExpired,
-      vipInfo: {
-        ...vip,
-        daysRemaining: expiry.daysRemaining,
-        formattedExpiry: expiry.formattedExpiry,
-        isExpired: expiry.isExpired
-      }
-    };
-  });
+  // Filter and Search calculations
+  const filteredStudents = students.filter(student => {
+    // 1. Paid / Free Filter
+    if (filterType === 'paid' && !student.isPaid) return false;
+    if (filterType === 'free' && student.isPaid) return false;
 
-  const activeVipCount = studentStatuses.filter(s => s.isVipActive).length;
-  const expiredVipCount = studentStatuses.filter(s => s.isVipExpired).length;
-  const freeCount = studentStatuses.filter(s => !s.isVipActive && !s.isVipExpired).length;
-
-  const filteredStudents = studentStatuses.filter(s => {
-    if (filterVip === 'active_vip' && !s.isVipActive) return false;
-    if (filterVip === 'expired_vip' && !s.isVipExpired) return false;
-    if (filterVip === 'free' && (s.isVipActive || s.isVipExpired)) return false;
-
+    // 2. Search Text Match
     if (search.trim()) {
       const q = search.toLowerCase();
-      return s.name?.toLowerCase().includes(q) || s.email?.toLowerCase().includes(q);
+      const matchName = student.name?.toLowerCase().includes(q);
+      const matchEmail = student.email?.toLowerCase().includes(q);
+      return matchName || matchEmail;
     }
     return true;
   });
 
+  const paidCount = students.filter(s => s.isPaid).length;
+  const freeCount = students.length - paidCount;
+
   return (
-    <div className="space-y-6 relative z-10">
-      {/* Counters */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        <div className="bg-stone-950 p-4 rounded-2xl border border-stone-800">
-          <div className="text-xs font-bold text-stone-400 flex items-center gap-1.5 mb-1">
-            <Users className="w-3.5 h-3.5 text-amber-500" />
-            कुल पंजीकृत छात्र
+    <div className="space-y-5 relative z-10 text-stone-900">
+      
+      {/* Overview stats cards */}
+      <div className="grid grid-cols-3 gap-3">
+        <div className="bg-white p-3.5 rounded-2xl border border-stone-200 shadow-xs">
+          <div className="text-[10px] font-bold text-stone-500 uppercase flex items-center gap-1 mb-1">
+            <Users className="w-3.5 h-3.5 text-stone-500" />
+            कुल छात्र (Total)
           </div>
-          <div className="text-2xl font-black text-white">{students.length}</div>
+          <div className="text-xl sm:text-2xl font-black text-stone-900">{students.length}</div>
         </div>
 
-        <div className="bg-emerald-950/30 p-4 rounded-2xl border border-emerald-500/30">
-          <div className="text-xs font-bold text-emerald-400 flex items-center gap-1.5 mb-1">
-            <Crown className="w-3.5 h-3.5 text-emerald-400" />
-            सक्रिय VIP छात्र
+        <div className="bg-emerald-50 p-3.5 rounded-2xl border border-emerald-200">
+          <div className="text-[10px] font-bold text-emerald-700 uppercase flex items-center gap-1 mb-1">
+            <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
+            एक्टिव छात्र (Paid)
           </div>
-          <div className="text-2xl font-black text-emerald-400">{activeVipCount}</div>
+          <div className="text-xl sm:text-2xl font-black text-emerald-700">{paidCount}</div>
         </div>
 
-        <div className="bg-amber-950/30 p-4 rounded-2xl border border-amber-500/30">
-          <div className="text-xs font-bold text-amber-400 flex items-center gap-1.5 mb-1">
-            <Clock className="w-3.5 h-3.5 text-amber-400" />
-            समाप्त VIP (Expired)
+        <div className="bg-stone-50 p-3.5 rounded-2xl border border-stone-200">
+          <div className="text-[10px] font-bold text-stone-500 uppercase flex items-center gap-1 mb-1">
+            <Clock className="w-3.5 h-3.5 text-stone-500" />
+            फ्री छात्र (Free)
           </div>
-          <div className="text-2xl font-black text-amber-400">{expiredVipCount}</div>
-        </div>
-
-        <div className="bg-stone-950 p-4 rounded-2xl border border-stone-800">
-          <div className="text-xs font-bold text-stone-400 flex items-center gap-1.5 mb-1">
-            <UserCheck className="w-3.5 h-3.5 text-stone-400" />
-            फ्री छात्र
-          </div>
-          <div className="text-2xl font-black text-stone-300">{freeCount}</div>
+          <div className="text-xl sm:text-2xl font-black text-stone-600">{freeCount}</div>
         </div>
       </div>
 
       {actionMsg && (
-        <div className="p-4 rounded-xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 flex items-center justify-between gap-3 text-sm animate-fade-in">
-          <div className="flex items-center gap-2 font-medium">
-            <Check className="w-5 h-5 text-emerald-400 shrink-0" />
-            <span>{actionMsg}</span>
-          </div>
-          <button onClick={() => setActionMsg(null)} className="text-stone-400 hover:text-white cursor-pointer">
+        <div className="p-3 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 flex items-center justify-between gap-2 text-xs font-bold animate-fade-in">
+          <span>{actionMsg}</span>
+          <button onClick={() => setActionMsg(null)} className="text-stone-500 hover:text-stone-800">
             <X className="w-4 h-4" />
           </button>
         </div>
       )}
 
-      {/* Manual VIP Activation Section */}
-      <div className="bg-stone-950 p-4 rounded-2xl border border-stone-800">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Crown className="w-5 h-5 text-amber-500" />
-            <div>
-              <h4 className="text-sm font-bold text-white">मैन्युअल VIP एक्टिवेशन (Manual VIP Activation)</h4>
-              <p className="text-[11px] text-stone-500">यदि छात्र ने व्हाट्सएप पर भुगतान स्क्रीनशॉट भेजा है, तो यहाँ से डायरेक्ट चालू करें</p>
-            </div>
-          </div>
+      {/* Control bar: Filters, Search, Add Manual Student */}
+      <div className="flex flex-col sm:flex-row gap-3 justify-between items-stretch sm:items-center">
+        
+        {/* Filter Tab buttons */}
+        <div className="flex gap-1 bg-stone-100 p-1 rounded-xl border border-stone-200 overflow-x-auto scrollbar-none">
           <button
-            onClick={() => setShowManualForm(!showManualForm)}
-            className="bg-amber-500 hover:bg-amber-400 text-stone-950 px-3.5 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer"
+            onClick={() => setFilterType('all')}
+            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
+              filterType === 'all' ? 'bg-white text-stone-900 shadow-sm' : 'text-stone-500 hover:text-stone-800'
+            }`}
           >
-            <Plus className={`w-3.5 h-3.5 transition-transform duration-200 ${showManualForm ? 'rotate-45' : ''}`} />
-            <span>{showManualForm ? 'बंद करें' : 'शुरू करें'}</span>
+            सभी छात्र ({students.length})
+          </button>
+          
+          <button
+            onClick={() => setFilterType('paid')}
+            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer whitespace-nowrap flex items-center gap-1.5 ${
+              filterType === 'paid' ? 'bg-white text-emerald-700 shadow-sm' : 'text-stone-500 hover:text-stone-800'
+            }`}
+          >
+            <ShieldCheck className="w-3.5 h-3.5 text-emerald-500" />
+            Paid ({paidCount})
+          </button>
+
+          <button
+            onClick={() => setFilterType('free')}
+            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer whitespace-nowrap flex items-center gap-1.5 ${
+              filterType === 'free' ? 'bg-white text-stone-700 shadow-sm' : 'text-stone-500 hover:text-stone-800'
+            }`}
+          >
+            <Clock className="w-3.5 h-3.5 text-stone-500" />
+            Free ({freeCount})
           </button>
         </div>
 
-        {showManualForm && (
-          <form onSubmit={handleManualSubmit} className="mt-4 pt-4 border-t border-stone-800/80 grid grid-cols-1 sm:grid-cols-3 gap-3 items-end animate-in fade-in duration-150">
-            <div className="space-y-1.5">
-              <label className="text-[11px] font-bold text-stone-400">1. छात्र का नाम (Full Name)</label>
-              <input
-                type="text"
-                value={manualName}
-                onChange={e => setManualName(e.target.value)}
-                placeholder="उदा. राहुल कुमार"
-                className="w-full bg-stone-900 border border-stone-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-amber-500"
-                required
-              />
-            </div>
-            <div className="space-y-1.5">
-              <label className="text-[11px] font-bold text-stone-400">2. छात्र का जीमेल (Gmail ID)</label>
-              <input
-                type="email"
-                value={manualEmail}
-                onChange={e => setManualEmail(e.target.value)}
-                placeholder="उदा. rahul@gmail.com"
-                className="w-full bg-stone-900 border border-stone-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-amber-500"
-                required
-              />
-            </div>
-            <div className="flex gap-2 items-center">
-              <div className="flex-1 space-y-1.5">
-                <label className="text-[11px] font-bold text-stone-400">3. प्लान चुनें (Select Plan)</label>
-                <select
-                  value={manualPlan}
-                  onChange={e => setManualPlan(e.target.value as '1month' | '1year')}
-                  className="w-full bg-stone-900 border border-stone-800 rounded-xl px-2 py-2 text-xs text-white focus:outline-none focus:border-amber-500"
-                >
-                  <option value="1year">टॉपर बैच - 1 वर्ष (₹600)</option>
-                  <option value="1month">1 महीना VIP (₹99)</option>
-                </select>
-              </div>
-              <button
-                type="submit"
-                className="bg-emerald-600 hover:bg-emerald-500 text-white font-bold h-9 px-4 rounded-xl text-xs flex items-center justify-center transition-all cursor-pointer whitespace-nowrap shadow-md shadow-emerald-600/10 active:scale-95"
+        {/* Search Input & Action Button */}
+        <div className="flex items-center gap-2">
+          <div className="relative min-w-[180px] flex-1 sm:flex-initial">
+            <Search className="w-3.5 h-3.5 text-stone-400 absolute left-3 top-3" />
+            <input
+              type="text"
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              placeholder="छात्र का नाम या जीमेल खोजें..."
+              className="w-full bg-white border border-stone-200 rounded-xl pl-8 pr-3 py-2 text-xs text-stone-900 placeholder-stone-400 focus:outline-none focus:border-red-600 font-bold"
+              style={{ minHeight: '44px' }}
+            />
+          </div>
+
+          <button
+            onClick={() => setShowManualForm(true)}
+            className="bg-stone-900 hover:bg-stone-800 text-white font-black px-3 py-2 rounded-xl text-xs flex items-center gap-1 shrink-0 shadow-xs"
+            style={{ minHeight: '44px' }}
+          >
+            <Plus className="w-4 h-4" />
+            <span>छात्र जोड़ें</span>
+          </button>
+        </div>
+      </div>
+
+      {/* Manual Student Addition Dialog Form */}
+      {showManualForm && (
+        <div className="fixed inset-0 bg-stone-950/80 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-fade-in">
+          <form 
+            onSubmit={handleManualAddStudent}
+            className="bg-white border border-stone-200 rounded-3xl p-5 max-w-sm w-full space-y-4 shadow-2xl relative text-stone-900"
+          >
+            <div className="flex items-center justify-between border-b border-stone-100 pb-2.5">
+              <h3 className="font-black text-stone-900 text-sm flex items-center gap-1.5">
+                <Users className="w-4 h-4 text-red-600" />
+                <span>नया छात्र जोड़ें (Manual Register)</span>
+              </h3>
+              <button 
+                type="button" 
+                onClick={() => setShowManualForm(false)} 
+                className="text-stone-400 hover:text-stone-800 cursor-pointer p-1 rounded-full hover:bg-stone-150"
               >
-                सक्रिय करें
+                <X className="w-4 h-4" />
               </button>
             </div>
-          </form>
-        )}
-      </div>
 
-      {/* Controls Bar */}
-      <div className="flex flex-col sm:flex-row gap-3 justify-between items-stretch sm:items-center">
-        <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-none">
-          <button
-            onClick={() => setFilterVip('all')}
-            className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
-              filterVip === 'all' ? 'bg-amber-500 text-stone-950' : 'bg-stone-900 text-stone-400 hover:text-white border border-stone-800'
-            }`}
-          >
-            सभी ({students.length})
-          </button>
-          <button
-            onClick={() => setFilterVip('active_vip')}
-            className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1 whitespace-nowrap ${
-              filterVip === 'active_vip' ? 'bg-emerald-500 text-stone-950' : 'bg-stone-900 text-emerald-400 hover:text-white border border-stone-800'
-            }`}
-          >
-            <Crown className="w-3 h-3" /> सक्रिय VIP ({activeVipCount})
-          </button>
-          <button
-            onClick={() => setFilterVip('expired_vip')}
-            className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1 whitespace-nowrap ${
-              filterVip === 'expired_vip' ? 'bg-amber-500 text-stone-950' : 'bg-stone-900 text-amber-400 hover:text-white border border-stone-800'
-            }`}
-          >
-            <Clock className="w-3 h-3" /> समाप्त VIP ({expiredVipCount})
-          </button>
-          <button
-            onClick={() => setFilterVip('free')}
-            className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
-              filterVip === 'free' ? 'bg-stone-700 text-white' : 'bg-stone-900 text-stone-400 hover:text-white border border-stone-800'
-            }`}
-          >
-            फ्री ({freeCount})
-          </button>
-        </div>
-
-        <div className="relative min-w-[220px]">
-          <Search className="w-3.5 h-3.5 text-stone-500 absolute left-3 top-3" />
-          <input
-            type="text"
-            value={search}
-            onChange={e => setSearch(e.target.value)}
-            placeholder="छात्र का नाम या जीमेल खोजें..."
-            className="w-full bg-stone-950 border border-stone-800 rounded-xl pl-8 pr-3 py-2 text-xs text-white placeholder-stone-500 focus:outline-none focus:border-amber-500"
-          />
-        </div>
-      </div>
-
-      {/* Students List */}
-      {loading ? (
-        <div className="p-12 text-center text-stone-400 text-sm">
-          छात्रों का विवरण लोड हो रहा है...
-        </div>
-      ) : filteredStudents.length === 0 ? (
-        <div className="bg-stone-950 p-12 rounded-2xl border border-stone-800 text-center space-y-2">
-          <Users className="w-10 h-10 text-stone-600 mx-auto" />
-          <h4 className="text-white font-bold text-sm">कोई छात्र नहीं मिला</h4>
-          <p className="text-stone-500 text-xs">
-            दिए गए फ़िल्टर के अनुसार कोई छात्र रिकॉर्ड उपलब्ध नहीं है।
-          </p>
-        </div>
-      ) : (
-        <div className="space-y-3">
-          {filteredStudents.map((s) => {
-            const cleanEmail = s.email?.toLowerCase();
-            const vipInfo = s.vipInfo;
-            const isBusy = processingEmail === cleanEmail;
-
-            return (
-              <div 
-                key={s.id || s.email}
-                className={`bg-stone-950/90 border rounded-2xl p-4 transition-all ${
-                  s.isVipActive 
-                    ? 'border-emerald-500/30 shadow-md shadow-emerald-950/20' 
-                    : s.isVipExpired
-                    ? 'border-amber-500/40 bg-amber-950/10'
-                    : 'border-stone-800'
-                }`}
-              >
-                <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
-                  {/* Left: Avatar & Info */}
-                  <div className="flex items-start sm:items-center gap-3">
-                    <div className={`w-11 h-11 rounded-2xl flex items-center justify-center font-bold text-sm shrink-0 ${
-                      s.isVipActive 
-                        ? 'bg-gradient-to-br from-amber-400 to-amber-600 text-stone-950 shadow-md shadow-amber-900/40' 
-                        : s.isVipExpired
-                        ? 'bg-amber-950 border border-amber-500/40 text-amber-400'
-                        : 'bg-stone-800 text-stone-300'
-                    }`}>
-                      {s.name?.charAt(0)?.toUpperCase() || 'S'}
-                    </div>
-
-                    <div>
-                      <div className="flex flex-wrap items-center gap-2">
-                        <h4 className="font-bold text-white text-sm">{s.name}</h4>
-
-                        {/* Status Badges */}
-                        {s.isVipActive && (
-                          <span className="bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 text-[10px] font-black px-2 py-0.5 rounded-full flex items-center gap-1">
-                            <Crown className="w-3 h-3 text-emerald-400" />
-                            VIP सक्रिय ({vipInfo?.plan === '1month' ? '1 माह' : '1 वर्ष'}) • {vipInfo?.daysRemaining} दिन शेष
-                          </span>
-                        )}
-
-                        {s.isVipExpired && (
-                          <span className="bg-amber-500/20 border border-amber-500/40 text-amber-300 text-[10px] font-black px-2 py-0.5 rounded-full flex items-center gap-1">
-                            <Clock className="w-3 h-3 text-amber-400" />
-                            प्लान समाप्त (Expired)
-                          </span>
-                        )}
-
-                        {!s.isVipActive && !s.isVipExpired && (
-                          <span className="bg-stone-800 text-stone-400 text-[10px] font-medium px-2 py-0.5 rounded-full">
-                            साधारण (मुफ्त)
-                          </span>
-                        )}
-                      </div>
-
-                      <div className="flex flex-wrap items-center gap-2 text-xs text-stone-400 mt-1">
-                        <span className="flex items-center gap-1">
-                          <Mail className="w-3 h-3 text-stone-500 shrink-0" />
-                          <span className="font-mono text-stone-300">{s.email}</span>
-                          <button
-                            type="button"
-                            onClick={() => handleCopy(s.email)}
-                            className="hover:text-amber-400 cursor-pointer p-0.5"
-                            title="जीमेल कॉपी करें"
-                          >
-                            {copiedEmail === s.email ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
-                          </button>
-                        </span>
-
-                        {s.lastLogin && (
-                          <span className="text-[10px] text-stone-500 hidden sm:inline border-l border-stone-800 pl-2">
-                            लॉगिन: {new Date(s.lastLogin).toLocaleDateString('hi-IN')}
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Right: Plan Dates & Actions */}
-                  <div className="flex flex-col sm:flex-row sm:items-center gap-2.5 pt-2 sm:pt-0 border-t sm:border-t-0 border-stone-800/80">
-                    {/* Validity Info */}
-                    {vipInfo && (
-                      <div className="text-left sm:text-right text-[11px] bg-stone-900/80 px-3 py-1.5 rounded-xl border border-stone-800/80">
-                        <div className="text-stone-400 flex items-center sm:justify-end gap-1">
-                          <Hourglass className="w-3 h-3 text-amber-400" />
-                          <span>वैधता: <strong className="text-white">{vipInfo.formattedExpiry} तक</strong></span>
-                        </div>
-                        <div className="text-[10px] text-stone-500">
-                          {s.isVipActive ? `${vipInfo.daysRemaining} दिन बाकी` : 'प्लान अवधि पूर्ण हो चुकी है'}
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Action Buttons */}
-                    <div className="flex items-center gap-1.5">
-                      {s.isVipActive ? (
-                        <>
-                          <button
-                            type="button"
-                            onClick={() => setSelectedStudentForVip(s)}
-                            disabled={isBusy}
-                            className="px-3 py-1.5 rounded-xl text-xs font-bold bg-amber-500/15 hover:bg-amber-500/25 text-amber-400 border border-amber-500/30 transition-all cursor-pointer flex items-center gap-1"
-                            title="वैधता बढ़ाएँ (Extend)"
-                          >
-                            <Plus className="w-3.5 h-3.5" />
-                            <span>वैधता बढ़ाएँ</span>
-                          </button>
-
-                          <button
-                            type="button"
-                            onClick={() => handleRevokeVip(s)}
-                            disabled={isBusy}
-                            className="px-2.5 py-1.5 rounded-xl text-xs text-stone-400 hover:text-rose-400 hover:bg-rose-950/30 border border-stone-800 transition-colors cursor-pointer"
-                            title="VIP रद्द करें"
-                          >
-                            रद्द करें
-                          </button>
-                        </>
-                      ) : (
-                        <button
-                          type="button"
-                          onClick={() => setSelectedStudentForVip(s)}
-                          disabled={isBusy}
-                          className="px-4 py-2 rounded-xl text-xs font-black transition-all cursor-pointer flex items-center gap-1.5 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-stone-950 shadow-md shadow-amber-950/40"
-                        >
-                          <Crown className="w-3.5 h-3.5" />
-                          <span>{s.isVipExpired ? 'पुनः रिन्यू करें' : 'VIP एक्सेस दें'}</span>
-                        </button>
-                      )}
-                    </div>
-                  </div>
-                </div>
+            <div className="space-y-3">
+              <div>
+                <label className="block text-[11px] font-black text-stone-600 mb-1">
+                  छात्र का पूरा नाम (Full Name): *
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={manualName}
+                  onChange={e => setManualName(e.target.value)}
+                  placeholder="उदा. राहुल कुमार"
+                  className="w-full bg-white border border-stone-300 rounded-xl px-3 py-2.5 text-xs focus:outline-none focus:border-red-600 font-bold"
+                  style={{ minHeight: '44px' }}
+                />
               </div>
-            );
-          })}
+
+              <div>
+                <label className="block text-[11px] font-black text-stone-600 mb-1">
+                  जीमेल आईडी (Gmail ID): *
+                </label>
+                <input
+                  type="email"
+                  required
+                  value={manualEmail}
+                  onChange={e => setManualEmail(e.target.value)}
+                  placeholder="उदा. rahul@gmail.com"
+                  className="w-full bg-white border border-stone-300 rounded-xl px-3 py-2.5 text-xs focus:outline-none focus:border-red-600 font-bold"
+                  style={{ minHeight: '44px' }}
+                />
+              </div>
+
+              <div className="flex items-center gap-2 bg-stone-50 p-2.5 rounded-xl border border-stone-200">
+                <input
+                  type="checkbox"
+                  id="manual_is_paid"
+                  checked={manualIsPaid}
+                  onChange={e => setManualIsPaid(e.target.checked)}
+                  className="w-4 h-4 text-emerald-600 focus:ring-emerald-500 rounded cursor-pointer"
+                />
+                <label htmlFor="manual_is_paid" className="text-xs font-black text-stone-800 cursor-pointer select-none">
+                  क्रैश कोर्स तुरंत अनलॉक करें (Paid Active)?
+                </label>
+              </div>
+            </div>
+
+            <button
+              type="submit"
+              className="w-full bg-stone-900 hover:bg-stone-800 text-white font-black py-3 rounded-xl text-xs transition-all shadow-md cursor-pointer"
+              style={{ minHeight: '44px' }}
+            >
+              छात्र सहेजें और जोड़ें
+            </button>
+          </form>
         </div>
       )}
 
-      {/* Grant / Extend VIP Modal */}
-      {selectedStudentForVip && (
-        <div className="fixed inset-0 bg-black/85 backdrop-blur-md flex items-center justify-center p-4 z-50 animate-fade-in">
-          <div className="bg-stone-900 border border-amber-500/40 rounded-3xl max-w-md w-full p-6 shadow-2xl relative space-y-5">
-            <button
-              onClick={() => setSelectedStudentForVip(null)}
-              className="absolute top-4 right-4 text-stone-400 hover:text-white bg-stone-800 p-2 rounded-full cursor-pointer"
-            >
-              <X className="w-4 h-4" />
-            </button>
+      {/* Render list of students */}
+      {loading ? (
+        <div className="p-10 text-center text-stone-500 text-xs font-bold">
+          छात्रों की सूची लोड की जा रही है...
+        </div>
+      ) : filteredStudents.length === 0 ? (
+        <div className="bg-stone-50 border border-stone-200 p-10 rounded-2xl text-center space-y-1">
+          <Users className="w-8 h-8 text-stone-400 mx-auto" />
+          <p className="text-stone-900 text-xs font-bold">कोई छात्र नहीं मिला</p>
+          <p className="text-stone-500 text-[10px]">सर्च क्वेरी बदलें या नया छात्र जोड़ें।</p>
+        </div>
+      ) : (
+        <div className="overflow-x-auto rounded-2xl border border-stone-200 bg-white">
+          <table className="w-full text-left border-collapse">
+            <thead>
+              <tr className="bg-stone-50 text-stone-600 text-[10px] font-black uppercase tracking-wider border-b border-stone-200">
+                <th className="p-3">छात्र विवरण</th>
+                <th className="p-3 text-center">पंजीकरण तिथि</th>
+                <th className="p-3 text-center">क्रैश कोर्स स्थिति</th>
+                <th className="p-3 text-right">कार्रवाई</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-stone-150 text-xs font-bold">
+              {filteredStudents.map((student) => {
+                const isPaid = student.isPaid === true;
+                const isProcessing = processingId === student.id;
 
-            <div className="text-center">
-              <div className="w-12 h-12 rounded-2xl bg-amber-500/20 border border-amber-500/30 text-amber-400 flex items-center justify-center mx-auto mb-2 font-black text-lg">
-                <Crown className="w-6 h-6" />
-              </div>
-              <h3 className="text-lg font-bold text-white">VIP सदस्यता अवधि चुनें</h3>
-              <p className="text-xs text-stone-400 mt-0.5">
-                छात्र: <strong className="text-white">{selectedStudentForVip.name}</strong> ({selectedStudentForVip.email})
-              </p>
-            </div>
+                return (
+                  <tr key={student.id} className="hover:bg-stone-50/50">
+                    {/* Student Name and Email */}
+                    <td className="p-3">
+                      <div className="flex items-center gap-2.5">
+                        <div className="w-8 h-8 rounded-full bg-stone-100 text-stone-800 flex items-center justify-center font-black text-xs shrink-0 border border-stone-200">
+                          {student.name?.charAt(0)?.toUpperCase() || 'S'}
+                        </div>
+                        <div className="min-w-0">
+                          <h4 className="font-bold text-stone-900 truncate max-w-[160px] leading-tight">
+                            {student.name}
+                          </h4>
+                          <div className="flex items-center gap-1 text-[10px] text-stone-500 mt-0.5">
+                            <Mail className="w-3 h-3 text-stone-400 shrink-0" />
+                            <span className="truncate max-w-[140px] font-mono">{student.email}</span>
+                            <button
+                              type="button"
+                              onClick={() => handleCopy(student.email)}
+                              className="text-stone-400 hover:text-red-600 p-0.5 cursor-pointer shrink-0"
+                              title="ईमेल कॉपी करें"
+                            >
+                              {copiedEmail === student.email ? <Check className="w-3 h-3 text-emerald-600" /> : <Copy className="w-3 h-3" />}
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    </td>
 
-            {/* Plan Duration Choices */}
-            <div className="grid grid-cols-2 gap-3">
-              <div
-                onClick={() => setSelectedPlanToGrant('1month')}
-                className={`p-3.5 rounded-2xl border cursor-pointer transition-all ${
-                  selectedPlanToGrant === '1month'
-                    ? 'bg-amber-950/60 border-amber-500 text-white shadow-lg shadow-amber-950/50'
-                    : 'bg-stone-950 border-stone-800 text-stone-400 hover:border-stone-700'
-                }`}
-              >
-                <div className="font-bold text-xs uppercase tracking-wide text-amber-400">1 माह प्लान</div>
-                <div className="text-2xl font-black text-white mt-1">₹99</div>
-                <div className="text-[11px] text-stone-300 mt-1 flex items-center gap-1">
-                  <Hourglass className="w-3 h-3 text-amber-400" />
-                  30 दिन की वैधता
-                </div>
-                <div className="text-[10px] text-stone-500 mt-1">
-                  30 दिन बाद स्वतः समाप्त
-                </div>
-              </div>
+                    {/* Registration Date */}
+                    <td className="p-3 text-center text-[10px] text-stone-500">
+                      <span className="flex items-center justify-center gap-1">
+                        <Calendar className="w-3 h-3 text-stone-400" />
+                        {student.createdAt?.toDate?.()?.toLocaleDateString('hi-IN') || 'हाल ही में'}
+                      </span>
+                    </td>
 
-              <div
-                onClick={() => setSelectedPlanToGrant('1year')}
-                className={`p-3.5 rounded-2xl border cursor-pointer transition-all ${
-                  selectedPlanToGrant === '1year'
-                    ? 'bg-amber-950/60 border-amber-500 text-white shadow-lg shadow-amber-950/50'
-                    : 'bg-stone-950 border-stone-800 text-stone-400 hover:border-stone-700'
-                }`}
-              >
-                <div className="font-bold text-xs uppercase tracking-wide text-amber-400">1 वर्ष प्लान</div>
-                <div className="text-2xl font-black text-white mt-1">₹600</div>
-                <div className="text-[11px] text-stone-300 mt-1 flex items-center gap-1">
-                  <Hourglass className="w-3 h-3 text-amber-400" />
-                  365 दिन की वैधता
-                </div>
-                <div className="text-[10px] text-stone-500 mt-1">
-                  1 साल बाद स्वतः समाप्त
-                </div>
-              </div>
-            </div>
+                    {/* Paid Status & Manual Toggle Switch */}
+                    <td className="p-3 text-center">
+                      <div className="flex items-center justify-center gap-3">
+                        <span className={`px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider ${
+                          isPaid 
+                            ? 'bg-emerald-100 text-emerald-800' 
+                            : 'bg-stone-100 text-stone-500'
+                        }`}>
+                          {isPaid ? '✓ PAID' : '✕ FREE'}
+                        </span>
 
-            <p className="text-[11px] text-stone-400 bg-stone-950 p-3 rounded-xl border border-stone-800">
-              💡 यह अवधि पूरी होते ही छात्र का VIP एक्सेस अपने आप डीएक्टिवेट हो जाएगा। यदि छात्र बाद में दोबारा पेमेंट करता है तो फिर से नया प्लान एक्टिवेट हो जाएगा।
-            </p>
+                        {/* Custom visual elegant toggle switch */}
+                        <button
+                          type="button"
+                          disabled={isProcessing}
+                          onClick={() => handleTogglePaidStatus(student)}
+                          className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+                            isPaid ? 'bg-emerald-600' : 'bg-stone-200'
+                          }`}
+                          style={{ minHeight: '20px', minWidth: '36px' }}
+                          title={isPaid ? "एक्सेस रद्द (Lock) करें" : "कोर्स अनलॉक करें"}
+                        >
+                          <span
+                            aria-hidden="true"
+                            className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow-xs ring-0 transition duration-200 ease-in-out ${
+                              isPaid ? 'translate-x-4' : 'translate-x-0'
+                            }`}
+                          />
+                        </button>
+                      </div>
+                    </td>
 
-            <button
-              type="button"
-              onClick={() => handleGrantVip(selectedStudentForVip, selectedPlanToGrant)}
-              disabled={processingEmail === selectedStudentForVip.email}
-              className="w-full bg-amber-500 hover:bg-amber-400 text-stone-950 font-black py-3 rounded-xl transition-all shadow-md cursor-pointer text-sm flex items-center justify-center gap-2"
-            >
-              <Crown className="w-4 h-4" />
-              <span>
-                {selectedPlanToGrant === '1month' ? '1 माह (30 दिन) VIP एक्टिवेट करें' : '1 वर्ष (365 दिन) VIP एक्टिवेट करें'}
-              </span>
-            </button>
-          </div>
+                    {/* Delete action button */}
+                    <td className="p-3 text-right">
+                      <button
+                        type="button"
+                        disabled={isProcessing}
+                        onClick={() => handleDeleteStudent(student)}
+                        className="p-2 rounded-lg border border-stone-200 text-stone-400 hover:text-red-600 hover:bg-red-50 transition-colors cursor-pointer inline-flex items-center justify-center"
+                        style={{ minWidth: '36px', minHeight: '36px' }}
+                        title="रिकॉर्ड हटाएं"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
         </div>
       )}
     </div>

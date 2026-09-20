@@ -23,8 +23,16 @@ export const AuthProvider = ({ children }: any) => {
     }
     return null;
   });
-  const [isVIP, setIsVIP] = useState(false);
-  const [vipDetails, setVipDetails] = useState<any>(null);
+  const [isVIP, setIsVIP] = useState(true);
+  const [isPaid, setIsPaid] = useState<boolean>(false);
+  const [vipDetails, setVipDetails] = useState<any>({
+    isVip: true,
+    plan: 'free_unlocked',
+    planDurationText: 'मुफ़्त शिक्षा अभियान (सभी अनलॉक)',
+    isExpired: false,
+    daysRemaining: 9999,
+    formattedExpiry: 'असीमित (मुफ़्त एक्सेस)'
+  });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -55,22 +63,25 @@ export const AuthProvider = ({ children }: any) => {
           try {
             const userRef = doc(db, 'users', firebaseUser.uid);
             const userSnap = await getDoc(userRef);
+            const cleanEmail = firebaseUser.email.trim().toLowerCase();
             if (!userSnap.exists()) {
               await setDoc(userRef, {
                 uid: firebaseUser.uid,
                 name: firebaseUser.displayName || firebaseUser.email.split('@')[0] || 'Unknown',
-                email: firebaseUser.email,
+                email: cleanEmail,
                 photo: firebaseUser.photoURL || '',
+                isPaid: false,
                 createdAt: serverTimestamp(),
-                isActive: false
+                lastLogin: serverTimestamp()
               });
             } else {
               // Merge updates without losing active state
               await setDoc(userRef, {
                 uid: firebaseUser.uid,
                 name: firebaseUser.displayName || firebaseUser.email.split('@')[0] || 'Unknown',
-                email: firebaseUser.email,
-                photo: firebaseUser.photoURL || ''
+                email: cleanEmail,
+                photo: firebaseUser.photoURL || '',
+                lastLogin: serverTimestamp()
               }, { merge: true });
             }
           } catch (err) {
@@ -101,82 +112,50 @@ export const AuthProvider = ({ children }: any) => {
     return () => unsubAuth();
   }, []);
 
-  // Real-time VIP listener with automatic expiration check
+  // Real-time VIP listener with automatic expiration check (Forced to true for free access)
   useEffect(() => {
-    if (!user?.email) {
-      setIsVIP(false);
-      setVipDetails(null);
-      return;
-    }
-
-    const cleanEmail = user.email.trim().toLowerCase();
-    const envEmail = (import.meta.env.VITE_MAIN_ADMIN_EMAIL || '').trim().toLowerCase() || 'rajkumarchaurasia141@gmail.com';
-    if (cleanEmail === envEmail || getAdminEmails().includes(cleanEmail)) {
-      setIsVIP(true);
-      setVipDetails({
-        isVip: true,
-        plan: 'admin_lifetime',
-        planDurationText: 'लाइफटाइम एडमिन',
-        isExpired: false,
-        daysRemaining: 9999,
-        formattedExpiry: 'असीमित (Admin)'
-      });
-      return;
-    }
-
-    const uid = fbUser?.uid || `simulated_${cleanEmail.replace(/[^a-zA-Z0-9]/g, '_')}`;
-
-    // STEP 1 & STEP 3: Listen to 'users' collection at user.uid for active state
-    const userDocRef = doc(db, 'users', uid);
-    const unsubUser = onSnapshot(userDocRef, (snap) => {
-      if (snap.exists()) {
-        const data = snap.data();
-        if (data?.isActive === true) {
-          setIsVIP(true);
-          setVipDetails({
-            isVip: true,
-            plan: '1year',
-            planDurationText: '1 वर्ष प्लान',
-            isExpired: false,
-            daysRemaining: 365,
-            formattedExpiry: 'सक्रिय (Real-time)'
-          });
-          return;
-        }
-      }
-
-      // Legacy fallback: also check vip_users
-      const legacyDocRef = doc(db, 'vip_users', cleanEmail);
-      getDoc(legacyDocRef).then((docSnap) => {
-        if (docSnap.exists()) {
-          const data = docSnap.data();
-          if (data?.isVip === true) {
-            const expiryStatus = checkVipExpiryStatus(data.expiresAt);
-            if (!expiryStatus.isExpired) {
-              setIsVIP(true);
-              setVipDetails({
-                ...data,
-                isExpired: false,
-                daysRemaining: expiryStatus.daysRemaining,
-                statusText: expiryStatus.statusText,
-                formattedExpiry: expiryStatus.formattedExpiry
-              });
-              return;
-            }
-          }
-        }
-        setIsVIP(false);
-        setVipDetails(null);
-      }).catch(() => {
-        setIsVIP(false);
-        setVipDetails(null);
-      });
-    }, (err) => {
-      console.warn("User status listener notice:", err);
+    setIsVIP(true);
+    setVipDetails({
+      isVip: true,
+      plan: 'free_unlocked',
+      planDurationText: 'मुफ़्त शिक्षा अभियान (सभी अनलॉक)',
+      isExpired: false,
+      daysRemaining: 9999,
+      formattedExpiry: 'असीमित (मुफ़्त एक्सेस)'
     });
+  }, [user?.email]);
 
-    return () => unsubUser();
-  }, [user?.email, fbUser?.uid]);
+  // Real-time observer of current user's isPaid status in users collection
+  useEffect(() => {
+    let unsubUserDoc = () => {};
+
+    if (isAdmin) {
+      setIsPaid(true);
+      return;
+    }
+
+    const emailForUid = user?.email || fbUser?.email;
+    if (emailForUid) {
+      const cleanEmail = emailForUid.trim().toLowerCase();
+      const uid = fbUser?.uid || `simulated_${cleanEmail.replace(/[^a-zA-Z0-9]/g, '_')}`;
+      const userRef = doc(db, 'users', uid);
+
+      unsubUserDoc = onSnapshot(userRef, (snap) => {
+        if (snap.exists()) {
+          const data = snap.data();
+          setIsPaid(data?.isPaid === true);
+        } else {
+          setIsPaid(false);
+        }
+      }, (err) => {
+        console.warn("User doc listener error:", err);
+      });
+    } else {
+      setIsPaid(false);
+    }
+
+    return () => unsubUserDoc();
+  }, [user?.email, fbUser?.uid, isAdmin]);
 
   const login = async (name: string, email: string) => {
     setError(null);
@@ -226,14 +205,16 @@ export const AuthProvider = ({ children }: any) => {
           name: cleanName,
           email: cleanEmail,
           photo: '',
+          isPaid: false,
           createdAt: serverTimestamp(),
-          isActive: false
+          lastLogin: serverTimestamp()
         });
       } else {
-        // update basic info if already registered, keeping isActive intact
+        // update basic info if already registered, keeping isPaid intact
         await setDoc(userRef, {
           name: cleanName,
-          email: cleanEmail
+          email: cleanEmail,
+          lastLogin: serverTimestamp()
         }, { merge: true });
       }
     } catch (err) {
@@ -246,13 +227,20 @@ export const AuthProvider = ({ children }: any) => {
   const logout = () => {
     localStorage.removeItem('bseb_user');
     setUser(null);
-    setIsVIP(false);
-    setVipDetails(null);
+    setIsVIP(true);
+    setVipDetails({
+      isVip: true,
+      plan: 'free_unlocked',
+      planDurationText: 'मुफ़्त शिक्षा अभियान (सभी अनलॉक)',
+      isExpired: false,
+      daysRemaining: 9999,
+      formattedExpiry: 'असीमित (मुफ़्त एक्सेस)'
+    });
     setError(null);
   };
 
   return (
-    <AuthContext.Provider value={{ user, fbUser, isAdmin, isVIP, vipDetails, loading, login, logout, error, setError }}>
+    <AuthContext.Provider value={{ user, fbUser, isAdmin, isVIP, isPaid, vipDetails, loading, login, logout, error, setError }}>
       {children}
     </AuthContext.Provider>
   );

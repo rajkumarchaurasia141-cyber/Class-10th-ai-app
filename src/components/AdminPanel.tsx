@@ -77,7 +77,7 @@ export function AdminPanel({ onBack }: any) {
     };
 
     try {
-      const unsub = onSnapshot(collection(db, 'payments'), (snapshot) => {
+      const unsub = onSnapshot(collection(db, 'payment_requests'), (snapshot) => {
         updateCount(snapshot.docs);
       }, (err) => {
         console.warn("Payment requests notice:", err?.message || String(err));
@@ -408,15 +408,15 @@ export function AdminPanel({ onBack }: any) {
         <div className="flex border-b border-stone-800 mb-8 relative z-10 gap-2 overflow-x-auto scrollbar-none">
           <button 
             onClick={() => setActiveTab('requests')} 
-            className={`pb-3 px-4 font-bold text-sm flex items-center gap-2 transition-colors cursor-pointer whitespace-nowrap ${
+            className={`pb-3 px-4 font-bold text-sm flex items-center gap-2 transition-colors cursor-pointer whitespace-nowrap relative ${
               activeTab === 'requests' ? 'border-b-2 border-amber-500 text-amber-500' : 'text-stone-400 hover:text-stone-200'
             }`}
           >
-            <Receipt className="w-4 h-4" />
+            <Receipt className="w-4 h-4 text-amber-500" /> 
             <span>पेमेंट रिक्वेस्ट</span>
             {pendingRequestsCount > 0 && (
-              <span className="bg-amber-500 text-stone-950 font-black text-[11px] px-2 py-0.5 rounded-full">
-                {pendingRequestsCount} नई
+              <span className="bg-red-600 text-white text-[10px] font-black px-1.5 py-0.2 rounded-full animate-pulse">
+                {pendingRequestsCount}
               </span>
             )}
           </button>

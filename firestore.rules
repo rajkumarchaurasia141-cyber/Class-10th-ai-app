@@ -66,8 +66,18 @@ service cloud.firestore {
       allow read, write: if true;
     }
 
+    // Allow read/write to app_settings
+    match /app_settings/{docId} {
+      allow read, write: if true;
+    }
+
     // Allow read/write to admin_courses
     match /admin_courses/{courseId} {
+      allow read, write: if true;
+    }
+
+    // Allow read/write to users
+    match /users/{userId} {
       allow read, write: if true;
     }
   }

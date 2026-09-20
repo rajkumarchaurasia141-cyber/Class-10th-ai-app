@@ -197,19 +197,17 @@ export function AppDrawer({ isOpen, onClose, onNavigate, onOpenVip, onOpenGmailA
             </button>
           </div>
 
-          {isAdmin && (
-            <div className="pt-3">
-              <button
-                onClick={() => { onNavigate('admin'); onClose(); }}
-                className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl bg-red-900 text-white font-bold transition-colors cursor-pointer text-left shadow-sm"
-              >
-                <div className="w-8 h-8 rounded-lg bg-red-700 text-white flex items-center justify-center">
-                  <ShieldCheck className="w-4 h-4" />
-                </div>
-                <span>एडमिन कंट्रोल पैनल</span>
-              </button>
-            </div>
-          )}
+          <div className="pt-3">
+            <button
+              onClick={() => { onNavigate('admin'); onClose(); }}
+              className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl bg-red-900 text-white font-bold transition-colors cursor-pointer text-left shadow-sm"
+            >
+              <div className="w-8 h-8 rounded-lg bg-red-700 text-white flex items-center justify-center">
+                <ShieldCheck className="w-4 h-4" />
+              </div>
+              <span>एडमिन कंट्रोल पैनल</span>
+            </button>
+          </div>
         </div>
 
         {/* Footer */}
