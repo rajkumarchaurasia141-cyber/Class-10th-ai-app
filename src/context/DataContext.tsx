@@ -5,6 +5,7 @@ import { safeSetDoc, safeDeleteDoc } from '../utils/firestoreSafe';
 import { useAuth } from './AuthContext';
 import { defaultSubjectsData } from '../data/defaultCurriculum';
 import { defaultPaidPdfNotes } from '../data/defaultPdfNotes';
+import courseData from '../data/courseData.json';
 import { Subject, PaidPdfNote, LiveClass, LeaderboardEntry, RoutineItem, MotivationalQuote, NotificationItem, AppConfig, BannerItem } from '../types';
 
 export const defaultBanners: BannerItem[] = [
@@ -303,15 +304,26 @@ const DataContext = createContext<DataContextType | null>(null);
 
 export const DataProvider = ({ children }: any) => {
   const { user } = useAuth();
-  const [subjects, setSubjects] = useState<Record<string, Subject>>(defaultSubjectsData);
+  const [subjects, setSubjects] = useState<Record<string, Subject>>(() => {
+    const subjectsMap: Record<string, Subject> = {};
+    if (courseData && Array.isArray(courseData.subjects)) {
+      courseData.subjects.forEach((sub: any) => {
+        subjectsMap[sub.id] = sub as Subject;
+      });
+    }
+    return Object.keys(subjectsMap).length > 0 ? subjectsMap : defaultSubjectsData;
+  });
   const [paidNotes, setPaidNotes] = useState<PaidPdfNote[]>(() => {
+    const initialPdfNotes = courseData?.paid_notes && Array.isArray(courseData.paid_notes) && courseData.paid_notes.length > 0
+      ? (courseData.paid_notes as PaidPdfNote[])
+      : defaultPaidPdfNotes;
     try {
       const cached = localStorage.getItem('bseb_paid_notes_cache');
       if (cached) {
         const parsed = JSON.parse(cached);
         if (Array.isArray(parsed) && parsed.length > 0) {
           const mergedNotes = [...parsed];
-          defaultPaidPdfNotes.forEach((def) => {
+          initialPdfNotes.forEach((def) => {
             if (!mergedNotes.some(n => n.id === def.id || (n.subjectId === def.subjectId && n.chapterNo === def.chapterNo))) {
               mergedNotes.push(def);
             }
@@ -320,167 +332,28 @@ export const DataProvider = ({ children }: any) => {
         }
       }
     } catch {}
-    return defaultPaidPdfNotes;
+    return initialPdfNotes;
   });
   const [loading, setLoading] = useState(false);
 
   const fetchData = async () => {
+    setLoading(true);
     try {
-      const fetchOperation = async () => {
-        const subsSnap = await getDocs(collection(db, 'subjects'));
-        const firestoreData: Record<string, any> = {};
-
-        for (const docSnap of subsSnap.docs) {
-          const sub = docSnap.data();
-          const subId = docSnap.id;
-          const chSnap = await getDocs(query(collection(db, 'subjects', subId, 'chapters'), orderBy('chapter_no', 'asc')));
-          firestoreData[subId] = {
-            ...sub,
-            id: subId,
-            chapters: chSnap.docs.map(d => ({ id: d.id, ...d.data() }))
-          };
-        }
-        return firestoreData;
-      };
-
-      // Strict 2-second timeout race so that quota exhaustion or slow networks NEVER hang the UI
-      const timeoutPromise = new Promise<null>((resolve) => setTimeout(() => resolve(null), 2000));
-      const firestoreData = await Promise.race([fetchOperation(), timeoutPromise]);
-
-      if (!firestoreData) {
-        return;
-      }
-
-      // Merge: Start with default subjects, then overlay firestore data safely
       const merged: Record<string, Subject> = {};
-
-      Object.keys(defaultSubjectsData).forEach((subKey) => {
-        const defaultSub = defaultSubjectsData[subKey];
-        // Match firestore key case-insensitively
-        const matchingFirestoreKey = Object.keys(firestoreData).find(
-          k => k.trim().toLowerCase() === subKey.toLowerCase()
-        );
-        const firestoreSub = matchingFirestoreKey ? firestoreData[matchingFirestoreKey] : {};
-        
-        const chapterMap = new Map<number, any>();
-        
-        // 1. Add all default chapters first (guarantees all 14 Sanskrit chapters, 29 Hindi chapters, etc.)
-        if (defaultSub.chapters) {
-          defaultSub.chapters.forEach((ch: any) => {
-            const chNum = Number(ch.chapter_no);
-            if (!isNaN(chNum)) {
-              chapterMap.set(chNum, { ...ch, chapter_no: chNum });
-            }
-          });
-        }
-
-        // 2. Overlay firestore chapters if present, but NEVER drop chapters or downgrade 50 MCQs to 15/16!
-        if (firestoreSub.chapters && Array.isArray(firestoreSub.chapters)) {
-          firestoreSub.chapters.forEach((fCh: any) => {
-            const chNum = Number(fCh.chapter_no);
-            if (isNaN(chNum)) return;
-
-            const existing = chapterMap.get(chNum);
-            if (!existing) {
-              chapterMap.set(chNum, { ...fCh, chapter_no: chNum });
-            } else {
-              const fNotes = typeof fCh.notes_hindi === 'string' ? fCh.notes_hindi : '';
-              const eNotes = typeof existing.notes_hindi === 'string' ? existing.notes_hindi : '';
-              const bestNotes = fNotes.length > eNotes.length ? fNotes : eNotes;
-
-              const fIntro = typeof fCh.intro_hindi === 'string' ? fCh.intro_hindi : '';
-              const eIntro = typeof existing.intro_hindi === 'string' ? existing.intro_hindi : '';
-              const bestIntro = fIntro.length > eIntro.length ? fIntro : eIntro;
-
-              const fTips = typeof fCh.topper_tips === 'string' ? fCh.topper_tips : '';
-              const eTips = typeof existing.topper_tips === 'string' ? existing.topper_tips : '';
-              const bestTips = fTips.length > eTips.length ? fTips : eTips;
-
-              // CRUCIAL: Do NOT let partial 15 or 16 MCQs from Firestore replace the 50 MCQs!
-              const existingMcqCount = Array.isArray(existing.mcq) ? existing.mcq.length : 0;
-              const fMcqCount = Array.isArray(fCh.mcq) ? fCh.mcq.length : 0;
-              let bestMcq = existing.mcq;
-              if (fMcqCount >= 50 && fMcqCount >= existingMcqCount) {
-                bestMcq = fCh.mcq;
-              } else if (existingMcqCount > 0) {
-                bestMcq = existing.mcq;
-              } else if (fMcqCount > 0) {
-                bestMcq = fCh.mcq;
-              }
-
-              const existingQaCount = Array.isArray(existing.subjective_qa) ? existing.subjective_qa.length : 0;
-              const fQaCount = Array.isArray(fCh.subjective_qa) ? fCh.subjective_qa.length : 0;
-              const bestSubQa = fQaCount >= existingQaCount ? fCh.subjective_qa : existing.subjective_qa;
-
-              chapterMap.set(chNum, {
-                ...fCh,
-                ...existing,
-                chapter_no: chNum,
-                intro_hindi: bestIntro,
-                notes_hindi: bestNotes,
-                topper_tips: bestTips,
-                mcq: bestMcq,
-                subjective_qa: bestSubQa
-              });
-            }
-          });
-        }
-
-        // 3. Special GUARANTEE for Sanskrit: Ensure all 14 chapters are guaranteed intact with full 50 MCQs
-        if (subKey === 'sanskrit') {
-          defaultSubjectsData.sanskrit.chapters?.forEach((dCh: any) => {
-            const chNum = Number(dCh.chapter_no);
-            const current = chapterMap.get(chNum);
-            if (!current) {
-              chapterMap.set(chNum, { ...dCh, chapter_no: chNum });
-            } else {
-              // Always guarantee full 50 MCQs
-              if (!current.mcq || current.mcq.length < 50) {
-                current.mcq = dCh.mcq;
-              }
-              if (!current.notes_hindi || current.notes_hindi.length < 100) {
-                current.notes_hindi = dCh.notes_hindi;
-              }
-              if (!current.intro_hindi || current.intro_hindi.length < 50) {
-                current.intro_hindi = dCh.intro_hindi;
-              }
-              if (!current.topper_tips || current.topper_tips.length < 50) {
-                current.topper_tips = dCh.topper_tips;
-              }
-              if (!current.subjective_qa || current.subjective_qa.length < 5) {
-                current.subjective_qa = dCh.subjective_qa;
-              }
-              chapterMap.set(chNum, current);
-            }
-          });
-        }
-
-        const chaptersArray = Array.from(chapterMap.values());
-        chaptersArray.sort((a, b) => Number(a.chapter_no) - Number(b.chapter_no));
-
-        merged[subKey] = {
-          ...defaultSub,
-          ...firestoreSub,
-          id: subKey,
-          subject_name_hindi: defaultSub.subject_name_hindi || firestoreSub.subject_name_hindi,
-          chapters: chaptersArray
-        };
-      });
-
-      // Include extra subjects from firestore ONLY if they are NOT duplicate aliases of standard subjects
-      const KNOWN_KEYS = ['sanskrit', 'hindi', 'science', 'math', 'social_science', 'english', 'sst'];
-      Object.keys(firestoreData).forEach((rawKey) => {
-        const normKey = rawKey.trim().toLowerCase();
-        const isKnown = KNOWN_KEYS.includes(normKey);
-        const alreadyExists = Object.keys(merged).some(k => k.toLowerCase() === normKey);
-        if (!alreadyExists && !isKnown) {
-          merged[rawKey] = firestoreData[rawKey];
-        }
-      });
-
-      setSubjects(merged);
+      if (courseData && Array.isArray(courseData.subjects)) {
+        courseData.subjects.forEach((sub: any) => {
+          merged[sub.id] = sub as Subject;
+        });
+      }
+      if (Object.keys(merged).length > 0) {
+        setSubjects(merged);
+      } else {
+        setSubjects(defaultSubjectsData);
+      }
     } catch (e: any) {
       console.warn("Data Fetch Notice:", e?.message || String(e));
+    } finally {
+      setLoading(false);
     }
   };
 
