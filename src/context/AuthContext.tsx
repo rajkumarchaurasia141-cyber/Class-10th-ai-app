@@ -49,8 +49,7 @@ export const AuthProvider = ({ children }: any) => {
   };
 
   const cleanUserEmail = user?.email?.trim().toLowerCase() || '';
-  const mainAdminEmail = (import.meta.env.VITE_MAIN_ADMIN_EMAIL || '').trim().toLowerCase() || 'rajkumarchaurasia141@gmail.com';
-  const isAdmin = cleanUserEmail === mainAdminEmail || getAdminEmails().includes(cleanUserEmail);
+  const isAdmin = cleanUserEmail === 'rajkumarchaurasia143@gmail.com' || cleanUserEmail === 'rajkumarchaurasia141@gmail.com';
 
   useEffect(() => {
     // Listen to Firebase Auth state changes

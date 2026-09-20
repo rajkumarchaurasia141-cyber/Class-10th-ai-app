@@ -200,11 +200,11 @@ function MainApp() {
             />
           )}
 
-          {activeTab === 'admin' && adminVerified && (
+          {activeTab === 'admin' && isAdmin && adminVerified && (
             <AdminPanel onBack={() => setActiveTab('home')} />
           )}
 
-          {activeTab === 'admin' && !adminVerified && (
+          {activeTab === 'admin' && isAdmin && !adminVerified && (
             <div className="p-8 text-center max-w-md mx-auto my-12 bg-white rounded-3xl border border-stone-200 shadow-xl space-y-5">
               <div className="w-16 h-16 bg-red-50 text-red-600 rounded-2xl flex items-center justify-center mx-auto text-2xl font-bold animate-pulse">
                 🔑
@@ -271,6 +271,32 @@ function MainApp() {
                   </button>
                 </div>
               </form>
+            </div>
+          )}
+
+          {activeTab === 'admin' && !isAdmin && (
+            <div className="p-8 text-center max-w-md mx-auto my-12 bg-white rounded-3xl border border-stone-200 shadow-xl space-y-5">
+              <div className="w-16 h-16 bg-rose-50 text-rose-600 rounded-2xl flex items-center justify-center mx-auto text-2xl font-bold">
+                ⚠️
+              </div>
+              
+              <div className="space-y-2">
+                <h2 className="text-xl font-black text-stone-900 tracking-tight">अनधिकृत प्रवेश (Restricted Access)</h2>
+                <p className="text-stone-500 text-xs font-semibold leading-relaxed">
+                  यह अनुभाग केवल राजकुमार सर (Admin) के लिए सुरक्षित है। आपकी जीमेल आईडी <b>{user?.email || 'Guest / Not Logged In'}</b> को एडमिन का अधिकार प्राप्त नहीं है।
+                </p>
+                <p className="text-red-600 text-xs font-black">
+                  कृपया लॉगिन पेज पर सही एडमिन जीमेल आईडी से लॉगिन करें।
+                </p>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setActiveTab('home')}
+                className="w-full bg-stone-900 hover:bg-black text-white font-black py-3 rounded-xl shadow-md transition-all cursor-pointer text-xs"
+              >
+                ← मुख्य पृष्ठ (Home Screen) पर वापस जाएँ
+              </button>
             </div>
           )}
         </main>

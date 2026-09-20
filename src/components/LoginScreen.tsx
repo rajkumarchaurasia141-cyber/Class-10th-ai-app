@@ -61,8 +61,7 @@ export function LoginScreen() {
   };
 
   const cleanInputEmail = email.trim().toLowerCase();
-  const mainAdmin = (import.meta.env?.VITE_MAIN_ADMIN_EMAIL || '').trim().toLowerCase() || 'rajkumarchaurasia141@gmail.com';
-  const isAdminEmail = cleanInputEmail === mainAdmin || getAdminEmails().includes(cleanInputEmail);
+  const isAdminEmail = cleanInputEmail === 'rajkumarchaurasia143@gmail.com' || cleanInputEmail === 'rajkumarchaurasia141@gmail.com';
 
   return (
     <div className="min-h-screen w-full bg-gradient-to-b from-slate-900 via-slate-950 to-slate-900 flex flex-col items-center justify-center p-3.5 sm:p-6 selection:bg-red-500/30 overflow-x-hidden">

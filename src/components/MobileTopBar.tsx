@@ -89,13 +89,15 @@ export function MobileTopBar({
         </button>
 
         {/* Admin Link */}
-        <button
-          onClick={onOpenAdmin}
-          className="w-9 h-9 rounded-xl flex items-center justify-center bg-stone-900 text-amber-400 hover:bg-black hover:text-amber-300 transition-colors cursor-pointer shrink-0 shadow-md ring-1 ring-amber-500/20"
-          title="एडमिन पैनल"
-        >
-          <ShieldCheck className="w-5 h-5" />
-        </button>
+        {isAdmin && (
+          <button
+            onClick={onOpenAdmin}
+            className="w-9 h-9 rounded-xl flex items-center justify-center bg-stone-900 text-amber-400 hover:bg-black hover:text-amber-300 transition-colors cursor-pointer shrink-0 shadow-md ring-1 ring-amber-500/20"
+            title="एडमिन पैनल"
+          >
+            <ShieldCheck className="w-5 h-5" />
+          </button>
+        )}
 
         {/* Gmail Identification / Login */}
         {onOpenGmailAuth && (
