@@ -38,7 +38,7 @@ const SUBJECT_TABS: SubjectTab[] = [
     id: 'sanskrit',
     name: 'Sanskrit',
     nameHindi: 'संस्कृत (पीयूषम्)',
-    badge: 'अध्याय 1 लाइव (50 MCQ)',
+    badge: 'सभी 14 अध्याय लाइव (700 MCQ)',
     color: 'text-amber-800',
     bgLight: 'bg-amber-500/10',
     borderColor: 'border-amber-300'

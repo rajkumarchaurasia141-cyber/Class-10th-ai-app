@@ -273,7 +273,7 @@ export function AdminPanel({ onBack }: any) {
       await safeSetDoc(doc(db, 'subjects', subId), {
         subject_name: subjectName,
         subject_name_hindi: subjectNameHindi
-      }, { merge: true });
+      }, { merge: true }, 3000, true);
 
       let finalMcq = mcqList.filter(m => m.question.trim().length > 0);
       let finalQa = qaList.filter(q => q.question.trim().length > 0);
@@ -298,7 +298,7 @@ export function AdminPanel({ onBack }: any) {
         mcq: finalMcq,
         subjective_qa: finalQa,
         updatedAt: new Date().toISOString()
-      }, { merge: true });
+      }, { merge: true }, 3000, true);
 
       if (ok) {
         setCMsg(`अध्याय ${chNo} (${chapterNameHindi || subjectNameHindi}) सफलतापूर्वक Firestore में सेव हो गया!`);

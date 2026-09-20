@@ -11,13 +11,14 @@ import {
   Send, 
   ShieldCheck, 
   LogOut, 
-  Sparkles,
-  ExternalLink,
-  Hourglass,
-  Clock,
-  PhoneCall,
-  Radio,
-  Trophy
+  Sparkles, 
+  ExternalLink, 
+  Hourglass, 
+  Clock, 
+  PhoneCall, 
+  Radio, 
+  Trophy,
+  Mail
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
@@ -26,9 +27,10 @@ interface AppDrawerProps {
   onClose: () => void;
   onNavigate: (view: string, extra?: any) => void;
   onOpenVip: () => void;
+  onOpenGmailAuth?: () => void;
 }
 
-export function AppDrawer({ isOpen, onClose, onNavigate, onOpenVip }: AppDrawerProps) {
+export function AppDrawer({ isOpen, onClose, onNavigate, onOpenVip, onOpenGmailAuth }: AppDrawerProps) {
   const { user, isAdmin, isVIP, vipDetails, logout } = useAuth();
 
   if (!isOpen) return null;
@@ -55,15 +57,24 @@ export function AppDrawer({ isOpen, onClose, onNavigate, onOpenVip }: AppDrawerP
 
           <div className="flex items-center gap-3">
             <div className="w-13 h-13 rounded-full bg-white text-red-700 flex items-center justify-center font-black text-xl shadow-md border-2 border-amber-300 shrink-0">
-              {user?.name ? user.name.charAt(0).toUpperCase() : 'S'}
+              {isAdmin ? '👑' : user?.name ? user.name.charAt(0).toUpperCase() : 'B'}
             </div>
-            <div className="min-w-0">
-              <h3 className="font-bold text-base text-white truncate leading-tight">{user?.name || 'छात्र'}</h3>
-              <p className="text-xs text-stone-300 truncate">{user?.email}</p>
+            <div className="min-w-0 flex-1">
+              <h3 className="font-bold text-base text-white truncate leading-tight">
+                {isAdmin ? 'राजकुमार चौरसिया' : user?.name || 'अतिथि विद्यार्थी'}
+              </h3>
+              <p className="text-xs text-stone-300 truncate">
+                {user?.email || 'जीमेल कनेक्ट नहीं है'}
+              </p>
               
-              {/* VIP Status Badge */}
-              <div className="mt-1.5 flex items-center gap-1.5">
-                {isVIP ? (
+              {/* VIP / Admin Status Badge */}
+              <div className="mt-1.5 flex items-center gap-1.5 flex-wrap">
+                {isAdmin ? (
+                  <span className="bg-amber-400 text-stone-950 text-[10px] font-black px-2 py-0.5 rounded-full flex items-center gap-1 shadow-sm">
+                    <ShieldCheck className="w-3 h-3 text-stone-950 fill-current" />
+                    सुपर एडमिन (Admin)
+                  </span>
+                ) : isVIP ? (
                   <span className="bg-amber-400 text-stone-950 text-[10px] font-black px-2 py-0.5 rounded-full flex items-center gap-1 shadow-sm">
                     <Crown className="w-3 h-3 text-stone-950 fill-stone-950" />
                     VIP एक्टिव ({vipDetails?.daysRemaining || 0} दिन शेष)
@@ -75,12 +86,26 @@ export function AppDrawer({ isOpen, onClose, onNavigate, onOpenVip }: AppDrawerP
                   </span>
                 ) : (
                   <span className="bg-white/20 text-white text-[10px] font-medium px-2 py-0.5 rounded-full">
-                    साधारण (मुफ़्त) खाता
+                    {user?.email ? 'साधारण (मुफ़्त) खाता' : 'डायरेक्ट स्टडी मोड'}
                   </span>
                 )}
               </div>
             </div>
           </div>
+
+          {/* Quick Gmail Auth button if not identified or if wants to switch */}
+          {!isAdmin && onOpenGmailAuth && (
+            <button
+              onClick={() => {
+                onClose();
+                onOpenGmailAuth();
+              }}
+              className="mt-3 w-full py-1.5 px-3 bg-white/15 hover:bg-white/25 text-amber-200 border border-amber-300/40 rounded-xl text-[11px] font-bold flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+            >
+              <Mail className="w-3.5 h-3.5 text-amber-300" />
+              <span>{user?.email ? 'जीमेल बदलें / एडमिन पहचान' : 'जीमेल से पहचानें (Admin / Profile)'}</span>
+            </button>
+          )}
         </div>
 
         {/* Navigation Items */}
@@ -196,13 +221,26 @@ export function AppDrawer({ isOpen, onClose, onNavigate, onOpenVip }: AppDrawerP
             <PhoneCall className="w-3.5 h-3.5 text-red-600" />
             <span>हेल्पलाइन: 9241511070</span>
           </button>
-          <button 
-            onClick={logout}
-            className="flex items-center gap-1.5 text-rose-600 hover:text-rose-800 font-bold cursor-pointer"
-          >
-            <LogOut className="w-3.5 h-3.5" />
-            <span>लॉगआउट</span>
-          </button>
+          {user?.email ? (
+            <button 
+              onClick={logout}
+              className="flex items-center gap-1.5 text-rose-600 hover:text-rose-800 font-bold cursor-pointer"
+            >
+              <LogOut className="w-3.5 h-3.5" />
+              <span>लॉगआउट</span>
+            </button>
+          ) : (
+            <button 
+              onClick={() => {
+                onClose();
+                if (onOpenGmailAuth) onOpenGmailAuth();
+              }}
+              className="flex items-center gap-1.5 text-red-700 hover:text-red-900 font-bold cursor-pointer"
+            >
+              <Mail className="w-3.5 h-3.5" />
+              <span>जीमेल पहचान</span>
+            </button>
+          )}
         </div>
       </div>
     </div>

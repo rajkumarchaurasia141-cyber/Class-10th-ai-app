@@ -23,18 +23,19 @@ export function SubjectsExplorer({ subjectId, onBack }: any) {
   const [showPaidTest, setShowPaidTest] = useState(false);
   const [activeTab, setActiveTab] = useState<'intro' | 'notes' | 'tips' | 'qna' | 'mcq'>('intro');
 
-  const subject = subjects[subjectId];
+  const subject = subjects[subjectId] || subjects[subjectId?.toLowerCase()] || (subjectId?.toLowerCase().includes('sanskrit') ? subjects['sanskrit'] : undefined);
   if (!subject) return <div className="p-4 text-center text-stone-400">विषय नहीं मिला</div>;
 
   const chapters = subject.chapters || [];
-  const currentChapter = chapters.find((c: any) => c.chapter_no === selectedCh) || chapters[0];
+  const currentChapter = chapters.find((c: any) => Number(c.chapter_no) === Number(selectedCh)) || chapters[0];
 
-  const handleSelectChapter = (chNo: number) => {
-    if (chNo > 1 && !isVIP) {
+  const handleSelectChapter = (chNo: number | string) => {
+    const numericCh = Number(chNo);
+    if (numericCh > 1 && !isVIP) {
       setShowPaywall(true);
       return;
     }
-    setSelectedCh(chNo);
+    setSelectedCh(numericCh);
     setActiveTab('intro');
   };
 
@@ -73,13 +74,13 @@ export function SubjectsExplorer({ subjectId, onBack }: any) {
             key={ch.id || `chapter-${ch.chapter_no}-${index}`}
             onClick={() => handleSelectChapter(ch.chapter_no)}
             className={`px-3.5 py-2 rounded-xl whitespace-nowrap font-extrabold text-xs transition-all flex items-center gap-1.5 cursor-pointer shrink-0 shadow-xs ${
-              selectedCh === ch.chapter_no 
+              Number(selectedCh) === Number(ch.chapter_no) 
                 ? 'bg-red-700 text-white shadow-md' 
                 : 'bg-white text-stone-700 border border-slate-200 hover:bg-slate-50'
             }`}
           >
             <span>अध्याय {ch.chapter_no}</span>
-            {ch.chapter_no > 1 && !isVIP && (
+            {Number(ch.chapter_no) > 1 && !isVIP && (
               <span className="text-[9px] bg-amber-400 text-stone-950 font-black px-1.5 py-0.5 rounded ml-1">VIP</span>
             )}
           </button>

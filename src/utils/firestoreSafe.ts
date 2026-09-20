@@ -73,11 +73,11 @@ export async function safeSetDoc<T = any>(
   reference: DocumentReference<T>,
   data: any,
   options?: SetOptions,
-  timeoutMs: number = 2500
+  timeoutMs: number = 2500,
+  forceAttempt: boolean = false
 ): Promise<boolean> {
-  // If quota is already exceeded, SKIP network write completely
-  // to avoid resource-exhausted exceptions and Firestore backoff delay loops
-  if (isFirestoreQuotaExceeded()) {
+  // If quota is already exceeded, SKIP routine background writes unless forceAttempt is true
+  if (isFirestoreQuotaExceeded() && !forceAttempt) {
     console.warn("Firestore write skipped: Daily write quota reached (20,000/day). Saved to local cache.");
     return false;
   }
@@ -90,6 +90,10 @@ export async function safeSetDoc<T = any>(
     if (result === 'timeout') {
       console.warn("Firestore write timed out. Safely continuing with local data.");
       return false;
+    }
+    // If successfully written, clear any stale quota exceeded flag
+    if (isFirestoreQuotaExceeded()) {
+      setFirestoreQuotaExceeded(false);
     }
     return true;
   } catch (err: any) {
@@ -105,9 +109,10 @@ export async function safeSetDoc<T = any>(
 
 export async function safeDeleteDoc<T = any>(
   reference: DocumentReference<T>,
-  timeoutMs: number = 2500
+  timeoutMs: number = 2500,
+  forceAttempt: boolean = false
 ): Promise<boolean> {
-  if (isFirestoreQuotaExceeded()) {
+  if (isFirestoreQuotaExceeded() && !forceAttempt) {
     console.warn("Firestore delete skipped: Daily quota reached. Data updated locally.");
     return false;
   }
@@ -120,6 +125,9 @@ export async function safeDeleteDoc<T = any>(
     if (result === 'timeout') {
       console.warn("Firestore delete timed out. Safely continuing.");
       return false;
+    }
+    if (isFirestoreQuotaExceeded()) {
+      setFirestoreQuotaExceeded(false);
     }
     return true;
   } catch (err: any) {

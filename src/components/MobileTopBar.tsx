@@ -1,5 +1,5 @@
 import React from 'react';
-import { Menu, Bell, Crown, ShieldCheck } from 'lucide-react';
+import { Menu, Bell, Crown, ShieldCheck, Mail } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
 interface MobileTopBarProps {
@@ -7,6 +7,7 @@ interface MobileTopBarProps {
   onOpenNotifications: () => void;
   onOpenVip: () => void;
   onOpenAdmin: () => void;
+  onOpenGmailAuth?: () => void;
   unreadCount?: number;
 }
 
@@ -15,9 +16,10 @@ export function MobileTopBar({
   onOpenNotifications,
   onOpenVip,
   onOpenAdmin,
+  onOpenGmailAuth,
   unreadCount = 2
 }: MobileTopBarProps) {
-  const { isVIP, isAdmin, vipDetails } = useAuth();
+  const { isVIP, isAdmin, vipDetails, user } = useAuth();
   const daysLeft = vipDetails?.daysRemaining;
 
   return (
@@ -90,10 +92,30 @@ export function MobileTopBar({
         {isAdmin && (
           <button
             onClick={onOpenAdmin}
-            className="w-8 h-8 rounded-xl bg-stone-900 text-amber-400 hover:bg-black flex items-center justify-center transition-colors cursor-pointer shrink-0"
+            className="w-8 h-8 rounded-xl bg-stone-900 text-amber-400 hover:bg-black flex items-center justify-center transition-colors cursor-pointer shrink-0 shadow-xs"
             title="एडमिन पैनल"
           >
             <ShieldCheck className="w-4 h-4" />
+          </button>
+        )}
+
+        {/* Gmail Identification / Login */}
+        {onOpenGmailAuth && (
+          <button
+            onClick={onOpenGmailAuth}
+            className={`h-8 px-2 rounded-xl flex items-center gap-1 text-xs font-bold transition-all cursor-pointer shrink-0 ${
+              isAdmin
+                ? 'bg-amber-400 text-stone-950 hover:bg-amber-300'
+                : user?.email
+                ? 'bg-slate-100 text-stone-800 hover:bg-slate-200'
+                : 'bg-red-50 text-red-700 hover:bg-red-100 border border-red-200'
+            }`}
+            title={user?.email ? `जीमेल: ${user.email}` : "जीमेल से पहचान करें"}
+          >
+            <Mail className="w-3.5 h-3.5" />
+            <span className="text-[10px] hidden sm:inline">
+              {isAdmin ? 'एडमिन' : user?.email ? 'जीमेल' : 'लॉगिन'}
+            </span>
           </button>
         )}
       </div>

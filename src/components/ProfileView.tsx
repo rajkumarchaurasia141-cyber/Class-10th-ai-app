@@ -23,6 +23,7 @@ interface ProfileViewProps {
   onOpenSocial: () => void;
   onOpenAdmin: () => void;
   onOpenCourse: () => void;
+  onOpenGmailAuth?: () => void;
 }
 
 export function ProfileView({
@@ -30,7 +31,8 @@ export function ProfileView({
   onOpenRoutine,
   onOpenSocial,
   onOpenAdmin,
-  onOpenCourse
+  onOpenCourse,
+  onOpenGmailAuth
 }: ProfileViewProps) {
   const { user, isVIP, isAdmin, vipDetails, logout } = useAuth();
   const daysLeft = vipDetails?.daysRemaining;
@@ -40,23 +42,61 @@ export function ProfileView({
       {/* Profile Card */}
       <div className="bg-white rounded-3xl p-5 border border-slate-200/90 shadow-sm flex items-center gap-4">
         <div className="w-16 h-16 rounded-full bg-gradient-to-tr from-red-600 to-amber-500 text-white flex items-center justify-center font-black text-2xl shadow-md border-2 border-white shrink-0">
-          {user?.name ? user.name.charAt(0).toUpperCase() : 'S'}
+          {isAdmin ? '👑' : user?.name ? user.name.charAt(0).toUpperCase() : 'B'}
         </div>
         <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-2">
-            <h3 className="font-black text-stone-900 text-lg truncate">{user?.name || 'छात्र'}</h3>
-            {isVIP && (
+          <div className="flex items-center gap-2 flex-wrap">
+            <h3 className="font-black text-stone-900 text-lg truncate">
+              {isAdmin ? 'राजकुमार चौरसिया' : user?.name || 'अतिथि विद्यार्थी'}
+            </h3>
+            {isAdmin ? (
+              <span className="bg-amber-400 text-stone-950 font-black px-2 py-0.5 rounded-full text-xs shadow-xs flex items-center gap-1">
+                <ShieldCheck className="w-3 h-3 fill-current" />
+                सुपर एडमिन
+              </span>
+            ) : isVIP ? (
               <span className="bg-amber-400 text-stone-950 p-1 rounded-full text-xs shadow-xs" title="VIP स्टूडेंट">
                 <Crown className="w-3 h-3 fill-current" />
               </span>
-            )}
+            ) : null}
           </div>
-          <p className="text-xs text-stone-500 font-mono truncate">{user?.email}</p>
+          <p className="text-xs text-stone-500 font-mono truncate">
+            {user?.email || 'जीमेल कनेक्ट नहीं है'}
+          </p>
           <span className="inline-block mt-1 text-[10px] font-bold text-red-700 bg-red-50 border border-red-200 px-2 py-0.5 rounded-full">
             बिहार बोर्ड कक्षा 10वीं (BSEB 2027)
           </span>
         </div>
       </div>
+
+      {/* Gmail Identification Card for Admin / Student Sync */}
+      {onOpenGmailAuth && (
+        <div className="bg-gradient-to-r from-stone-900 via-stone-850 to-stone-900 rounded-3xl p-4 text-white border border-amber-500/30 shadow-md">
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2.5">
+              <div className="w-10 h-10 rounded-2xl bg-white/10 border border-white/20 flex items-center justify-center text-amber-400 shrink-0">
+                <Mail className="w-5 h-5" />
+              </div>
+              <div>
+                <h4 className="font-black text-sm text-white">
+                  {isAdmin ? 'एडमिन जीमेल सक्रिय है' : 'जीमेल से पहचान'}
+                </h4>
+                <p className="text-[11px] text-stone-300 mt-0.5">
+                  {isAdmin 
+                    ? 'rajkumarchaurasia141@gmail.com से लॉग इन हैं' 
+                    : 'एडमिन या VIP प्रोफाइल अपने जीमेल से सीधे पहचानें'}
+                </p>
+              </div>
+            </div>
+            <button
+              onClick={onOpenGmailAuth}
+              className="px-3.5 py-2 bg-gradient-to-r from-amber-500 to-amber-400 hover:from-amber-400 hover:to-amber-300 text-stone-950 font-black text-xs rounded-xl shadow-xs transition-transform active:scale-95 cursor-pointer shrink-0"
+            >
+              {isAdmin ? 'जीमेल बदलें' : 'पहचान करें'}
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Subscription Status Card */}
       <div className={`rounded-3xl p-5 border shadow-xs space-y-3 ${
@@ -178,14 +218,24 @@ export function ProfileView({
         )}
       </div>
 
-      {/* Logout */}
-      <button
-        onClick={logout}
-        className="w-full p-3.5 rounded-2xl bg-white hover:bg-rose-50 text-rose-600 font-bold text-xs border border-rose-200 flex items-center justify-center gap-2 transition-all cursor-pointer shadow-xs"
-      >
-        <LogOut className="w-4 h-4" />
-        <span>ऐप से लॉगआउट करें</span>
-      </button>
+      {/* Logout or Login with Gmail */}
+      {user?.email ? (
+        <button
+          onClick={logout}
+          className="w-full p-3.5 rounded-2xl bg-white hover:bg-rose-50 text-rose-600 font-bold text-xs border border-rose-200 flex items-center justify-center gap-2 transition-all cursor-pointer shadow-xs"
+        >
+          <LogOut className="w-4 h-4" />
+          <span>लॉगआउट करें / जीमेल बदलें</span>
+        </button>
+      ) : onOpenGmailAuth ? (
+        <button
+          onClick={onOpenGmailAuth}
+          className="w-full p-3.5 rounded-2xl bg-stone-900 hover:bg-black text-amber-400 font-bold text-xs flex items-center justify-center gap-2 transition-all cursor-pointer shadow-sm"
+        >
+          <Mail className="w-4 h-4" />
+          <span>जीमेल से पहचान / लॉगिन करें</span>
+        </button>
+      ) : null}
     </div>
   );
 }

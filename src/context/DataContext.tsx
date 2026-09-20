@@ -309,7 +309,15 @@ export const DataProvider = ({ children }: any) => {
       const cached = localStorage.getItem('bseb_paid_notes_cache');
       if (cached) {
         const parsed = JSON.parse(cached);
-        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          const mergedNotes = [...parsed];
+          defaultPaidPdfNotes.forEach((def) => {
+            if (!mergedNotes.some(n => n.id === def.id || (n.subjectId === def.subjectId && n.chapterNo === def.chapterNo))) {
+              mergedNotes.push(def);
+            }
+          });
+          return mergedNotes;
+        }
       }
     } catch {}
     return defaultPaidPdfNotes;
@@ -348,42 +356,66 @@ export const DataProvider = ({ children }: any) => {
 
       Object.keys(defaultSubjectsData).forEach((subKey) => {
         const defaultSub = defaultSubjectsData[subKey];
-        const firestoreSub = firestoreData[subKey] || {};
+        // Match firestore key case-insensitively
+        const matchingFirestoreKey = Object.keys(firestoreData).find(
+          k => k.trim().toLowerCase() === subKey.toLowerCase()
+        );
+        const firestoreSub = matchingFirestoreKey ? firestoreData[matchingFirestoreKey] : {};
         
         const chapterMap = new Map<number, any>();
         
-        // 1. Add all default chapters first (guarantees chapter 3 and all rich notes exist)
+        // 1. Add all default chapters first (guarantees all 14 Sanskrit chapters, 29 Hindi chapters, etc.)
         if (defaultSub.chapters) {
           defaultSub.chapters.forEach((ch: any) => {
-            chapterMap.set(ch.chapter_no, { ...ch });
+            const chNum = Number(ch.chapter_no);
+            if (!isNaN(chNum)) {
+              chapterMap.set(chNum, { ...ch, chapter_no: chNum });
+            }
           });
         }
 
-        // 2. Overlay firestore chapters if present, but keep the richer content
+        // 2. Overlay firestore chapters if present, but NEVER drop chapters or downgrade 50 MCQs to 15/16!
         if (firestoreSub.chapters && Array.isArray(firestoreSub.chapters)) {
           firestoreSub.chapters.forEach((fCh: any) => {
-            const existing = chapterMap.get(fCh.chapter_no);
+            const chNum = Number(fCh.chapter_no);
+            if (isNaN(chNum)) return;
+
+            const existing = chapterMap.get(chNum);
             if (!existing) {
-              chapterMap.set(fCh.chapter_no, fCh);
+              chapterMap.set(chNum, { ...fCh, chapter_no: chNum });
             } else {
-              const fNotes = fCh.notes_hindi || '';
-              const eNotes = existing.notes_hindi || '';
+              const fNotes = typeof fCh.notes_hindi === 'string' ? fCh.notes_hindi : '';
+              const eNotes = typeof existing.notes_hindi === 'string' ? existing.notes_hindi : '';
               const bestNotes = fNotes.length > eNotes.length ? fNotes : eNotes;
 
-              const fIntro = fCh.intro_hindi || '';
-              const eIntro = existing.intro_hindi || '';
+              const fIntro = typeof fCh.intro_hindi === 'string' ? fCh.intro_hindi : '';
+              const eIntro = typeof existing.intro_hindi === 'string' ? existing.intro_hindi : '';
               const bestIntro = fIntro.length > eIntro.length ? fIntro : eIntro;
 
-              const fTips = fCh.topper_tips || '';
-              const eTips = existing.topper_tips || '';
+              const fTips = typeof fCh.topper_tips === 'string' ? fCh.topper_tips : '';
+              const eTips = typeof existing.topper_tips === 'string' ? existing.topper_tips : '';
               const bestTips = fTips.length > eTips.length ? fTips : eTips;
 
-              const bestMcq = (fCh.mcq && fCh.mcq.length >= (existing.mcq?.length || 0)) ? fCh.mcq : existing.mcq;
-              const bestSubQa = (fCh.subjective_qa && fCh.subjective_qa.length >= (existing.subjective_qa?.length || 0)) ? fCh.subjective_qa : existing.subjective_qa;
+              // CRUCIAL: Do NOT let partial 15 or 16 MCQs from Firestore replace the 50 MCQs!
+              const existingMcqCount = Array.isArray(existing.mcq) ? existing.mcq.length : 0;
+              const fMcqCount = Array.isArray(fCh.mcq) ? fCh.mcq.length : 0;
+              let bestMcq = existing.mcq;
+              if (fMcqCount >= 50 && fMcqCount >= existingMcqCount) {
+                bestMcq = fCh.mcq;
+              } else if (existingMcqCount > 0) {
+                bestMcq = existing.mcq;
+              } else if (fMcqCount > 0) {
+                bestMcq = fCh.mcq;
+              }
 
-              chapterMap.set(fCh.chapter_no, {
+              const existingQaCount = Array.isArray(existing.subjective_qa) ? existing.subjective_qa.length : 0;
+              const fQaCount = Array.isArray(fCh.subjective_qa) ? fCh.subjective_qa.length : 0;
+              const bestSubQa = fQaCount >= existingQaCount ? fCh.subjective_qa : existing.subjective_qa;
+
+              chapterMap.set(chNum, {
                 ...fCh,
                 ...existing,
+                chapter_no: chNum,
                 intro_hindi: bestIntro,
                 notes_hindi: bestNotes,
                 topper_tips: bestTips,
@@ -394,20 +426,55 @@ export const DataProvider = ({ children }: any) => {
           });
         }
 
+        // 3. Special GUARANTEE for Sanskrit: Ensure all 14 chapters are guaranteed intact with full 50 MCQs
+        if (subKey === 'sanskrit') {
+          defaultSubjectsData.sanskrit.chapters?.forEach((dCh: any) => {
+            const chNum = Number(dCh.chapter_no);
+            const current = chapterMap.get(chNum);
+            if (!current) {
+              chapterMap.set(chNum, { ...dCh, chapter_no: chNum });
+            } else {
+              // Always guarantee full 50 MCQs
+              if (!current.mcq || current.mcq.length < 50) {
+                current.mcq = dCh.mcq;
+              }
+              if (!current.notes_hindi || current.notes_hindi.length < 100) {
+                current.notes_hindi = dCh.notes_hindi;
+              }
+              if (!current.intro_hindi || current.intro_hindi.length < 50) {
+                current.intro_hindi = dCh.intro_hindi;
+              }
+              if (!current.topper_tips || current.topper_tips.length < 50) {
+                current.topper_tips = dCh.topper_tips;
+              }
+              if (!current.subjective_qa || current.subjective_qa.length < 5) {
+                current.subjective_qa = dCh.subjective_qa;
+              }
+              chapterMap.set(chNum, current);
+            }
+          });
+        }
+
         const chaptersArray = Array.from(chapterMap.values());
-        chaptersArray.sort((a, b) => a.chapter_no - b.chapter_no);
+        chaptersArray.sort((a, b) => Number(a.chapter_no) - Number(b.chapter_no));
 
         merged[subKey] = {
           ...defaultSub,
           ...firestoreSub,
+          id: subKey,
+          subject_name_hindi: defaultSub.subject_name_hindi || firestoreSub.subject_name_hindi,
           chapters: chaptersArray
         };
       });
 
-      // Include any extra subjects from firestore
-      Object.keys(firestoreData).forEach((subKey) => {
-        if (!merged[subKey]) {
-          merged[subKey] = firestoreData[subKey];
+      // Include extra subjects from firestore ONLY if they are NOT duplicate aliases of standard subjects
+      const KNOWN_KEYS = ['sanskrit', 'hindi', 'science', 'math', 'social_science', 'english', 'sst'];
+      Object.keys(firestoreData).forEach((rawKey) => {
+        const normKey = rawKey.trim().toLowerCase();
+        const isKnown = KNOWN_KEYS.includes(normKey);
+        const alreadyExists = Object.keys(merged).some(k => k.toLowerCase() === normKey);
+        if (!alreadyExists && !isKnown) {
+          merged[rawKey] = firestoreData[rawKey];
         }
       });
 
@@ -464,7 +531,7 @@ export const DataProvider = ({ children }: any) => {
     } catch {}
 
     try {
-      await safeSetDoc(doc(db, 'paid_notes', id), newNote);
+      await safeSetDoc(doc(db, 'paid_notes', id), newNote, undefined, 3000, true);
     } catch (e: any) {
       console.warn("Firestore note save notice:", e?.message || String(e));
     }
@@ -479,7 +546,7 @@ export const DataProvider = ({ children }: any) => {
     } catch {}
 
     try {
-      await safeDeleteDoc(doc(db, 'paid_notes', id));
+      await safeDeleteDoc(doc(db, 'paid_notes', id), 3000, true);
     } catch (e: any) {
       console.warn("Firestore note delete notice:", e?.message || String(e));
     }

@@ -55,6 +55,63 @@ export function AdminStudentsList() {
   const [selectedStudentForVip, setSelectedStudentForVip] = useState<StudentRecord | null>(null);
   const [selectedPlanToGrant, setSelectedPlanToGrant] = useState<'1month' | '1year'>('1month');
 
+  // Manual direct VIP activation form state
+  const [manualName, setManualName] = useState('');
+  const [manualEmail, setManualEmail] = useState('');
+  const [manualPlan, setManualPlan] = useState<'1month' | '1year'>('1year');
+  const [showManualForm, setShowManualForm] = useState(false);
+
+  const handleManualSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!manualName.trim() || !manualEmail.trim()) {
+      alert('कृपया छात्र का नाम और जीमेल दोनों दर्ज करें।');
+      return;
+    }
+    const cleanEmail = manualEmail.trim().toLowerCase();
+    if (!cleanEmail.includes('@')) {
+      alert('कृपया एक वैध जीमेल (Gmail) आईडी दर्ज करें।');
+      return;
+    }
+
+    const dummyStudent: StudentRecord = {
+      id: cleanEmail,
+      name: manualName.trim(),
+      email: cleanEmail,
+      createdAt: new Date().toISOString(),
+      lastLogin: new Date().toISOString()
+    };
+
+    // 1. Add to student list in state immediately if not already present
+    setStudents(prev => {
+      if (prev.some(s => s.email.toLowerCase() === cleanEmail)) {
+        return prev;
+      }
+      return [dummyStudent, ...prev];
+    });
+
+    // Save student to local storage bseb_registered_students
+    try {
+      const localStudents = JSON.parse(localStorage.getItem('bseb_registered_students') || '{}');
+      localStudents[cleanEmail] = dummyStudent;
+      localStorage.setItem('bseb_registered_students', JSON.stringify(localStudents));
+    } catch {}
+
+    // Save student to Firestore if possible
+    try {
+      await safeSetDoc(doc(db, 'students', cleanEmail), dummyStudent, { merge: true });
+    } catch (err) {
+      console.warn('Manual student register Firestore notice:', err);
+    }
+
+    // 2. Grant VIP
+    await handleGrantVip(dummyStudent, manualPlan);
+
+    // Reset fields
+    setManualName('');
+    setManualEmail('');
+    setShowManualForm(false);
+  };
+
   useEffect(() => {
     const mergeStudents = (remoteList: StudentRecord[]) => {
       const merged = [...remoteList];
@@ -303,6 +360,72 @@ export function AdminStudentsList() {
           </button>
         </div>
       )}
+
+      {/* Manual VIP Activation Section */}
+      <div className="bg-stone-950 p-4 rounded-2xl border border-stone-800">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Crown className="w-5 h-5 text-amber-500" />
+            <div>
+              <h4 className="text-sm font-bold text-white">मैन्युअल VIP एक्टिवेशन (Manual VIP Activation)</h4>
+              <p className="text-[11px] text-stone-500">यदि छात्र ने व्हाट्सएप पर भुगतान स्क्रीनशॉट भेजा है, तो यहाँ से डायरेक्ट चालू करें</p>
+            </div>
+          </div>
+          <button
+            onClick={() => setShowManualForm(!showManualForm)}
+            className="bg-amber-500 hover:bg-amber-400 text-stone-950 px-3.5 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer"
+          >
+            <Plus className={`w-3.5 h-3.5 transition-transform duration-200 ${showManualForm ? 'rotate-45' : ''}`} />
+            <span>{showManualForm ? 'बंद करें' : 'शुरू करें'}</span>
+          </button>
+        </div>
+
+        {showManualForm && (
+          <form onSubmit={handleManualSubmit} className="mt-4 pt-4 border-t border-stone-800/80 grid grid-cols-1 sm:grid-cols-3 gap-3 items-end animate-in fade-in duration-150">
+            <div className="space-y-1.5">
+              <label className="text-[11px] font-bold text-stone-400">1. छात्र का नाम (Full Name)</label>
+              <input
+                type="text"
+                value={manualName}
+                onChange={e => setManualName(e.target.value)}
+                placeholder="उदा. राहुल कुमार"
+                className="w-full bg-stone-900 border border-stone-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-amber-500"
+                required
+              />
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-[11px] font-bold text-stone-400">2. छात्र का जीमेल (Gmail ID)</label>
+              <input
+                type="email"
+                value={manualEmail}
+                onChange={e => setManualEmail(e.target.value)}
+                placeholder="उदा. rahul@gmail.com"
+                className="w-full bg-stone-900 border border-stone-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-amber-500"
+                required
+              />
+            </div>
+            <div className="flex gap-2 items-center">
+              <div className="flex-1 space-y-1.5">
+                <label className="text-[11px] font-bold text-stone-400">3. प्लान चुनें (Select Plan)</label>
+                <select
+                  value={manualPlan}
+                  onChange={e => setManualPlan(e.target.value as '1month' | '1year')}
+                  className="w-full bg-stone-900 border border-stone-800 rounded-xl px-2 py-2 text-xs text-white focus:outline-none focus:border-amber-500"
+                >
+                  <option value="1year">टॉपर बैच - 1 वर्ष (₹600)</option>
+                  <option value="1month">1 महीना VIP (₹99)</option>
+                </select>
+              </div>
+              <button
+                type="submit"
+                className="bg-emerald-600 hover:bg-emerald-500 text-white font-bold h-9 px-4 rounded-xl text-xs flex items-center justify-center transition-all cursor-pointer whitespace-nowrap shadow-md shadow-emerald-600/10 active:scale-95"
+              >
+                सक्रिय करें
+              </button>
+            </div>
+          </form>
+        )}
+      </div>
 
       {/* Controls Bar */}
       <div className="flex flex-col sm:flex-row gap-3 justify-between items-stretch sm:items-center">

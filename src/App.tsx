@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { DataProvider, useData } from './context/DataContext';
-import { LoginScreen } from './components/LoginScreen';
+import { GmailAuthModal } from './components/GmailAuthModal';
 import { HomeScreen } from './components/HomeScreen';
 import { SubjectsExplorer } from './components/SubjectsExplorer';
 import { AdminPanel } from './components/AdminPanel';
@@ -39,6 +39,7 @@ function MainApp() {
   const [showRoutine, setShowRoutine] = useState(false);
   const [showSocial, setShowSocial] = useState(false);
   const [showNcert, setShowNcert] = useState(false);
+  const [showGmailAuth, setShowGmailAuth] = useState(false);
 
   if (forceDownloadMode) {
     return (
@@ -48,8 +49,6 @@ function MainApp() {
       }} />
     );
   }
-
-  if (!user) return <LoginScreen />;
 
   const handleDrawerNavigate = (view: string, extra?: any) => {
     switch (view) {
@@ -96,6 +95,7 @@ function MainApp() {
           onOpenNotifications={() => setShowNotifications(true)}
           onOpenVip={() => setShowVipModal(true)}
           onOpenAdmin={() => setActiveTab('admin')}
+          onOpenGmailAuth={() => setShowGmailAuth(true)}
           unreadCount={2}
         />
 
@@ -105,6 +105,7 @@ function MainApp() {
           onClose={() => setShowDrawer(false)}
           onNavigate={handleDrawerNavigate}
           onOpenVip={() => setShowVipModal(true)}
+          onOpenGmailAuth={() => setShowGmailAuth(true)}
         />
 
         {/* Main Content Area */}
@@ -162,6 +163,7 @@ function MainApp() {
               onOpenSocial={() => setShowSocial(true)}
               onOpenAdmin={() => setActiveTab('admin')}
               onOpenCourse={() => setActiveTab('my_courses')}
+              onOpenGmailAuth={() => setShowGmailAuth(true)}
             />
           )}
 
@@ -185,14 +187,22 @@ function MainApp() {
               </div>
               <h2 className="text-xl font-black text-stone-900">प्रतिबंधित क्षेत्र (Admin Only)</h2>
               <p className="text-stone-600 text-sm">
-                यह एडमिन पैनल केवल अधिकृत एडमिन के लिए है। कृपया अपने एडमिन जीमेल से लॉगिन करें।
+                यह एडमिन पैनल केवल अधिकृत एडमिन (rajkumarchaurasia141@gmail.com) के लिए है। कृपया अपने एडमिन जीमेल से पहचान करें।
               </p>
-              <button
-                onClick={() => setActiveTab('home')}
-                className="w-full bg-stone-900 text-white font-bold py-3 rounded-xl hover:bg-stone-800 transition-colors cursor-pointer"
-              >
-                होम पर वापस जाएँ
-              </button>
+              <div className="space-y-2 pt-2">
+                <button
+                  onClick={() => setShowGmailAuth(true)}
+                  className="w-full bg-gradient-to-r from-amber-500 to-amber-400 hover:from-amber-400 hover:to-amber-300 text-stone-950 font-black py-3 rounded-xl shadow-md transition-all cursor-pointer"
+                >
+                  ⚡ एडमिन जीमेल से पहचान करें
+                </button>
+                <button
+                  onClick={() => setActiveTab('home')}
+                  className="w-full bg-slate-100 text-stone-700 font-bold py-2.5 rounded-xl hover:bg-slate-200 transition-colors cursor-pointer text-xs"
+                >
+                  होम पर वापस जाएँ
+                </button>
+              </div>
             </div>
           )}
         </main>
@@ -231,6 +241,10 @@ function MainApp() {
             }}
           />
         )}
+        <GmailAuthModal 
+          isOpen={showGmailAuth} 
+          onClose={() => setShowGmailAuth(false)} 
+        />
         <InstallAppBanner />
       </div>
     </div>

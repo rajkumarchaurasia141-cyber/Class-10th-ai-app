@@ -16,7 +16,8 @@ import {
   AlertCircle,
   ExternalLink,
   Hourglass,
-  Clock
+  Clock,
+  Mail
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useData } from '../context/DataContext';
@@ -25,12 +26,14 @@ import { doc } from 'firebase/firestore';
 import { safeSetDoc, isQuotaError } from '../utils/firestoreSafe';
 
 export function PaywallModal({ onClose }: { onClose: () => void }) {
-  const { user, isVIP, vipDetails } = useAuth();
+  const { user, isVIP, vipDetails, login } = useAuth();
   const { appConfig } = useData();
   const [selectedPlan, setSelectedPlan] = useState<'1month' | '1year'>('1year');
   const [showPaymentInfo, setShowPaymentInfo] = useState(false);
   const [copiedUpi, setCopiedUpi] = useState(false);
   const [copiedPhone, setCopiedPhone] = useState(false);
+  const [studentEmailInput, setStudentEmailInput] = useState(user?.email || '');
+  const [studentNameInput, setStudentNameInput] = useState(user?.name || '');
 
   // In-App Screenshot Upload State
   const [screenshotData, setScreenshotData] = useState<string | null>(null);
@@ -39,6 +42,7 @@ export function PaywallModal({ onClose }: { onClose: () => void }) {
   const [uploading, setUploading] = useState(false);
   const [uploadSuccess, setUploadSuccess] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
+  const [firestoreFailed, setFirestoreFailed] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const UPI_ID = appConfig.upiId;
@@ -156,21 +160,33 @@ export function PaywallModal({ onClose }: { onClose: () => void }) {
       return;
     }
 
-    if (!user?.email) {
-      setUploadError('लॉगिन जीमेल नहीं मिला। कृपया पुनः लॉगिन करें।');
+    const cleanEmail = (user?.email || studentEmailInput).trim().toLowerCase();
+    if (!cleanEmail || !cleanEmail.includes('@')) {
+      setUploadError('कृपया अपना वैध जीमेल (Gmail) दर्ज करें जिस पर VIP एक्टिवेट किया जाएगा।');
       return;
+    }
+
+    const finalStudentName = (user?.name || studentNameInput).trim() || 'विद्यार्थी';
+
+    // Auto-save user identity if not previously set
+    if (!user?.email) {
+      try {
+        login(finalStudentName, cleanEmail);
+      } catch (e) {
+        console.warn('Auto login note:', e);
+      }
     }
 
     setUploading(true);
     setUploadError(null);
+    setFirestoreFailed(false);
 
-    const cleanEmail = user.email.trim().toLowerCase();
     const timestamp = Date.now();
     const requestId = `${cleanEmail.replace(/[^a-zA-Z0-9]/g, '_')}_${timestamp}`;
 
     const requestPayload = {
       id: requestId,
-      studentName: user?.name?.trim() || 'अज्ञात छात्र',
+      studentName: finalStudentName,
       studentEmail: cleanEmail,
       plan: selectedPlan,
       planTitle,
@@ -196,6 +212,7 @@ export function PaywallModal({ onClose }: { onClose: () => void }) {
       await safeSetDoc(doc(db, 'payment_requests', requestId), requestPayload, undefined, 2000);
     } catch (err: any) {
       console.warn('Firestore payment request background notice:', err?.message || String(err));
+      setFirestoreFailed(true);
     } finally {
       setUploading(false);
       setUploadSuccess(true);
@@ -454,18 +471,45 @@ export function PaywallModal({ onClose }: { onClose: () => void }) {
                   </div>
 
                   {uploadSuccess ? (
-                    <div className="p-4 rounded-xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 space-y-3 animate-fade-in">
+                    <div className={`p-4 rounded-xl border space-y-3 animate-fade-in ${
+                      firestoreFailed 
+                        ? 'bg-amber-500/10 border-amber-500/30 text-amber-300' 
+                        : 'bg-emerald-500/15 border-emerald-500/30 text-emerald-400'
+                    }`}>
                       <div className="flex items-center gap-2 font-bold text-sm">
-                        <CheckCircle2 className="w-5 h-5 text-emerald-400 shrink-0" />
-                        <span>स्क्रीनशॉट सफलतापूर्वक सबमिट हो गया!</span>
+                        {firestoreFailed ? (
+                          <AlertCircle className="w-5 h-5 text-amber-400 shrink-0" />
+                        ) : (
+                          <CheckCircle2 className="w-5 h-5 text-emerald-400 shrink-0" />
+                        )}
+                        <span>
+                          {firestoreFailed 
+                            ? '⚠️ सर्वर ओवरलोड: व्हाट्सएप पर भेजें!' 
+                            : 'स्क्रीनशॉट सफलतापूर्वक सबमिट हो गया!'}
+                        </span>
                       </div>
-                      <p className="text-xs text-stone-200 leading-relaxed">
-                        धन्यवाद <strong className="text-white">{user?.name}</strong>! आपका पेमेंट स्क्रीनशॉट सुरक्षित सहेज लिया गया है। 
-                        एडमिन (Rajkumar Sir) द्वारा वैरिफाई होते ही आपका <strong className="text-amber-300">{planTitle}</strong> तुरंत एक्टिवेट कर दिया जाएगा।
-                      </p>
-                      <div className="text-[11px] text-stone-300 pt-1 border-t border-emerald-500/20 flex flex-wrap items-center justify-between gap-1.5">
-                        <span>पंजीकृत ईमेल: <span className="font-mono text-white font-bold">{user?.email}</span></span>
-                        <span className="text-emerald-400 font-bold bg-emerald-500/20 px-2 py-0.5 rounded">विचाराधीन (Pending)</span>
+                      
+                      {firestoreFailed ? (
+                        <p className="text-xs text-stone-200 leading-relaxed">
+                          प्रिय <strong className="text-white">{user?.name || studentNameInput || 'विद्यार्थी'}</strong>, आज की दैनिक सर्वर लिमिट पूरी होने के कारण ऐप में ऑटो-सबमिट नहीं हो पाया। 
+                          <strong className="text-amber-300"> चिंता न करें!</strong> आपका बैच एक्टिव करने के लिए कृपया नीचे दिए गए <strong className="text-white">"WhatsApp पर स्क्रीनशॉट भेजें"</strong> बटन पर क्लिक करके Rajkumar Sir को तुरंत स्क्रीनशॉट व्हाट्सएप पर भेज दें।
+                        </p>
+                      ) : (
+                        <p className="text-xs text-stone-200 leading-relaxed">
+                          धन्यवाद <strong className="text-white">{user?.name || studentNameInput || 'विद्यार्थी'}</strong>! आपका पेमेंट स्क्रीनशॉट सुरक्षित सहेज लिया गया है। 
+                          एडमिन (Rajkumar Sir) द्वारा वैरिफाई होते ही आपका <strong className="text-amber-300">{planTitle}</strong> तुरंत एक्टिवेट कर दिया जाएगा।
+                        </p>
+                      )}
+
+                      <div className="text-[11px] text-stone-300 pt-1 border-t border-stone-800/80 flex flex-wrap items-center justify-between gap-1.5">
+                        <span>पंजीकृत ईमेल: <span className="font-mono text-white font-bold">{user?.email || studentEmailInput}</span></span>
+                        <span className={`font-bold px-2 py-0.5 rounded text-[10px] ${
+                          firestoreFailed 
+                            ? 'text-amber-400 bg-amber-500/20' 
+                            : 'text-emerald-400 bg-emerald-500/20'
+                        }`}>
+                          {firestoreFailed ? 'व्हाट्सएप अनिवार्य' : 'विचाराधीन (Pending)'}
+                        </span>
                       </div>
 
                       {/* Instant WhatsApp Verification Button */}
@@ -473,10 +517,14 @@ export function PaywallModal({ onClose }: { onClose: () => void }) {
                         href={whatsappUrl}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-2.5 px-3 rounded-xl flex items-center justify-center gap-2 text-xs transition-all shadow-md cursor-pointer text-center"
+                        className={`w-full text-white font-bold py-2.5 px-3 rounded-xl flex items-center justify-center gap-2 text-xs transition-all shadow-md cursor-pointer text-center ${
+                          firestoreFailed 
+                            ? 'bg-gradient-to-r from-emerald-600 to-green-600 hover:from-emerald-500 hover:to-green-500 animate-pulse ring-2 ring-emerald-500/50' 
+                            : 'bg-emerald-600 hover:bg-emerald-500'
+                        }`}
                       >
                         <MessageCircle className="w-4 h-4 text-white fill-white/20" />
-                        <span>WhatsApp पर भी भेजें (5 मिनट में फास्ट एक्टिवेशन)</span>
+                        <span>{firestoreFailed ? '👉 व्हाट्सएप पर स्क्रीनशॉट भेजें (अनिवार्य) 👈' : 'WhatsApp पर भी भेजें (5 मिनट में फास्ट एक्टिवेशन)'}</span>
                       </a>
 
                       <div className="text-center pt-1">
@@ -559,6 +607,41 @@ export function PaywallModal({ onClose }: { onClose: () => void }) {
                           className="w-full bg-stone-950 border border-stone-800 rounded-lg px-3 py-2 text-xs text-white placeholder-stone-600 focus:outline-none focus:border-amber-500"
                         />
                       </div>
+
+                      {/* If user is not logged in, ask for their Gmail so VIP can be assigned */}
+                      {!user?.email && (
+                        <div className="space-y-2 pt-1 border-t border-stone-800">
+                          <div>
+                            <label className="block text-[11px] font-bold text-amber-400 mb-1 flex items-center gap-1">
+                              <Mail className="w-3.5 h-3.5" />
+                              <span>आपकी जीमेल आईडी (VIP एक्टिवेशन हेतु): *</span>
+                            </label>
+                            <input
+                              type="email"
+                              required
+                              value={studentEmailInput}
+                              onChange={(e) => {
+                                setStudentEmailInput(e.target.value);
+                                setUploadError(null);
+                              }}
+                              placeholder="उदा. yourname@gmail.com"
+                              className="w-full bg-stone-950 border border-amber-500/40 rounded-lg px-3 py-2 text-xs text-white placeholder-stone-600 focus:outline-none focus:border-amber-400"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-[11px] font-medium text-stone-400 mb-1">
+                              आपका नाम (वैकल्पिक):
+                            </label>
+                            <input
+                              type="text"
+                              value={studentNameInput}
+                              onChange={(e) => setStudentNameInput(e.target.value)}
+                              placeholder="उदा. राहुल कुमार"
+                              className="w-full bg-stone-950 border border-stone-800 rounded-lg px-3 py-2 text-xs text-white placeholder-stone-600 focus:outline-none focus:border-amber-500"
+                            />
+                          </div>
+                        </div>
+                      )}
 
                       {uploadError && (
                         <div className="p-2.5 rounded-lg bg-rose-500/10 border border-rose-500/20 text-rose-400 text-xs flex items-center gap-1.5">

@@ -111,27 +111,40 @@ export function AdminPaymentRequests() {
       const planKey = req.plan === '1year' ? '1year' : '1month';
       const expiry = calculateVipExpiry(planKey);
 
+      let dbSuccess1 = false;
+      let dbSuccess2 = false;
+
       // 1. Grant VIP in vip_users collection with expiry
-      await safeSetDoc(doc(db, 'vip_users', cleanEmail), {
-        isVip: true,
-        plan: planKey,
-        planDuration: expiry.planDurationText,
-        planPrice: req.planPrice || (planKey === '1month' ? 99 : 600),
-        studentName: req.studentName || '',
-        validFrom: expiry.validFrom,
-        expiresAt: expiry.expiresAt,
-        addedAt: new Date().toISOString(),
-        activatedByAdmin: true
-      }, { merge: true });
+      try {
+        await safeSetDoc(doc(db, 'vip_users', cleanEmail), {
+          isVip: true,
+          plan: planKey,
+          planDuration: expiry.planDurationText,
+          planPrice: req.planPrice || (planKey === '1month' ? 99 : 600),
+          studentName: req.studentName || '',
+          validFrom: expiry.validFrom,
+          expiresAt: expiry.expiresAt,
+          addedAt: new Date().toISOString(),
+          activatedByAdmin: true
+        }, { merge: true });
+        dbSuccess1 = true;
+      } catch (err) {
+        console.warn('Firestore grant VIP failed:', err);
+      }
 
       // 2. Mark request as approved in payment_requests
-      await safeSetDoc(doc(db, 'payment_requests', req.id), {
-        status: 'approved',
-        approvedAt: new Date().toISOString(),
-        expiresAt: expiry.expiresAt
-      }, { merge: true });
+      try {
+        await safeSetDoc(doc(db, 'payment_requests', req.id), {
+          status: 'approved',
+          approvedAt: new Date().toISOString(),
+          expiresAt: expiry.expiresAt
+        }, { merge: true });
+        dbSuccess2 = true;
+      } catch (err) {
+        console.warn('Firestore update request status failed:', err);
+      }
 
-      // 3. Keep local storage synced
+      // 3. Keep local storage synced (Always do this as robust fallback)
       try {
         const localItems: PaymentRequestItem[] = JSON.parse(localStorage.getItem('bseb_payment_requests') || '[]');
         const updated = localItems.map(item => item.id === req.id ? { ...item, status: 'approved' as const, approvedAt: new Date().toISOString() } : item);
@@ -161,13 +174,17 @@ export function AdminPaymentRequests() {
         year: 'numeric'
       });
 
-      setActionMsg(`सफलता! छात्र ${req.studentName} (${cleanEmail}) का ${expiry.planDurationText} VIP बैच अनलॉक हो गया (वैधता: ${expiryDateFormatted} तक)।`);
+      if (dbSuccess1 && dbSuccess2) {
+        setActionMsg(`सफलता! छात्र ${req.studentName} (${cleanEmail}) का ${expiry.planDurationText} VIP बैच अनलॉक हो गया (वैधता: ${expiryDateFormatted} तक)।`);
+      } else {
+        setActionMsg(`सूचना: छात्र ${req.studentName} (${cleanEmail}) का VIP बैच स्थानीय रूप से अनलॉक कर दिया गया है (आज की क्लाउड लिमिट पूरी है, कल ऑटो-सिंक हो जाएगा)।`);
+      }
       if (selectedImage?.id === req.id) {
         setSelectedImage(prev => prev ? { ...prev, status: 'approved' } : null);
       }
     } catch (err: any) {
       if (isQuotaError(err)) {
-        setActionMsg('सूचना: आज की Firestore दैनिक लिमिट पूरी हो चुकी है।');
+        setActionMsg('सूचना: आज की Firestore दैनिक लिमिट पूरी हो चुकी है। बदलाव स्थानीय रूप से सहेज लिया गया है।');
       } else {
         console.warn('Approve failed notice:', err?.message || String(err));
         alert('स्वीकृति में त्रुटि: ' + (err?.message || 'पुनः प्रयास करें'));
