@@ -83,8 +83,8 @@ export function ProfileView({
                 </h4>
                 <p className="text-[11px] text-stone-300 mt-0.5">
                   {isAdmin 
-                    ? 'rajkumarchaurasia141@gmail.com से लॉग इन हैं' 
-                    : 'एडमिन या VIP प्रोफाइल अपने जीमेल से सीधे पहचानें'}
+                    ? `${user?.email || 'एडमिन'} से लॉग इन हैं` 
+                    : 'VIP प्रोफाइल अपने जीमेल से सीधे पहचानें'}
                 </p>
               </div>
             </div>

@@ -77,7 +77,7 @@ export function AdminPanel({ onBack }: any) {
     };
 
     try {
-      const unsub = onSnapshot(collection(db, 'payment_requests'), (snapshot) => {
+      const unsub = onSnapshot(collection(db, 'payments'), (snapshot) => {
         updateCount(snapshot.docs);
       }, (err) => {
         console.warn("Payment requests notice:", err?.message || String(err));

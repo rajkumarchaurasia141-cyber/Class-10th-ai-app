@@ -1,12 +1,14 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import { db } from '../lib/firebase';
+import { db, auth } from '../lib/firebase';
 import { doc, onSnapshot } from 'firebase/firestore';
+import { signInAnonymously, onAuthStateChanged } from 'firebase/auth';
 import { safeSetDoc, isFirestoreQuotaExceeded } from '../utils/firestoreSafe';
 import { checkVipExpiryStatus } from '../utils/vipHelper';
 
 const AuthContext = createContext<any>(null);
 
 export const AuthProvider = ({ children }: any) => {
+  const [fbUser, setFbUser] = useState<any>(null);
   const [user, setUser] = useState<{ name: string; email: string } | null>(() => {
     try {
       const saved = localStorage.getItem('bseb_user');
@@ -34,13 +36,28 @@ export const AuthProvider = ({ children }: any) => {
         if (Array.isArray(parsed)) return parsed.map(e => e.trim().toLowerCase());
       }
     } catch (e) {}
-    return ['rajkumarchaurasia141@gmail.com'];
+    const envEmail = (import.meta.env.VITE_MAIN_ADMIN_EMAIL || '').trim().toLowerCase();
+    return envEmail ? [envEmail] : ['rajkumarchaurasia141@gmail.com'];
   };
 
   const cleanUserEmail = user?.email?.trim().toLowerCase() || '';
-  const isAdmin = cleanUserEmail === 'rajkumarchaurasia141@gmail.com' || getAdminEmails().includes(cleanUserEmail);
+  const mainAdminEmail = (import.meta.env.VITE_MAIN_ADMIN_EMAIL || '').trim().toLowerCase() || 'rajkumarchaurasia141@gmail.com';
+  const isAdmin = cleanUserEmail === mainAdminEmail || getAdminEmails().includes(cleanUserEmail);
 
   useEffect(() => {
+    // Listen to Firebase Auth state changes
+    const unsubAuth = onAuthStateChanged(auth, (firebaseUser) => {
+      if (firebaseUser) {
+        setFbUser(firebaseUser);
+      } else {
+        setFbUser(null);
+        // Automatically sign in anonymously to satisfy request.auth != null rule for storage
+        signInAnonymously(auth).catch((err) => {
+          console.warn("Background anonymous sign-in notice:", err);
+        });
+      }
+    });
+
     // Secondary sync from localStorage if needed
     try {
       const saved = localStorage.getItem('bseb_user');
@@ -52,6 +69,8 @@ export const AuthProvider = ({ children }: any) => {
       }
     } catch (e) {}
     setLoading(false);
+
+    return () => unsubAuth();
   }, []);
 
   // Real-time VIP listener with automatic expiration check
@@ -63,7 +82,8 @@ export const AuthProvider = ({ children }: any) => {
     }
 
     const cleanEmail = user.email.trim().toLowerCase();
-    if (cleanEmail === 'rajkumarchaurasia141@gmail.com' || getAdminEmails().includes(cleanEmail)) {
+    const envEmail = (import.meta.env.VITE_MAIN_ADMIN_EMAIL || '').trim().toLowerCase() || 'rajkumarchaurasia141@gmail.com';
+    if (cleanEmail === envEmail || getAdminEmails().includes(cleanEmail)) {
       setIsVIP(true);
       setVipDetails({
         isVip: true,
@@ -240,7 +260,7 @@ export const AuthProvider = ({ children }: any) => {
   };
 
   return (
-    <AuthContext.Provider value={{ user, isAdmin, isVIP, vipDetails, loading, login, logout, error, setError }}>
+    <AuthContext.Provider value={{ user, fbUser, isAdmin, isVIP, vipDetails, loading, login, logout, error, setError }}>
       {children}
     </AuthContext.Provider>
   );

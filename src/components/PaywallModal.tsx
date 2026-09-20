@@ -21,12 +21,13 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useData } from '../context/DataContext';
-import { db } from '../lib/firebase';
-import { doc } from 'firebase/firestore';
+import { db, storage } from '../lib/firebase';
+import { doc, serverTimestamp } from 'firebase/firestore';
+import { ref, uploadString, getDownloadURL } from 'firebase/storage';
 import { safeSetDoc, isQuotaError } from '../utils/firestoreSafe';
 
 export function PaywallModal({ onClose }: { onClose: () => void }) {
-  const { user, isVIP, vipDetails, login } = useAuth();
+  const { user, fbUser, isVIP, vipDetails, login } = useAuth();
   const { appConfig } = useData();
   const [selectedPlan, setSelectedPlan] = useState<'1month' | '1year'>('1year');
   const [showPaymentInfo, setShowPaymentInfo] = useState(false);
@@ -183,35 +184,59 @@ export function PaywallModal({ onClose }: { onClose: () => void }) {
 
     const timestamp = Date.now();
     const requestId = `${cleanEmail.replace(/[^a-zA-Z0-9]/g, '_')}_${timestamp}`;
+    const userId = fbUser?.uid || cleanEmail.replace(/[^a-zA-Z0-9]/g, '_');
 
-    const requestPayload = {
-      id: requestId,
-      studentName: finalStudentName,
-      studentEmail: cleanEmail,
-      plan: selectedPlan,
-      planTitle,
-      planAmount,
-      planPrice: selectedPlan === '1month' ? 99 : 600,
-      screenshotDataUrl: screenshotData,
-      utr: utrNumber.trim(),
-      status: 'pending' as const,
-      submittedAt: new Date().toISOString()
-    };
-
-    // 1. Immediately save to LocalStorage so payment request is NEVER lost!
     try {
-      const stored = JSON.parse(localStorage.getItem('bseb_payment_requests') || '[]');
-      const filtered = stored.filter((r: any) => r.id !== requestId);
-      localStorage.setItem('bseb_payment_requests', JSON.stringify([requestPayload, ...filtered]));
-    } catch (e) {
-      console.warn('Local payment storage note:', e);
-    }
+      // 1. Upload screenshot to Firebase Storage at /payments/{userId}/ folder
+      const storagePath = `payments/${userId}/screenshot_${timestamp}.jpg`;
+      const storageRef = ref(storage, storagePath);
+      
+      console.log('Uploading screenshot to storage path:', storagePath);
+      await uploadString(storageRef, screenshotData, 'data_url');
+      const downloadURL = await getDownloadURL(storageRef);
+      console.log('Screenshot upload successful! Download URL:', downloadURL);
 
-    // 2. Race Firestore write with a 2000ms timeout
-    try {
-      await safeSetDoc(doc(db, 'payment_requests', requestId), requestPayload, undefined, 2000);
+      // 2. Prepare payload with required schema
+      const paymentPayload = {
+        userId,
+        userName: finalStudentName,
+        userEmail: cleanEmail,
+        screenshotUrl: downloadURL,
+        courseId: 'bseb_10th_vip',
+        status: 'pending' as const,
+        createdAt: serverTimestamp(),
+        // backwards-compatible properties for UI and local storage fallbacks
+        id: requestId,
+        studentName: finalStudentName,
+        studentEmail: cleanEmail,
+        plan: selectedPlan,
+        planTitle,
+        planAmount,
+        planPrice: selectedPlan === '1month' ? 99 : 600,
+        screenshotDataUrl: downloadURL, // replace local base64 with remote URL to prevent quota issues
+        utr: utrNumber.trim(),
+        submittedAt: new Date().toISOString()
+      };
+
+      // 3. Save to LocalStorage so payment request is never lost
+      try {
+        const stored = JSON.parse(localStorage.getItem('bseb_payment_requests') || '[]');
+        const filtered = stored.filter((r: any) => r.id !== requestId);
+        localStorage.setItem('bseb_payment_requests', JSON.stringify([paymentPayload, ...filtered]));
+      } catch (e) {
+        console.warn('Local payment storage note:', e);
+      }
+
+      // 4. Save to firestore collections 'payments' and 'payment_requests'
+      const dbSuccessPayments = await safeSetDoc(doc(db, 'payments', requestId), paymentPayload, undefined, 5000);
+      const dbSuccessRequests = await safeSetDoc(doc(db, 'payment_requests', requestId), paymentPayload, undefined, 5000);
+
+      if (!dbSuccessPayments && !dbSuccessRequests) {
+        setFirestoreFailed(true);
+      }
     } catch (err: any) {
-      console.warn('Firestore payment request background notice:', err?.message || String(err));
+      console.error('Firebase screenshot upload or Firestore save failed:', err);
+      setUploadError('स्क्रीनशॉट अपलोड करने में त्रुटि हुई: ' + (err?.message || String(err)));
       setFirestoreFailed(true);
     } finally {
       setUploading(false);

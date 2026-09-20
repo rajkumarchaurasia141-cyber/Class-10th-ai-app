@@ -1,6 +1,7 @@
 import { initializeApp } from 'firebase/app';
 import { getAuth } from 'firebase/auth';
 import { initializeFirestore, setLogLevel } from 'firebase/firestore';
+import { getStorage } from 'firebase/storage';
 
 import fbConfig from '../../firebase-applet-config.json';
 
@@ -9,6 +10,7 @@ setLogLevel('silent');
 
 export const app = initializeApp(fbConfig);
 export const auth = getAuth(app);
+export const storage = getStorage(app);
 
 // Use initializeFirestore with experimentalAutoDetectLongPolling to ensure reliable
 // connectivity in container, proxy, and iframe preview environments.

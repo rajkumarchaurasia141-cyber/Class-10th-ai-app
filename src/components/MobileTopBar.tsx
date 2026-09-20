@@ -92,10 +92,10 @@ export function MobileTopBar({
         {isAdmin && (
           <button
             onClick={onOpenAdmin}
-            className="w-8 h-8 rounded-xl bg-stone-900 text-amber-400 hover:bg-black flex items-center justify-center transition-colors cursor-pointer shrink-0 shadow-xs"
+            className="w-9 h-9 rounded-xl flex items-center justify-center bg-stone-900 text-amber-400 hover:bg-black hover:text-amber-300 transition-colors cursor-pointer shrink-0 shadow-md ring-1 ring-amber-500/20"
             title="एडमिन पैनल"
           >
-            <ShieldCheck className="w-4 h-4" />
+            <ShieldCheck className="w-5 h-5" />
           </button>
         )}
 
@@ -103,9 +103,9 @@ export function MobileTopBar({
         {onOpenGmailAuth && (
           <button
             onClick={onOpenGmailAuth}
-            className={`h-8 px-2 rounded-xl flex items-center gap-1 text-xs font-bold transition-all cursor-pointer shrink-0 ${
+            className={`h-8 px-2.5 rounded-xl flex items-center gap-1.5 text-xs font-black transition-all cursor-pointer shrink-0 ${
               isAdmin
-                ? 'bg-amber-400 text-stone-950 hover:bg-amber-300'
+                ? 'bg-gradient-to-r from-amber-500 to-amber-400 text-stone-950 hover:from-amber-400 hover:to-amber-300 ring-2 ring-amber-500/30'
                 : user?.email
                 ? 'bg-slate-100 text-stone-800 hover:bg-slate-200'
                 : 'bg-red-50 text-red-700 hover:bg-red-100 border border-red-200'
@@ -113,8 +113,8 @@ export function MobileTopBar({
             title={user?.email ? `जीमेल: ${user.email}` : "जीमेल से पहचान करें"}
           >
             <Mail className="w-3.5 h-3.5" />
-            <span className="text-[10px] hidden sm:inline">
-              {isAdmin ? 'एडमिन' : user?.email ? 'जीमेल' : 'लॉगिन'}
+            <span className="text-[10px]">
+              {isAdmin ? 'आप एडमिन हैं (सफलतापूर्वक)' : user?.email ? 'जीमेल' : 'लॉगिन'}
             </span>
           </button>
         )}

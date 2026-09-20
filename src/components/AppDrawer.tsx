@@ -103,7 +103,7 @@ export function AppDrawer({ isOpen, onClose, onNavigate, onOpenVip, onOpenGmailA
               className="mt-3 w-full py-1.5 px-3 bg-white/15 hover:bg-white/25 text-amber-200 border border-amber-300/40 rounded-xl text-[11px] font-bold flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
             >
               <Mail className="w-3.5 h-3.5 text-amber-300" />
-              <span>{user?.email ? 'जीमेल बदलें / एडमिन पहचान' : 'जीमेल से पहचानें (Admin / Profile)'}</span>
+              <span>{user?.email ? 'जीमेल बदलें' : 'जीमेल से पहचानें (Profile)'}</span>
             </button>
           )}
         </div>

@@ -26,6 +26,11 @@ service cloud.firestore {
       allow read, write: if true;
     }
 
+    // Allow read/write to payments (screenshot uploads and status)
+    match /payments/{paymentId} {
+      allow read, write: if true;
+    }
+
     // Allow read/write to paid_notes (PDF notes uploaded by admin)
     match /paid_notes/{noteId} {
       allow read, write: if true;

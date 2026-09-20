@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { db } from '../lib/firebase';
-import { collection, onSnapshot, doc } from 'firebase/firestore';
+import { collection, onSnapshot, doc, query, where, serverTimestamp } from 'firebase/firestore';
 import { safeSetDoc, safeDeleteDoc, isQuotaError } from '../utils/firestoreSafe';
 import { 
   Receipt, 
@@ -77,10 +77,25 @@ export function AdminPaymentRequests() {
     };
 
     try {
-      const unsub = onSnapshot(collection(db, 'payment_requests'), (snapshot) => {
+      // Query the 'payments' collection where status == 'pending' as requested
+      const q = query(collection(db, 'payments'), where('status', '==', 'pending'));
+      const unsub = onSnapshot(q, (snapshot) => {
         const items: PaymentRequestItem[] = [];
         snapshot.forEach((docSnap) => {
-          items.push({ id: docSnap.id, ...docSnap.data() } as PaymentRequestItem);
+          const data = docSnap.data();
+          items.push({
+            id: docSnap.id,
+            studentName: data.userName || data.studentName || 'विद्यार्थी',
+            studentEmail: data.userEmail || data.studentEmail || '',
+            plan: data.plan || '1year',
+            planTitle: data.planTitle || '1 वर्ष बैच',
+            planAmount: data.planAmount || '₹600',
+            planPrice: data.planPrice || (data.plan === '1month' ? 99 : 600),
+            screenshotDataUrl: data.screenshotUrl || data.screenshotDataUrl || '',
+            utr: data.utr || '',
+            status: data.status || 'pending',
+            submittedAt: data.createdAt?.toDate?.()?.toISOString() || data.submittedAt || new Date().toISOString()
+          } as any);
         });
         mergeWithLocal(items);
       }, (err) => {
@@ -132,13 +147,15 @@ export function AdminPaymentRequests() {
         console.warn('Firestore grant VIP failed:', err);
       }
 
-      // 2. Mark request as approved in payment_requests
+      // 2. Mark request as approved in payments and payment_requests
       try {
-        await safeSetDoc(doc(db, 'payment_requests', req.id), {
+        const updatePayload = {
           status: 'approved',
           approvedAt: new Date().toISOString(),
           expiresAt: expiry.expiresAt
-        }, { merge: true });
+        };
+        await safeSetDoc(doc(db, 'payments', req.id), updatePayload, { merge: true });
+        await safeSetDoc(doc(db, 'payment_requests', req.id), updatePayload, { merge: true });
         dbSuccess2 = true;
       } catch (err) {
         console.warn('Firestore update request status failed:', err);
@@ -199,9 +216,8 @@ export function AdminPaymentRequests() {
     if (!confirm(`क्या आप ${req.studentName} के इस पेमेंट रिक्वेस्ट को अस्वीकृत करना चाहते हैं?`)) return;
     setProcessingId(req.id);
     try {
-      await safeSetDoc(doc(db, 'payment_requests', req.id), {
-        status: 'rejected'
-      }, { merge: true });
+      await safeSetDoc(doc(db, 'payments', req.id), { status: 'rejected' }, { merge: true });
+      await safeSetDoc(doc(db, 'payment_requests', req.id), { status: 'rejected' }, { merge: true });
 
       // Update local storage
       try {
@@ -230,6 +246,7 @@ export function AdminPaymentRequests() {
   const handleDelete = async (id: string) => {
     if (!confirm('क्या आप इस पेमेंट रिक्वेस्ट रिकॉर्ड को हटाना चाहते हैं?')) return;
     try {
+      await safeDeleteDoc(doc(db, 'payments', id));
       await safeDeleteDoc(doc(db, 'payment_requests', id));
 
       // Remove from local storage
