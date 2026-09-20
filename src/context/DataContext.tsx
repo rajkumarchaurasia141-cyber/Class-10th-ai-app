@@ -5,7 +5,6 @@ import { safeSetDoc, safeDeleteDoc } from '../utils/firestoreSafe';
 import { useAuth } from './AuthContext';
 import { defaultSubjectsData } from '../data/defaultCurriculum';
 import { defaultPaidPdfNotes } from '../data/defaultPdfNotes';
-import courseData from '../data/courseData.json';
 import { Subject, PaidPdfNote, LiveClass, LeaderboardEntry, RoutineItem, MotivationalQuote, NotificationItem, AppConfig, BannerItem } from '../types';
 
 export const defaultBanners: BannerItem[] = [
@@ -304,57 +303,63 @@ const DataContext = createContext<DataContextType | null>(null);
 
 export const DataProvider = ({ children }: any) => {
   const { user } = useAuth();
-  const [subjects, setSubjects] = useState<Record<string, Subject>>(() => {
-    const subjectsMap: Record<string, Subject> = {};
-    if (courseData && Array.isArray(courseData.subjects)) {
-      courseData.subjects.forEach((sub: any) => {
-        subjectsMap[sub.id] = sub as Subject;
-      });
-    }
-    return Object.keys(subjectsMap).length > 0 ? subjectsMap : defaultSubjectsData;
-  });
-  const [paidNotes, setPaidNotes] = useState<PaidPdfNote[]>(() => {
-    const initialPdfNotes = courseData?.paid_notes && Array.isArray(courseData.paid_notes) && courseData.paid_notes.length > 0
-      ? (courseData.paid_notes as PaidPdfNote[])
-      : defaultPaidPdfNotes;
-    try {
-      const cached = localStorage.getItem('bseb_paid_notes_cache');
-      if (cached) {
-        const parsed = JSON.parse(cached);
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          const mergedNotes = [...parsed];
-          initialPdfNotes.forEach((def) => {
-            if (!mergedNotes.some(n => n.id === def.id || (n.subjectId === def.subjectId && n.chapterNo === def.chapterNo))) {
-              mergedNotes.push(def);
-            }
-          });
-          return mergedNotes;
-        }
-      }
-    } catch {}
-    return initialPdfNotes;
-  });
+  const [subjects, setSubjects] = useState<Record<string, Subject>>(defaultSubjectsData);
+  const [paidNotes, setPaidNotes] = useState<PaidPdfNote[]>(defaultPaidPdfNotes);
   const [loading, setLoading] = useState(false);
 
+  useEffect(() => {
+    const loadData = async () => {
+      setLoading(true);
+      try {
+        const res = await fetch('/courseData.json');
+        const courseData = await res.json();
+        
+        const subjectsMap: Record<string, Subject> = {};
+        if (courseData && Array.isArray(courseData.subjects)) {
+          courseData.subjects.forEach((sub: any) => {
+            subjectsMap[sub.id] = sub as Subject;
+          });
+        }
+        setSubjects(Object.keys(subjectsMap).length > 0 ? subjectsMap : defaultSubjectsData);
+
+        const initialPdfNotes = courseData?.paid_notes && Array.isArray(courseData.paid_notes) 
+          ? (courseData.paid_notes as PaidPdfNote[])
+          : defaultPaidPdfNotes;
+        
+        // Merge with local cache
+        try {
+          const cached = localStorage.getItem('bseb_paid_notes_cache');
+          if (cached) {
+            const parsed = JSON.parse(cached);
+            if (Array.isArray(parsed) && parsed.length > 0) {
+              const mergedNotes = [...parsed];
+              initialPdfNotes.forEach((def) => {
+                if (!mergedNotes.some(n => n.id === def.id || (n.subjectId === def.subjectId && n.chapterNo === def.chapterNo))) {
+                  mergedNotes.push(def);
+                }
+              });
+              setPaidNotes(mergedNotes);
+            } else {
+              setPaidNotes(initialPdfNotes);
+            }
+          } else {
+            setPaidNotes(initialPdfNotes);
+          }
+        } catch {
+          setPaidNotes(initialPdfNotes);
+        }
+
+      } catch (e) {
+        console.error("Failed to load course data:", e);
+      } finally {
+        setLoading(false);
+      }
+    };
+    loadData();
+  }, []);
+
   const fetchData = async () => {
-    setLoading(true);
-    try {
-      const merged: Record<string, Subject> = {};
-      if (courseData && Array.isArray(courseData.subjects)) {
-        courseData.subjects.forEach((sub: any) => {
-          merged[sub.id] = sub as Subject;
-        });
-      }
-      if (Object.keys(merged).length > 0) {
-        setSubjects(merged);
-      } else {
-        setSubjects(defaultSubjectsData);
-      }
-    } catch (e: any) {
-      console.warn("Data Fetch Notice:", e?.message || String(e));
-    } finally {
-      setLoading(false);
-    }
+    // fetchData is now handled by loadData effect
   };
 
   // Real-time listener for paid_notes collection
