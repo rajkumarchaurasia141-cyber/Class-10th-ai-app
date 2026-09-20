@@ -523,6 +523,7 @@ export function AdminPaymentRequests() {
                     <img 
                       src={item.screenshotDataUrl} 
                       alt="Payment proof" 
+                      referrerPolicy="no-referrer"
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                     />
                     <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2 text-white font-bold text-xs">
@@ -618,6 +619,7 @@ export function AdminPaymentRequests() {
               <img
                 src={selectedImage.screenshotDataUrl}
                 alt="Payment proof full"
+                referrerPolicy="no-referrer"
                 className="max-h-[60vh] max-w-full object-contain rounded-lg"
               />
             </div>

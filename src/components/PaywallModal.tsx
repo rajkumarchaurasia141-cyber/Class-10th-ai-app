@@ -187,14 +187,35 @@ export function PaywallModal({ onClose }: { onClose: () => void }) {
     const userId = fbUser?.uid || cleanEmail.replace(/[^a-zA-Z0-9]/g, '_');
 
     try {
-      // 1. Upload screenshot to Firebase Storage at /payments/{userId}/ folder
+      // 1. Upload screenshot to Firebase Storage with a 4-second timeout race to prevent infinite spinning
       const storagePath = `payments/${userId}/screenshot_${timestamp}.jpg`;
       const storageRef = ref(storage, storagePath);
       
+      let downloadURL = '';
       console.log('Uploading screenshot to storage path:', storagePath);
-      await uploadString(storageRef, screenshotData, 'data_url');
-      const downloadURL = await getDownloadURL(storageRef);
-      console.log('Screenshot upload successful! Download URL:', downloadURL);
+      
+      try {
+        const uploadPromise = async () => {
+          await uploadString(storageRef, screenshotData, 'data_url');
+          return await getDownloadURL(storageRef);
+        };
+        
+        const timeoutPromise = new Promise<null>((resolve) => {
+          setTimeout(() => resolve(null), 4000);
+        });
+        
+        const uploadedUrl = await Promise.race([uploadPromise(), timeoutPromise]);
+        if (uploadedUrl) {
+          downloadURL = uploadedUrl;
+          console.log('Screenshot upload successful! Download URL:', downloadURL);
+        } else {
+          console.warn('Firebase Storage upload timed out. Falling back to secure direct Firestore storage.');
+          downloadURL = screenshotData; // Use compressed base64 directly as fallback
+        }
+      } catch (storageErr) {
+        console.warn('Firebase Storage upload failed. Falling back to direct Firestore storage:', storageErr);
+        downloadURL = screenshotData; // Use compressed base64 directly as fallback
+      }
 
       // 2. Prepare payload with required schema
       const paymentPayload = {
@@ -213,7 +234,7 @@ export function PaywallModal({ onClose }: { onClose: () => void }) {
         planTitle,
         planAmount,
         planPrice: selectedPlan === '1month' ? 99 : 600,
-        screenshotDataUrl: downloadURL, // replace local base64 with remote URL to prevent quota issues
+        screenshotDataUrl: downloadURL, // replace local base64 with remote URL or local fallback
         utr: utrNumber.trim(),
         submittedAt: new Date().toISOString()
       };
