@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { db } from '../lib/firebase';
-import { collection, onSnapshot, doc, query, serverTimestamp } from 'firebase/firestore';
+import { collection, onSnapshot, doc, query, serverTimestamp, orderBy, limit } from 'firebase/firestore';
 import { safeSetDoc, safeDeleteDoc, isQuotaError } from '../utils/firestoreSafe';
 import { 
   Receipt, 
@@ -78,8 +78,8 @@ export function AdminPaymentRequests() {
     };
 
     try {
-      // Query the 'payment_requests' collection in real-time
-      const q = collection(db, 'payment_requests');
+      // Query the 'payment_requests' collection in real-time, limited to last 50
+      const q = query(collection(db, 'payment_requests'), orderBy('createdAt', 'desc'), limit(50));
       const unsub = onSnapshot(q, (snapshot) => {
         setQuotaExceeded(false);
         const items: PaymentRequestItem[] = [];

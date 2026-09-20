@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { db } from '../lib/firebase';
-import { collection, onSnapshot, doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
+import { collection, onSnapshot, doc, getDoc, setDoc, serverTimestamp, query, orderBy, limit } from 'firebase/firestore';
 import { safeSetDoc, safeDeleteDoc, isQuotaError } from '../utils/firestoreSafe';
 import { 
   Users, 
@@ -49,7 +49,7 @@ export function AdminStudentsList() {
   // Real-time listener on the 'users' collection
   useEffect(() => {
     try {
-      const q = collection(db, 'users');
+      const q = query(collection(db, 'users'), orderBy('createdAt', 'desc'), limit(50));
       const unsub = onSnapshot(q, (snapshot) => {
         setQuotaExceeded(false);
         const list: StudentUser[] = [];
