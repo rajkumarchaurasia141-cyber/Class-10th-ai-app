@@ -48,16 +48,9 @@ export function AdminStudentsList() {
 
   // Real-time listener on the 'users' collection
   useEffect(() => {
-    fetchStudents();
-  }, []);
-
-  const fetchStudents = async () => {
-    setLoading(true);
-    setQuotaExceeded(false);
-    try {
-      const q = query(collection(db, 'users'), orderBy('createdAt', 'desc'), limit(50));
-      const snapshot = await getDocs(q);
-      
+    const q = query(collection(db, 'users'), orderBy('createdAt', 'desc'), limit(50));
+    const unsub = onSnapshot(q, (snapshot) => {
+      setQuotaExceeded(false);
       const list: StudentUser[] = [];
       snapshot.forEach((docSnap) => {
         const data = docSnap.data();
@@ -79,20 +72,20 @@ export function AdminStudentsList() {
         return tB - tA;
       });
 
-      // Update cache
-      localStorage.setItem('bseb_users_cache', JSON.stringify(list));
       setStudents(list);
-    } catch (e: any) {
-      console.warn("Error fetching users:", e);
-      if (isQuotaError(e)) setQuotaExceeded(true);
-      // ALWAYS try load from cache on error
-      try {
-        const cached = localStorage.getItem('bseb_users_cache');
-        if (cached) setStudents(JSON.parse(cached));
-      } catch {}
-    } finally {
       setLoading(false);
-    }
+    }, (err) => {
+      console.warn("Could not load real-time users collection:", err);
+      if (isQuotaError(err)) setQuotaExceeded(true);
+      setLoading(false);
+    });
+
+    return () => unsub();
+  }, []);
+
+  // Sync function not needed with onSnapshot
+  const fetchStudents = async () => {
+    // onSnapshot already handles updates
   };
 
   const handleCopy = (email: string) => {

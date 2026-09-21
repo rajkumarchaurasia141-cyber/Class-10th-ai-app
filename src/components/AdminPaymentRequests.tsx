@@ -50,16 +50,9 @@ export function AdminPaymentRequests() {
   const [quotaExceeded, setQuotaExceeded] = useState(false);
 
   useEffect(() => {
-    fetchRequests();
-  }, []);
-
-  const fetchRequests = async () => {
-    setLoading(true);
-    setQuotaExceeded(false);
-    try {
-      const q = query(collection(db, 'payment_requests'), orderBy('createdAt', 'desc'), limit(50));
-      const snapshot = await getDocs(q);
-      
+    const q = query(collection(db, 'payment_requests'), orderBy('createdAt', 'desc'), limit(50));
+    const unsub = onSnapshot(q, (snapshot) => {
+      setQuotaExceeded(false);
       const items: PaymentRequestItem[] = [];
       snapshot.forEach((docSnap) => {
         const data = docSnap.data();
@@ -77,21 +70,20 @@ export function AdminPaymentRequests() {
           submittedAt: data.createdAt?.toDate?.()?.toISOString() || data.submittedAt || new Date().toISOString()
         });
       });
-      
-      // Update cache
-      localStorage.setItem('bseb_payment_requests_cache', JSON.stringify(items));
       setRequests(items);
-    } catch (e: any) {
-      console.warn("Could not load payment requests:", e);
-      if (isQuotaError(e)) setQuotaExceeded(true);
-      // ALWAYS try to load from cache on error
-      try {
-        const cached = localStorage.getItem('bseb_payment_requests_cache');
-        if (cached) setRequests(JSON.parse(cached));
-      } catch {}
-    } finally {
       setLoading(false);
-    }
+    }, (err) => {
+      console.warn('Payment requests fetch error:', err);
+      if (isQuotaError(err)) setQuotaExceeded(true);
+      setLoading(false);
+    });
+
+    return () => unsub();
+  }, []);
+
+  // Sync function not needed with onSnapshot, but keeping button in UI for consistency
+  const fetchRequests = async () => {
+    // onSnapshot already handles updates
   };
 
   const handleCopy = (email: string) => {
