@@ -303,13 +303,18 @@ function MainApp() {
 
         {/* Bottom Navigation Bar (Sticky Native App Footer) */}
         {activeTab !== 'admin' && (
-          <BottomNavBar
-            activeTab={activeTab === 'explorer' ? 'my_courses' : activeTab}
-            onTabChange={(tab) => {
-              setSelectedSubject(null);
-              setActiveTab(tab);
-            }}
-          />
+          <div className="flex flex-col">
+            <BottomNavBar
+              activeTab={activeTab === 'explorer' ? 'my_courses' : activeTab}
+              onTabChange={(tab) => {
+                setSelectedSubject(null);
+                setActiveTab(tab);
+              }}
+            />
+            <div className="text-[10px] text-stone-400 text-center pb-2 bg-slate-50">
+              Data Version: {new Date().toLocaleTimeString()}
+            </div>
+          </div>
         )}
 
         {/* Global Modals */}
