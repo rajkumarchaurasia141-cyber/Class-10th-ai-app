@@ -8,7 +8,8 @@ admin.initializeApp({
 const db = admin.firestore();
 
 async function exportCollections() {
-  const collections = ['courses', 'admin_courses', 'subjects', 'videos'];
+  // Added all collections detected from user context
+  const collections = ['courses', 'admin_courses', 'subjects', 'videos', 'pdf_notes', 'banners', 'quiz'];
   const data = {};
   for (const col of collections) {
     try {
