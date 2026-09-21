@@ -84,7 +84,7 @@ export function AdminPaymentRequests() {
     } catch (e: any) {
       console.warn("Could not load payment requests:", e);
       if (isQuotaError(e)) setQuotaExceeded(true);
-      // Try to load from cache
+      // ALWAYS try to load from cache on error
       try {
         const cached = localStorage.getItem('bseb_payment_requests_cache');
         if (cached) setRequests(JSON.parse(cached));

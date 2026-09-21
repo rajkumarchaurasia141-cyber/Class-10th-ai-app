@@ -58,7 +58,7 @@ export const AuthProvider = ({ children }: any) => {
         setFbUser(firebaseUser);
         
         // Auto save Google or authenticated real users to Firestore
-        if (firebaseUser.email && !firebaseUser.isAnonymous) {
+        if (firebaseUser.email && !firebaseUser.isAnonymous && !isFirestoreQuotaExceeded()) {
           try {
             const userRef = doc(db, 'users', firebaseUser.uid);
             const userSnap = await getDoc(userRef);
@@ -85,6 +85,7 @@ export const AuthProvider = ({ children }: any) => {
             }
           } catch (err) {
             console.error("Error auto-saving user on auth state change:", err);
+            if (isQuotaError(err)) setFirestoreQuotaExceeded(true);
           }
         }
       } else {
@@ -195,29 +196,34 @@ export const AuthProvider = ({ children }: any) => {
 
     // STEP 1: USER LOGIN PE AUTO SAVE (TURANT ADMIN PANEL ME JAYE)
     const uid = fbUser?.uid || `simulated_${cleanEmail.replace(/[^a-zA-Z0-9]/g, '_')}`;
-    try {
-      const userRef = doc(db, 'users', uid);
-      const userSnap = await getDoc(userRef);
-      if (!userSnap.exists()) {
-        await setDoc(userRef, {
-          uid,
-          name: cleanName,
-          email: cleanEmail,
-          photo: '',
-          isPaid: false,
-          createdAt: serverTimestamp(),
-          lastLogin: serverTimestamp()
-        });
-      } else {
-        // update basic info if already registered, keeping isPaid intact
-        await setDoc(userRef, {
-          name: cleanName,
-          email: cleanEmail,
-          lastLogin: serverTimestamp()
-        }, { merge: true });
+    if (!isFirestoreQuotaExceeded()) {
+      try {
+        const userRef = doc(db, 'users', uid);
+        const userSnap = await safeGetDoc(userRef);
+        if (userSnap && !userSnap.exists()) {
+          await setDoc(userRef, {
+            uid,
+            name: cleanName,
+            email: cleanEmail,
+            photo: '',
+            isPaid: false,
+            createdAt: serverTimestamp(),
+            lastLogin: serverTimestamp()
+          });
+        } else if (userSnap && userSnap.exists()) {
+          // update basic info if already registered, keeping isPaid intact
+          await setDoc(userRef, {
+            name: cleanName,
+            email: cleanEmail,
+            lastLogin: serverTimestamp()
+          }, { merge: true });
+        }
+      } catch (err) {
+        console.error("Error auto-saving user to users collection in login:", err);
+        if (isQuotaError(err)) setFirestoreQuotaExceeded(true);
       }
-    } catch (err) {
-      console.error("Error auto-saving user to users collection in login:", err);
+    } else {
+      console.warn("Firestore quota exceeded, skipping user auto-save.");
     }
 
     return true;

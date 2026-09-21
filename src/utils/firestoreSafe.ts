@@ -1,4 +1,4 @@
-import { setDoc, deleteDoc, DocumentReference, SetOptions } from 'firebase/firestore';
+import { setDoc, deleteDoc, getDoc, DocumentReference, SetOptions } from 'firebase/firestore';
 
 const QUOTA_STORAGE_KEY = 'bseb_firestore_quota_exhausted';
 
@@ -21,7 +21,7 @@ let quotaExceededState = (() => {
 })();
 
 export function isFirestoreQuotaExceeded(): boolean {
-  return false;
+  return quotaExceededState;
 }
 
 export function setFirestoreQuotaExceeded(val: boolean) {
@@ -52,6 +52,38 @@ export function isQuotaError(err: any): boolean {
     msg.includes('Free daily write units') ||
     msg.includes('Quota exceeded')
   );
+}
+
+export async function safeGetDoc<T = any>(
+  reference: DocumentReference<T>,
+  timeoutMs: number = 2500
+): Promise<any | null> {
+  // If quota is already known exceeded, don't even try the read
+  if (isFirestoreQuotaExceeded()) {
+    console.warn("Firestore read skipped: Daily read quota exceeded.");
+    return null;
+  }
+
+  try {
+    const getPromise = getDoc(reference);
+    const timeoutPromise = new Promise<'timeout'>((resolve) => setTimeout(() => resolve('timeout'), timeoutMs));
+
+    const result = await Promise.race([getPromise, timeoutPromise]);
+    if (result === 'timeout') {
+      console.warn("Firestore read timed out.");
+      return null;
+    }
+    
+    // Result is the document snapshot
+    return result;
+  } catch (err: any) {
+    if (isQuotaError(err)) {
+      setFirestoreQuotaExceeded(true);
+      console.warn("Firestore daily read quota exceeded. Switching to offline mode.");
+    }
+    console.warn("Firestore read notice:", err?.message || String(err));
+    return null;
+  }
 }
 
 export async function safeSetDoc<T = any>(

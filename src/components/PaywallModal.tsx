@@ -190,6 +190,23 @@ export function PaywallModal({ onClose }: { onClose: () => void }) {
       const requestDocRef = doc(db, 'payment_requests', requestId);
       await setDoc(requestDocRef, payload);
 
+      // Trigger email notification
+      try {
+        await fetch('/api/send-payment-notification', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            studentName: finalStudentName,
+            studentEmail: emailForPayload,
+            amount: config.price,
+            screenshotUrl: screenshotBase64,
+            requestId: requestId
+          })
+        });
+      } catch (emailErr) {
+        console.error("Failed to trigger email notification:", emailErr);
+      }
+
       setSubmitSuccess(true);
       alert("पेमेंट स्क्रीनशॉट सफलतापूर्वक भेज दिया गया है! एडमिन द्वारा सत्यापन होते ही सभी चैप्टर्स अनलॉक हो जाएंगे।");
       onClose();

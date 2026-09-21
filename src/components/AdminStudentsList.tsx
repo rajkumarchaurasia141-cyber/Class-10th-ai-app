@@ -85,7 +85,7 @@ export function AdminStudentsList() {
     } catch (e: any) {
       console.warn("Error fetching users:", e);
       if (isQuotaError(e)) setQuotaExceeded(true);
-      // Try load from cache
+      // ALWAYS try load from cache on error
       try {
         const cached = localStorage.getItem('bseb_users_cache');
         if (cached) setStudents(JSON.parse(cached));

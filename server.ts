@@ -3,6 +3,7 @@ import path from 'path';
 import { createServer as createViteServer } from 'vite';
 import { GoogleGenAI } from '@google/genai';
 import { getAccurateDoubtAnswer } from './src/utils/doubtKnowledgeEngine';
+import nodemailer from 'nodemailer';
 
 async function startServer() {
   const app = express();
@@ -171,6 +172,45 @@ async function startServer() {
     } catch (err: any) {
       const fallbackReply = getAccurateDoubtAnswer(req.body?.question || 'इस प्रश्न का हल दें');
       return res.json({ answer: fallbackReply });
+    }
+  });
+
+  // API endpoint to send payment notification
+  app.post('/api/send-payment-notification', async (req: Request, res: Response) => {
+    try {
+      const { studentName, studentEmail, amount, screenshotUrl, requestId } = req.body;
+      
+      const transporter = nodemailer.createTransport({
+        host: process.env.SMTP_HOST,
+        port: parseInt(process.env.SMTP_PORT || '465'),
+        secure: true,
+        auth: {
+          user: process.env.SMTP_USER,
+          pass: process.env.SMTP_PASS,
+        },
+      });
+
+      const approvalLink = `${process.env.APP_URL}/admin/payments/${requestId}`;
+
+      await transporter.sendMail({
+        from: '"Padeyga Bihar Admin" <noreply@padeygabihar.com>',
+        to: process.env.ADMIN_EMAIL,
+        subject: `New Payment Request: ${studentName}`,
+        html: `
+          <h1>New Payment Request</h1>
+          <p><strong>Student:</strong> ${studentName}</p>
+          <p><strong>Email:</strong> ${studentEmail}</p>
+          <p><strong>Amount:</strong> ₹${amount}</p>
+          <p><a href="${screenshotUrl}" target="_blank">View Screenshot</a></p>
+          <br>
+          <a href="${approvalLink}" style="background-color: #000; color: #fff; padding: 10px 20px; text-decoration: none; border-radius: 5px;">Approve or Reject Payment</a>
+        `,
+      });
+
+      res.json({ success: true });
+    } catch (error) {
+      console.error('Email error:', error);
+      res.status(500).json({ error: 'Failed to send email' });
     }
   });
 
