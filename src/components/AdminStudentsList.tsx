@@ -48,50 +48,52 @@ export function AdminStudentsList() {
 
   // Real-time listener on the 'users' collection
   useEffect(() => {
+    fetchStudents();
+  }, []);
+
+  const fetchStudents = async () => {
+    setLoading(true);
+    setQuotaExceeded(false);
     try {
       const q = query(collection(db, 'users'), orderBy('createdAt', 'desc'), limit(50));
-      const unsub = onSnapshot(q, (snapshot) => {
-        setQuotaExceeded(false);
-        const list: StudentUser[] = [];
-        snapshot.forEach((docSnap) => {
-          const data = docSnap.data();
-          list.push({
-            id: docSnap.id,
-            uid: data.uid || docSnap.id,
-            name: data.name || 'Unknown student',
-            email: data.email || '',
-            isPaid: data.isPaid === true,
-            createdAt: data.createdAt,
-            lastLogin: data.lastLogin
-          });
+      const snapshot = await getDocs(q);
+      
+      const list: StudentUser[] = [];
+      snapshot.forEach((docSnap) => {
+        const data = docSnap.data();
+        list.push({
+          id: docSnap.id,
+          uid: data.uid || docSnap.id,
+          name: data.name || 'Unknown student',
+          email: data.email || '',
+          isPaid: data.isPaid === true,
+          createdAt: data.createdAt,
+          lastLogin: data.lastLogin
         });
-
-        // Sort by creation date or alphabetically as fallback
-        list.sort((a, b) => {
-          const tA = a.createdAt?.toDate?.()?.getTime() || 0;
-          const tB = b.createdAt?.toDate?.()?.getTime() || 0;
-          return tB - tA; // Newest registered students first
-        });
-
-        setStudents(list);
-        setLoading(false);
-      }, (err) => {
-        console.warn("Could not load real-time users collection:", err);
-        if (isQuotaError(err)) {
-          setQuotaExceeded(true);
-        }
-        setLoading(false);
       });
 
-      return () => unsub();
+      // Sort
+      list.sort((a, b) => {
+        const tA = a.createdAt?.toDate?.()?.getTime() || 0;
+        const tB = b.createdAt?.toDate?.()?.getTime() || 0;
+        return tB - tA;
+      });
+
+      // Update cache
+      localStorage.setItem('bseb_users_cache', JSON.stringify(list));
+      setStudents(list);
     } catch (e: any) {
-      console.warn("Error setting up users listener:", e);
-      if (isQuotaError(e)) {
-        setQuotaExceeded(true);
-      }
+      console.warn("Error fetching users:", e);
+      if (isQuotaError(e)) setQuotaExceeded(true);
+      // Try load from cache
+      try {
+        const cached = localStorage.getItem('bseb_users_cache');
+        if (cached) setStudents(JSON.parse(cached));
+      } catch {}
+    } finally {
       setLoading(false);
     }
-  }, []);
+  };
 
   const handleCopy = (email: string) => {
     navigator.clipboard?.writeText(email);
@@ -246,6 +248,17 @@ export function AdminStudentsList() {
 
   return (
     <div className="space-y-5 relative z-10 text-stone-900">
+      <div className="flex items-center justify-between">
+        <h3 className="font-black text-stone-950 text-lg">छात्र सूची</h3>
+        <button 
+          onClick={fetchStudents} 
+          disabled={loading}
+          className="flex items-center gap-2 bg-stone-900 text-white px-4 py-2 rounded-xl text-sm font-bold hover:bg-stone-800 transition-colors disabled:opacity-50"
+        >
+          <RefreshCw className="w-4 h-4" />
+          {loading ? 'सिंक हो रहा है...' : 'डेटा सिंक करें'}
+        </button>
+      </div>
       
       {quotaExceeded && (
         <div className="p-4 rounded-2xl bg-amber-50 border-2 border-amber-300 text-amber-900 space-y-2 animate-fade-in shadow-md">

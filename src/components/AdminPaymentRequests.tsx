@@ -18,7 +18,8 @@ import {
   Check,
   ShieldCheck,
   CircleDollarSign,
-  Hourglass
+  Hourglass,
+  RefreshCw
 } from 'lucide-react';
 
 export interface PaymentRequestItem {
@@ -49,74 +50,49 @@ export function AdminPaymentRequests() {
   const [quotaExceeded, setQuotaExceeded] = useState(false);
 
   useEffect(() => {
-    const mergeWithLocal = (remoteItems: PaymentRequestItem[]) => {
-      let merged = [...remoteItems];
-      try {
-        const localItems = JSON.parse(localStorage.getItem('bseb_payment_requests') || '[]');
-        const remoteIds = new Set(remoteItems.map(i => i.id));
-        for (const loc of localItems) {
-          if (!remoteIds.has(loc.id)) {
-            merged.push({
-              ...loc,
-              screenshotDataUrl: loc.screenshotBase64 || loc.screenshotDataUrl || ''
-            });
-          }
-        }
-      } catch (e) {
-        console.warn('Local requests merge notice:', e);
-      }
-
-      // Sort by submittedAt descending (newest first)
-      merged.sort((a, b) => {
-        const tA = new Date(a.submittedAt || 0).getTime();
-        const tB = new Date(b.submittedAt || 0).getTime();
-        return tB - tA;
-      });
-
-      setRequests(merged);
-      setLoading(false);
-    };
-
-    try {
-      // Query the 'payment_requests' collection in real-time, limited to last 50
-      const q = query(collection(db, 'payment_requests'), orderBy('createdAt', 'desc'), limit(50));
-      const unsub = onSnapshot(q, (snapshot) => {
-        setQuotaExceeded(false);
-        const items: PaymentRequestItem[] = [];
-        snapshot.forEach((docSnap) => {
-          const data = docSnap.data();
-          items.push({
-            id: docSnap.id,
-            userId: data.userId || data.uid || '',
-            studentName: data.userName || data.studentName || 'विद्यार्थी',
-            studentEmail: data.userEmail || data.studentEmail || data.email || '',
-            planTitle: data.courseName || 'Board Crash Course',
-            planAmount: data.amount ? `₹${data.amount}` : '₹299',
-            planPrice: Number(data.amount) || 299,
-            screenshotDataUrl: data.screenshotBase64 || data.screenshotUrl || data.screenshotDataUrl || '',
-            utr: data.upiRef || data.utr || '',
-            status: data.status || 'pending',
-            submittedAt: data.createdAt?.toDate?.()?.toISOString() || data.submittedAt || new Date().toISOString()
-          });
-        });
-        mergeWithLocal(items);
-      }, (err) => {
-        console.warn('Payment requests fetch notice:', err?.message || String(err));
-        if (isQuotaError(err)) {
-          setQuotaExceeded(true);
-        }
-        mergeWithLocal([]);
-      });
-
-      return () => unsub();
-    } catch (e: any) {
-      console.warn('Payment requests setup notice:', e?.message || String(e));
-      if (isQuotaError(e)) {
-        setQuotaExceeded(true);
-      }
-      mergeWithLocal([]);
-    }
+    fetchRequests();
   }, []);
+
+  const fetchRequests = async () => {
+    setLoading(true);
+    setQuotaExceeded(false);
+    try {
+      const q = query(collection(db, 'payment_requests'), orderBy('createdAt', 'desc'), limit(50));
+      const snapshot = await getDocs(q);
+      
+      const items: PaymentRequestItem[] = [];
+      snapshot.forEach((docSnap) => {
+        const data = docSnap.data();
+        items.push({
+          id: docSnap.id,
+          userId: data.userId || data.uid || '',
+          studentName: data.userName || data.studentName || 'विद्यार्थी',
+          studentEmail: data.userEmail || data.studentEmail || data.email || '',
+          planTitle: data.courseName || 'Board Crash Course',
+          planAmount: data.amount ? `₹${data.amount}` : '₹299',
+          planPrice: Number(data.amount) || 299,
+          screenshotDataUrl: data.screenshotBase64 || data.screenshotUrl || data.screenshotDataUrl || '',
+          utr: data.upiRef || data.utr || '',
+          status: data.status || 'pending',
+          submittedAt: data.createdAt?.toDate?.()?.toISOString() || data.submittedAt || new Date().toISOString()
+        });
+      });
+      
+      // Update cache
+      localStorage.setItem('bseb_payment_requests_cache', JSON.stringify(items));
+      setRequests(items);
+    } catch (e: any) {
+      console.warn("Could not load payment requests:", e);
+      if (isQuotaError(e)) setQuotaExceeded(true);
+      // Try to load from cache
+      try {
+        const cached = localStorage.getItem('bseb_payment_requests_cache');
+        if (cached) setRequests(JSON.parse(cached));
+      } catch {}
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleCopy = (email: string) => {
     navigator.clipboard?.writeText(email);
@@ -311,6 +287,17 @@ export function AdminPaymentRequests() {
       )}
 
       {/* Statistics dashboard Overview Cards */}
+      <div className="flex items-center justify-between">
+        <h3 className="font-black text-stone-950 text-lg">पेमेंट डैशबोर्ड</h3>
+        <button 
+          onClick={fetchRequests} 
+          disabled={loading}
+          className="flex items-center gap-2 bg-stone-900 text-white px-4 py-2 rounded-xl text-sm font-bold hover:bg-stone-800 transition-colors disabled:opacity-50"
+        >
+          <RefreshCw className="w-4 h-4" />
+          {loading ? 'सिंक हो रहा है...' : 'डेटा सिंक करें'}
+        </button>
+      </div>
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         <div className="bg-white p-4 rounded-2xl border border-stone-200 shadow-xs">
           <div className="text-[10px] font-bold text-stone-500 uppercase flex items-center gap-1.5 mb-1">
