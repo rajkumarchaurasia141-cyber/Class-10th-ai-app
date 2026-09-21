@@ -2,7 +2,7 @@ import React, { createContext, useContext, useEffect, useState } from 'react';
 import { db, auth } from '../lib/firebase';
 import { doc, onSnapshot, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { signInAnonymously, onAuthStateChanged } from 'firebase/auth';
-import { safeSetDoc, isFirestoreQuotaExceeded } from '../utils/firestoreSafe';
+import { safeSetDoc, isFirestoreQuotaExceeded, setFirestoreQuotaExceeded, isQuotaError, safeGetDoc } from '../utils/firestoreSafe';
 import { checkVipExpiryStatus } from '../utils/vipHelper';
 
 const AuthContext = createContext<any>(null);
@@ -112,18 +112,31 @@ export const AuthProvider = ({ children }: any) => {
     return () => unsubAuth();
   }, []);
 
-  // Real-time VIP listener with automatic expiration check (Forced to true for free access)
+  // Real-time VIP listener with automatic expiration check
   useEffect(() => {
-    setIsVIP(true);
-    setVipDetails({
-      isVip: true,
-      plan: 'free_unlocked',
-      planDurationText: 'मुफ़्त शिक्षा अभियान (सभी अनलॉक)',
-      isExpired: false,
-      daysRemaining: 9999,
-      formattedExpiry: 'असीमित (मुफ़्त एक्सेस)'
-    });
-  }, [user?.email]);
+    // Only force VIP if explicitly configured or for admin
+    if (isAdmin) {
+      setIsVIP(true);
+      setVipDetails({
+        isVip: true,
+        plan: 'admin',
+        planDurationText: 'एडमिन एक्सेस',
+        isExpired: false,
+        daysRemaining: 9999,
+        formattedExpiry: 'असीमित'
+      });
+    } else {
+      setIsVIP(isPaid);
+      setVipDetails({
+        isVip: isPaid,
+        plan: isPaid ? 'paid' : 'free',
+        planDurationText: isPaid ? 'प्रीमियम मेंबर' : 'मुफ़्त मेंबर',
+        isExpired: !isPaid,
+        daysRemaining: isPaid ? 365 : 0,
+        formattedExpiry: isPaid ? 'सक्रिय' : 'खरीदें'
+      });
+    }
+  }, [user?.email, isPaid, isAdmin]);
 
   // Real-time observer of current user's isPaid status in users collection
   useEffect(() => {

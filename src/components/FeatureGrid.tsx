@@ -12,7 +12,8 @@ import {
   Crown,
   FileText,
   BookOpen,
-  Trophy
+  Trophy,
+  Lock
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
@@ -66,18 +67,20 @@ export function FeatureGrid({ onNavigate }: FeatureGridProps) {
       id: 'paid_notes',
       title: 'Paid Notes',
       subtitle: 'VIP चैप्टर नोट्स',
-      badge: 'PDF',
-      badgeColor: 'bg-red-500 text-white',
+      badge: isVIP ? 'PDF' : 'VIP',
+      badgeColor: isVIP ? 'bg-red-500 text-white' : 'bg-amber-500 text-stone-950 font-black',
       bgIcon: 'bg-gradient-to-br from-rose-500 to-red-600',
       icon: FileCheck2,
       renderIcon: () => (
         <div className="w-12 h-12 rounded-2xl bg-rose-50 border border-rose-100 flex items-center justify-center relative shadow-sm group-hover:scale-105 transition-transform">
           <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-rose-500 to-red-600 flex items-center justify-center text-white shadow-md shadow-rose-500/20">
-            <FileText className="w-5 h-5" />
+            {isVIP ? <FileText className="w-5 h-5" /> : <Lock className="w-5 h-5" />}
           </div>
-          <span className="absolute -bottom-1 -right-1 bg-red-600 text-white font-black text-[8px] px-1 rounded shadow-xs">
-            PDF
-          </span>
+          {!isVIP && (
+            <span className="absolute -bottom-1 -right-1 bg-amber-400 text-stone-950 font-black text-[8px] px-1 rounded shadow-xs">
+              VIP
+            </span>
+          )}
         </div>
       )
     },
