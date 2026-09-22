@@ -1,8 +1,6 @@
 import React, { useState } from 'react';
 import { Database, Save, CheckCircle2, AlertCircle, Code, Layers, Sparkles } from 'lucide-react';
 import { useData } from '../context/DataContext';
-import { db } from '../lib/firebase';
-import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
 
 export function AdminMasterContentManager() {
   const { curriculum = [], pdfNotes = [], liveClasses = [], routine = [], quotes = [], notifications = [], banners = [], appConfig = {}, updateSettings, refreshData } = useData();
@@ -36,20 +34,11 @@ export function AdminMasterContentManager() {
         await updateSettings(parsed.appConfig);
       }
 
-      // Update sync flag in Firestore to trigger sync in client apps
-      try {
-        await setDoc(doc(db, 'settings', 'sync_flag'), {
-          last_updated: serverTimestamp()
-        });
-      } catch (syncErr) {
-        console.error('Error updating sync flag:', syncErr);
-      }
-
       // Also update local storage cache
       localStorage.setItem('bseb_master_override', JSON.stringify(parsed));
       await refreshData();
 
-      setSuccessMsg('मास्टर डेटा और सेटिंग्स सफलतापूर्वक अपडेट और सिंक हो गए हैं! (सभी छात्रों के लिए डेटा रिफ्रेश हो गया)');
+      setSuccessMsg('मास्टर डेटा और सेटिंग्स सफलतापूर्वक अपडेट हो गए हैं!');
       setTimeout(() => setSuccessMsg(''), 3000);
     } catch (err: any) {
       setErrorMsg('JSON सिंटैक्स त्रुटि: कृपया सही JSON फॉर्मेट दर्ज करें। (' + (err?.message || String(err)) + ')');
