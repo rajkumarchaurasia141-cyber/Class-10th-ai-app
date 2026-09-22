@@ -1,22 +1,36 @@
 import React, { useState } from 'react';
-import { Database, Save, CheckCircle2, AlertCircle, Code, Layers, Sparkles } from 'lucide-react';
+import { Database, Save, CheckCircle2, AlertCircle, Code, Layers, Sparkles, Download } from 'lucide-react';
 import { useData } from '../context/DataContext';
 
 export function AdminMasterContentManager() {
-  const { curriculum = [], pdfNotes = [], liveClasses = [], routine = [], quotes = [], notifications = [], banners = [], appConfig = {}, updateSettings, refreshData } = useData();
+  const { 
+    subjects = {}, 
+    paidNotes = [], 
+    liveClasses = [], 
+    leaderboard = [], 
+    routine = [], 
+    motivationalQuotes = [], 
+    notifications = [], 
+    appConfig = {}, 
+    updateSettings, 
+    refreshData 
+  } = useData();
 
   const [activeSubTab, setActiveSubTab] = useState<'json' | 'curriculum_summary' | 'quick_texts'>('json');
   
-  // Raw JSON viewer/editor state
+  // Convert subjects record to array for standard JSON representation
+  const subjectsArray = Object.values(subjects);
+
+  // Exact structure required by app_data.json
   const masterDataObject = {
-    appConfig,
-    curriculum,
-    pdfNotes,
-    liveClasses,
-    routine,
-    quotes,
-    notifications,
-    banners
+    subjects: subjectsArray,
+    paid_notes: paidNotes,
+    live_classes: liveClasses,
+    leaderboard: leaderboard,
+    routine: routine,
+    motivational_quotes: motivationalQuotes,
+    notifications: notifications,
+    app_config: appConfig
   };
 
   const [jsonText, setJsonText] = useState(JSON.stringify(masterDataObject, null, 2));
@@ -30,8 +44,8 @@ export function AdminMasterContentManager() {
       const parsed = JSON.parse(jsonText);
       
       // Save appConfig if present
-      if (parsed.appConfig) {
-        await updateSettings(parsed.appConfig);
+      if (parsed.app_config) {
+        await updateSettings(parsed.app_config);
       }
 
       // Also update local storage cache
@@ -42,6 +56,26 @@ export function AdminMasterContentManager() {
       setTimeout(() => setSuccessMsg(''), 3000);
     } catch (err: any) {
       setErrorMsg('JSON सिंटैक्स त्रुटि: कृपया सही JSON फॉर्मेट दर्ज करें। (' + (err?.message || String(err)) + ')');
+    }
+  };
+
+  // Triggers immediate download of app_data.json to device
+  const handleDownloadJson = () => {
+    try {
+      const blob = new Blob([JSON.stringify(masterDataObject, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'app_data.json';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      
+      setSuccessMsg('app_data.json फ़ाइल डाउनलोड हो गई है! अब इसे अपने प्रोजेक्ट के public/ फ़ोल्डर में पेस्ट करके डिप्लॉय करें।');
+      setTimeout(() => setSuccessMsg(''), 5000);
+    } catch (err: any) {
+      setErrorMsg('डाउनलोड विफल: ' + (err?.message || String(err)));
     }
   };
 
@@ -93,7 +127,7 @@ export function AdminMasterContentManager() {
 
         {activeSubTab === 'json' && (
           <div className="space-y-4">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
               <div>
                 <h4 className="text-xs font-black uppercase tracking-wider text-stone-900 flex items-center gap-1.5">
                   <Code className="w-4 h-4 text-indigo-600" /> संपूर्ण ऐप डेटा JSON (App Master Database)
@@ -101,13 +135,23 @@ export function AdminMasterContentManager() {
                 <p className="text-[11px] text-stone-500">आप नीचे दिए गए JSON में कोई भी बदलाव करके एक साथ सभी टेक्स्ट, मूल्य, कोर्स या सेटिंग्स बदल सकते हैं।</p>
               </div>
 
-              <button
-                type="button"
-                onClick={handleSaveJson}
-                className="bg-indigo-600 hover:bg-indigo-700 text-white font-black px-4 py-2.5 rounded-xl text-xs shadow cursor-pointer transition-all flex items-center gap-1.5 shrink-0"
-              >
-                <Save className="w-4 h-4" /> मास्टर डेटा सेव करें
-              </button>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={handleDownloadJson}
+                  className="bg-emerald-600 hover:bg-emerald-700 text-white font-black px-4 py-2.5 rounded-xl text-xs shadow cursor-pointer transition-all flex items-center gap-1.5 shrink-0"
+                  title="Download app_data.json file directly to update your app backend"
+                >
+                  <Download className="w-4 h-4" /> Download app_data.json
+                </button>
+                <button
+                  type="button"
+                  onClick={handleSaveJson}
+                  className="bg-indigo-600 hover:bg-indigo-700 text-white font-black px-4 py-2.5 rounded-xl text-xs shadow cursor-pointer transition-all flex items-center gap-1.5 shrink-0"
+                >
+                  <Save className="w-4 h-4" /> मास्टर डेटा सेव करें
+                </button>
+              </div>
             </div>
 
             <div className="relative">
@@ -119,7 +163,25 @@ export function AdminMasterContentManager() {
               />
             </div>
 
-            <div className="flex justify-end">
+            <div className="bg-blue-50 border border-blue-200 rounded-2xl p-4 text-xs text-blue-950 space-y-2">
+              <div className="font-black flex items-center gap-1 text-blue-900">
+                <Sparkles className="w-4 h-4 text-blue-600" /> मोबाइल यूजर्स के लिए "वन-क्लिक फिक्स" फ़ीचर:
+              </div>
+              <p className="leading-relaxed">
+                जब भी आप ऐप में कोई बदलाव करें (जैसे कोई लाइव क्लास जोड़ना या रूटीन बदलना), तो ऊपर दिए गए 
+                <strong className="text-emerald-700 font-bold"> "Download app_data.json" </strong> 
+                बटन पर क्लिक करें। यह फ़ाइल आपके फ़ोन या कंप्यूटर में डाउनलोड हो जाएगी। इसके बाद इस फ़ाइल को अपने प्रोजेक्ट के <strong className="font-bold">`public/`</strong> फ़ोल्डर में कॉपी-पेस्ट करके गिटहब (GitHub) पर पुश कर दें। आपका पूरा ऐप बिना एक भी रुपया खर्च किए हमेशा 100% लाइव रहेगा!
+              </p>
+            </div>
+
+            <div className="flex justify-end gap-2">
+              <button
+                type="button"
+                onClick={handleDownloadJson}
+                className="bg-emerald-600 hover:bg-emerald-700 text-white font-black px-6 py-3 rounded-2xl text-xs shadow-md cursor-pointer transition-all flex items-center gap-2"
+              >
+                <Download className="w-4 h-4" /> Download app_data.json
+              </button>
               <button
                 type="button"
                 onClick={handleSaveJson}
@@ -138,7 +200,7 @@ export function AdminMasterContentManager() {
             </h4>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              {(curriculum || []).map((subj) => (
+              {(subjectsArray || []).map((subj) => (
                 <div key={subj.id} className="bg-slate-50 border border-slate-200 rounded-2xl p-4 space-y-2">
                   <div className="flex items-center justify-between">
                     <span className="text-xs font-black text-stone-900">{subj.name}</span>
