@@ -404,8 +404,37 @@ export function AdminPanel({ onBack }: any) {
           </button>
         </div>
 
-        {/* Tab Controls */}
-        <div className="flex border-b border-stone-800 mb-8 relative z-10 gap-2 overflow-x-auto scrollbar-none">
+        {/* Mobile Dropdown Navigation for Tabs */}
+        <div className="block sm:hidden mb-6 relative z-30">
+          <label className="block text-xs font-black text-amber-500 uppercase tracking-wider mb-2">
+            कंट्रोल सेक्शन चुनें (Select Control Section):
+          </label>
+          <select
+            value={activeTab}
+            onChange={(e) => setActiveTab(e.target.value as any)}
+            className="w-full bg-stone-950 border border-stone-800 rounded-2xl px-4 py-4 text-white text-sm font-black focus:border-amber-500 focus:outline-none shadow-xl cursor-pointer"
+          >
+            <option value="requests">📥 पेमेंट रिक्वेस्ट {pendingRequestsCount > 0 ? `(${pendingRequestsCount})` : ''}</option>
+            <option value="students">👥 पंजीकृत छात्र</option>
+            <option value="pdf_notes">📄 Paid PDF नोट्स</option>
+            <option value="courses">🎓 कोर्स प्रबंधक (Add Course)</option>
+            <option value="live_classes">🔴 YouTube लाइव क्लास</option>
+            <option value="routine">📅 क्लास रूटीन</option>
+            <option value="quotes">💡 सुविचार / कोट्स</option>
+            <option value="notifications">🔔 पुश नोटिफिकेशन्स</option>
+            <option value="content">📤 नया चैप्टर अपलोड / एडिट</option>
+            <option value="vip">👑 VIP विद्यार्थी जोड़ें</option>
+            <option value="banners">🖼️ होम बैनर (Widgets)</option>
+            <option value="settings">⚙️ ऐप सेटिंग्स & मूल्य</option>
+            <option value="admins">🔒 एडमिन आईडी मैनेज</option>
+            <option value="apk">📱 APK & AAB शेयर</option>
+            <option value="sync">🔄 क्लाउड सिंक (1-क्लिक)</option>
+            <option value="master">🛠️ मास्टर डेटा & टेक्स्ट एडिटर</option>
+          </select>
+        </div>
+
+        {/* Tab Controls (Hidden on mobile for better UX, scrollbar-enabled on desktop) */}
+        <div className="hidden sm:flex border-b border-stone-800 mb-8 relative z-10 gap-2 overflow-x-auto scrollbar-none">
           <button 
             onClick={() => setActiveTab('requests')} 
             className={`pb-3 px-4 font-bold text-sm flex items-center gap-2 transition-colors cursor-pointer whitespace-nowrap relative ${
@@ -541,6 +570,7 @@ export function AdminPanel({ onBack }: any) {
             <Database className="w-4 h-4 text-indigo-400" /> 🛠️ मास्टर डेटा & टेक्स्ट एडिटर
           </button>
         </div>
+
 
         {/* Master Content & Text Editor Tab */}
         {activeTab === 'master' && (
