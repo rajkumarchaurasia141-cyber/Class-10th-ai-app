@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { db } from '../lib/firebase';
-import { collection, onSnapshot, doc, query, serverTimestamp, orderBy, limit } from 'firebase/firestore';
+import { collection, doc, query, serverTimestamp, orderBy, limit, getDocs, startAfter, DocumentData, QueryDocumentSnapshot } from 'firebase/firestore';
 import { safeSetDoc, safeDeleteDoc, isQuotaError } from '../utils/firestoreSafe';
 import { 
   Receipt, 
@@ -49,14 +49,26 @@ export function AdminPaymentRequests() {
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [quotaExceeded, setQuotaExceeded] = useState(false);
 
-  useEffect(() => {
-    const q = query(collection(db, 'payment_requests'), orderBy('createdAt', 'desc'), limit(50));
-    const unsub = onSnapshot(q, (snapshot) => {
-      setQuotaExceeded(false);
-      const items: PaymentRequestItem[] = [];
-      snapshot.forEach((docSnap) => {
+  const [lastDoc, setLastDoc] = useState<QueryDocumentSnapshot<DocumentData> | null>(null);
+  const [hasMore, setHasMore] = useState(true);
+
+  const fetchPaymentRequests = async (isInitial = false) => {
+    setLoading(true);
+    setQuotaExceeded(false);
+    try {
+      let q = query(collection(db, 'payment_requests'), orderBy('submittedAt', 'desc'), limit(20));
+      if (!isInitial && lastDoc) {
+        q = query(collection(db, 'payment_requests'), orderBy('submittedAt', 'desc'), startAfter(lastDoc), limit(20));
+      }
+
+      const snapshot = await getDocs(q);
+      const newLastDoc = snapshot.docs[snapshot.docs.length - 1];
+      setLastDoc(newLastDoc || null);
+      setHasMore(snapshot.docs.length === 20);
+
+      const items: PaymentRequestItem[] = snapshot.docs.map((docSnap) => {
         const data = docSnap.data();
-        items.push({
+        return {
           id: docSnap.id,
           userId: data.userId || data.uid || '',
           studentName: data.userName || data.studentName || 'विद्यार्थी',
@@ -67,18 +79,21 @@ export function AdminPaymentRequests() {
           screenshotDataUrl: data.screenshotBase64 || data.screenshotUrl || data.screenshotDataUrl || '',
           utr: data.upiRef || data.utr || '',
           status: data.status || 'pending',
-          submittedAt: data.createdAt?.toDate?.()?.toISOString() || data.submittedAt || new Date().toISOString()
-        });
+          submittedAt: data.submittedAt || data.createdAt?.toDate?.()?.toISOString() || new Date().toISOString()
+        };
       });
-      setRequests(items);
-      setLoading(false);
-    }, (err) => {
+
+      setRequests(prev => isInitial ? items : [...prev, ...items]);
+    } catch (err: any) {
       console.warn('Payment requests fetch error:', err);
       if (isQuotaError(err)) setQuotaExceeded(true);
+    } finally {
       setLoading(false);
-    });
+    }
+  };
 
-    return () => unsub();
+  useEffect(() => {
+    fetchPaymentRequests(true);
   }, []);
 
   // Sync function not needed with onSnapshot, but keeping button in UI for consistency
@@ -282,7 +297,7 @@ export function AdminPaymentRequests() {
       <div className="flex items-center justify-between">
         <h3 className="font-black text-stone-950 text-lg">पेमेंट डैशबोर्ड</h3>
         <button 
-          onClick={fetchRequests} 
+          onClick={() => fetchPaymentRequests(true)} 
           disabled={loading}
           className="flex items-center gap-2 bg-stone-900 text-white px-4 py-2 rounded-xl text-sm font-bold hover:bg-stone-800 transition-colors disabled:opacity-50"
         >
@@ -578,6 +593,16 @@ export function AdminPaymentRequests() {
             );
           })}
         </div>
+      )}
+
+      {/* Pagination Load More */}
+      {hasMore && !loading && (
+        <button 
+          onClick={() => fetchPaymentRequests(false)}
+          className="w-full py-4 text-xs font-black text-stone-600 bg-stone-100 rounded-2xl hover:bg-stone-200 transition-colors"
+        >
+          Load More (और लोड करें)
+        </button>
       )}
 
       {/* Full-Screen Screenshot zoom Lightbox Modal */}
