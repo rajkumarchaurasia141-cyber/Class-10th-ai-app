@@ -48,17 +48,13 @@ export function LiveClassesView({ onOpenVip }: LiveClassesViewProps) {
   };
 
   const handleWatchClass = (cls: LiveClass) => {
-    // All paid batch students or VIP can watch live classes
-    if (isVIP || cls.id.startsWith('live_default')) {
-      setSelectedClass(cls);
-    } else {
-      onOpenVip();
-    }
+    // All live classes are now free for everyone
+    setSelectedClass(cls);
   };
 
   return (
     <div className="p-4 max-w-2xl mx-auto space-y-4 pb-24">
-      {/* Header Banner */}
+          {/* Header Banner */}
       <div className="relative overflow-hidden bg-gradient-to-br from-red-700 via-red-900 to-stone-950 rounded-3xl p-5 text-white shadow-lg border border-red-500/30 space-y-2">
         <div className="absolute -right-6 -top-6 w-32 h-32 bg-red-500/20 rounded-full blur-2xl" />
 
@@ -67,19 +63,6 @@ export function LiveClassesView({ onOpenVip }: LiveClassesViewProps) {
             <span className="w-2 h-2 rounded-full bg-red-500 animate-ping" />
             BSEB 2027 LIVE CLASSES
           </span>
-
-          {isVIP ? (
-            <span className="bg-amber-400/20 text-amber-300 border border-amber-400/30 text-[10px] font-bold px-2.5 py-0.5 rounded-full flex items-center gap-1">
-              <Crown className="w-3 h-3 text-amber-400" /> VIP एक्सेस
-            </span>
-          ) : (
-            <button
-              onClick={onOpenVip}
-              className="bg-amber-400 hover:bg-amber-300 text-stone-950 text-[11px] font-black px-3 py-1 rounded-full flex items-center gap-1 shadow transition-all cursor-pointer"
-            >
-              <Crown className="w-3.5 h-3.5" /> VIP जॉइन करें
-            </button>
-          )}
         </div>
 
         <div className="relative z-10">
