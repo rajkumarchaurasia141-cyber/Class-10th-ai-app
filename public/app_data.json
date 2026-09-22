@@ -78,6 +78,17 @@
       "title": "वर्णिका पाठ 5",
       "scheduledAt": "आज",
       "isLive": false
+    },
+    {
+      "id": "live_1790071340480",
+      "scheduledAt": "आज शाम 6:00 बजे",
+      "description": "",
+      "subjectName": "सामान्य",
+      "teacherName": "राज सर",
+      "isLive": false,
+      "createdAt": "2026-09-22T10:02:20.480Z",
+      "youtubeUrl": "https://youtu.be/ruqhIhB3vl0?si=ZPQMxa9dIdjRUI8w",
+      "title": "Motivationa comeback"
     }
   ],
   "leaderboard": [],

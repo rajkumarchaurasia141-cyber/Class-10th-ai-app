@@ -415,6 +415,9 @@ export const DataProvider = ({ children }: any) => {
         snapshot.forEach((docSnap) => {
           classesFromDb.push({ id: docSnap.id, ...(docSnap.data() as any) });
         });
+        console.log("DataContext: Firestore snapshot size:", snapshot.size);
+        console.log("DataContext: classesFromDb length:", classesFromDb.length);
+        
         setLiveClasses(classesFromDb.length > 0 ? classesFromDb : defaultLiveClasses);
       }, (err) => {
         console.warn("Live classes snapshot warning:", err?.message || String(err));

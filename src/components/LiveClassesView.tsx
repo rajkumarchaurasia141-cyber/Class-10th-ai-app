@@ -26,6 +26,11 @@ export function LiveClassesView({ onOpenVip }: LiveClassesViewProps) {
   const { isVIP } = useAuth();
   const [selectedClass, setSelectedClass] = useState<LiveClass | null>(null);
 
+  React.useEffect(() => {
+    console.log("LiveClassesView: liveClasses array length:", liveClasses.length);
+    console.log("LiveClassesView: liveClasses data:", liveClasses);
+  }, [liveClasses]);
+
   // Helper to convert YouTube URL to embed URL
   const getEmbedUrl = (url: string) => {
     try {
