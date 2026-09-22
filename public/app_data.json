@@ -1,7 +1,85 @@
 {
   "subjects": [],
   "paid_notes": [],
-  "live_classes": [],
+  "live_classes": [
+    {
+      "id": "live_1789907372340",
+      "youtubeUrl": "https://youtu.be/qGIcGOIpISU?si=Qbsn8rZ0XPoSUHRD",
+      "subjectName": "संस्कृत",
+      "createdAt": "2026-09-20T12:29:32.343Z",
+      "scheduledAt": "अभी",
+      "title": "Sanskrit chapter 1 मंगलम",
+      "teacherName": "राज सर",
+      "description": "",
+      "isLive": false
+    },
+    {
+      "id": "live_1789950225625",
+      "scheduledAt": "Abhi",
+      "youtubeUrl": "https://youtu.be/MD6tiYOtGAg?si=71ajKNTvhMWd5RKi",
+      "description": "",
+      "createdAt": "2026-09-21T00:23:45.625Z",
+      "teacherName": "राज सर",
+      "isLive": false,
+      "title": "वर्णिका",
+      "subjectName": "संस्कृत"
+    },
+    {
+      "id": "live_1789997398467",
+      "description": "",
+      "teacherName": "राज सर",
+      "isLive": false,
+      "scheduledAt": "आज",
+      "youtubeUrl": "https://youtu.be/0qJWe4D-96A?si=JMCKo1pWkJvMyLGy",
+      "subjectName": "हिन्दी",
+      "title": "वर्णिका पाठ - 1",
+      "createdAt": "2026-09-21T13:29:58.468Z"
+    },
+    {
+      "id": "live_1790004170075",
+      "teacherName": "राज सर",
+      "title": "वर्णिका अध्याय 2  ढहते विश्वास",
+      "youtubeUrl": "https://youtu.be/l209nWSzih4?si=G8NDPz-Vl8Ex4Kio",
+      "description": "",
+      "isLive": false,
+      "scheduledAt": "आज",
+      "createdAt": "2026-09-21T15:22:50.075Z",
+      "subjectName": "विज्ञान"
+    },
+    {
+      "id": "live_1790033137415",
+      "scheduledAt": "आज",
+      "title": "वर्णिका पार्ट 3 मां",
+      "description": "",
+      "teacherName": "राज सर",
+      "isLive": false,
+      "youtubeUrl": "https://youtu.be/MD6tiYOtGAg?si=ojxhi71PG6uW3bmR",
+      "subjectName": "हिन्दी",
+      "createdAt": "2026-09-21T23:25:37.415Z"
+    },
+    {
+      "id": "live_1790046453396",
+      "scheduledAt": "आज",
+      "createdAt": "2026-09-22T03:07:33.399Z",
+      "description": "",
+      "youtubeUrl": "https://youtu.be/rRLL5Tw1gV8?si=Sq7RPg5dR32qkqd2",
+      "teacherName": "राज सर",
+      "title": "वर्णिका पाठ 4 नगर",
+      "subjectName": "संस्कृत",
+      "isLive": false
+    },
+    {
+      "id": "live_1790066678880",
+      "createdAt": "2026-09-22T08:44:38.880Z",
+      "subjectName": "संस्कृत",
+      "youtubeUrl": "https://youtu.be/8ofwkGs2nYE?si=n9IL_T7v4ni2qBfB",
+      "description": "",
+      "teacherName": "राज सर",
+      "title": "वर्णिका पाठ 5",
+      "scheduledAt": "आज",
+      "isLive": false
+    }
+  ],
   "leaderboard": [],
   "routine": [],
   "motivational_quotes": [],
