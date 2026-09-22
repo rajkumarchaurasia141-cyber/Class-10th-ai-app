@@ -407,7 +407,23 @@ export const DataProvider = ({ children }: any) => {
     return defaultLiveClasses;
   });
 
-  // Real-time listener removed - using static data load instead
+  // Real-time listener for live_classes
+  useEffect(() => {
+    try {
+      const unsub = onSnapshot(collection(db, 'live_classes'), (snapshot) => {
+        const classesFromDb: LiveClass[] = [];
+        snapshot.forEach((docSnap) => {
+          classesFromDb.push({ id: docSnap.id, ...(docSnap.data() as any) });
+        });
+        setLiveClasses(classesFromDb.length > 0 ? classesFromDb : defaultLiveClasses);
+      }, (err) => {
+        console.warn("Live classes snapshot warning:", err?.message || String(err));
+      });
+      return () => unsub();
+    } catch (err: any) {
+      console.warn("Live classes listener error:", err?.message || String(err));
+    }
+  }, []);
 
   const addLiveClass = async (classData: Omit<LiveClass, 'id'>): Promise<string> => {
     const id = 'live_' + Date.now();
