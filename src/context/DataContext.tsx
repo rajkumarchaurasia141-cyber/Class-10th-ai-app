@@ -1,8 +1,9 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { db } from '../lib/firebase';
-import { collection, getDocs, query, orderBy, onSnapshot, doc } from 'firebase/firestore';
+import { doc } from 'firebase/firestore';
 import { safeSetDoc, safeDeleteDoc } from '../utils/firestoreSafe';
 import { useAuth } from './AuthContext';
+import { getStaticCollection, getStaticData } from '../lib/staticData';
 import { defaultSubjectsData } from '../data/defaultCurriculum';
 import { defaultPaidPdfNotes } from '../data/defaultPdfNotes';
 import { Subject, PaidPdfNote, LiveClass, LeaderboardEntry, RoutineItem, MotivationalQuote, NotificationItem, AppConfig, BannerItem } from '../types';
@@ -308,91 +309,56 @@ export const DataProvider = ({ children }: any) => {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    const loadData = async () => {
+    const loadAllData = async () => {
       setLoading(true);
       try {
-        const res = await fetch('/courseData.json');
-        const courseData = await res.json();
-        
+        const data = await getStaticData();
+        if (!data) return;
+
+        // Subjects
         const subjectsMap: Record<string, Subject> = {};
-        if (courseData && Array.isArray(courseData.subjects)) {
-          courseData.subjects.forEach((sub: any) => {
+        if (data.subjects && Array.isArray(data.subjects)) {
+          data.subjects.forEach((sub: any) => {
             subjectsMap[sub.id] = sub as Subject;
           });
         }
         setSubjects(Object.keys(subjectsMap).length > 0 ? subjectsMap : defaultSubjectsData);
 
-        const initialPdfNotes = courseData?.paid_notes && Array.isArray(courseData.paid_notes) 
-          ? (courseData.paid_notes as PaidPdfNote[])
-          : defaultPaidPdfNotes;
-        
-        // Merge with local cache
-        try {
-          const cached = localStorage.getItem('bseb_paid_notes_cache');
-          if (cached) {
-            const parsed = JSON.parse(cached);
-            if (Array.isArray(parsed) && parsed.length > 0) {
-              const mergedNotes = [...parsed];
-              initialPdfNotes.forEach((def) => {
-                if (!mergedNotes.some(n => n.id === def.id || (n.subjectId === def.subjectId && n.chapterNo === def.chapterNo))) {
-                  mergedNotes.push(def);
-                }
-              });
-              setPaidNotes(mergedNotes);
-            } else {
-              setPaidNotes(initialPdfNotes);
-            }
-          } else {
-            setPaidNotes(initialPdfNotes);
-          }
-        } catch {
-          setPaidNotes(initialPdfNotes);
-        }
+        // Paid Notes
+        setPaidNotes(data.paid_notes || defaultPaidPdfNotes);
+
+        // Live Classes
+        setLiveClasses(data.live_classes || defaultLiveClasses);
+
+        // Leaderboard
+        setLeaderboard(data.leaderboard || defaultLeaderboard);
+
+        // Routine
+        setRoutine(data.routine || defaultRoutine);
+
+        // Quotes
+        setMotivationalQuotes(data.motivational_quotes || defaultQuotes);
+
+        // Notifications
+        setNotifications(data.notifications || defaultNotifications);
+
+        // App Config
+        setAppConfig(data.app_config || defaultAppConfig);
 
       } catch (e) {
-        console.error("Failed to load course data:", e);
+        console.error("Failed to load static data:", e);
       } finally {
         setLoading(false);
       }
     };
-    loadData();
+    loadAllData();
   }, []);
 
   const fetchData = async () => {
-    // fetchData is now handled by loadData effect
+    // fetchData is deprecated, replaced by initial load
   };
 
-  // Real-time listener for paid_notes collection
-  useEffect(() => {
-    try {
-      const unsub = onSnapshot(collection(db, 'paid_notes'), (snapshot) => {
-        if (!snapshot.empty) {
-          const notesFromDb: PaidPdfNote[] = [];
-          snapshot.forEach((docSnap) => {
-            notesFromDb.push({ id: docSnap.id, ...(docSnap.data() as any) });
-          });
-          // Merge with default notes if not present
-          const mergedNotes = [...notesFromDb];
-          defaultPaidPdfNotes.forEach((def) => {
-            if (!mergedNotes.some(n => n.id === def.id || (n.subjectId === def.subjectId && n.chapterNo === def.chapterNo))) {
-              mergedNotes.push(def);
-            }
-          });
-          setPaidNotes(mergedNotes);
-          try {
-            localStorage.setItem('bseb_paid_notes_cache', JSON.stringify(mergedNotes));
-          } catch {}
-        } else {
-          setPaidNotes(defaultPaidPdfNotes);
-        }
-      }, (err) => {
-        console.warn("Paid notes snapshot warning:", err?.message || String(err));
-      });
-      return () => unsub();
-    } catch (err: any) {
-      console.warn("Paid notes listener error:", err?.message || String(err));
-    }
-  }, []);
+  // Real-time listener removed - using static data load instead
 
   const addPaidNote = async (noteData: Omit<PaidPdfNote, 'id'>): Promise<string> => {
     const id = 'note_' + Date.now();
@@ -441,36 +407,7 @@ export const DataProvider = ({ children }: any) => {
     return defaultLiveClasses;
   });
 
-  // Real-time listener for live_classes collection
-  useEffect(() => {
-    try {
-      const unsub = onSnapshot(collection(db, 'live_classes'), (snapshot) => {
-        if (!snapshot.empty) {
-          const classesFromDb: LiveClass[] = [];
-          snapshot.forEach((docSnap) => {
-            classesFromDb.push({ id: docSnap.id, ...(docSnap.data() as any) });
-          });
-          const mergedClasses = [...classesFromDb];
-          defaultLiveClasses.forEach((def) => {
-            if (!mergedClasses.some(c => c.id === def.id || c.youtubeUrl === def.youtubeUrl)) {
-              mergedClasses.push(def);
-            }
-          });
-          setLiveClasses(mergedClasses);
-          try {
-            localStorage.setItem('bseb_live_classes_cache', JSON.stringify(mergedClasses));
-          } catch {}
-        } else {
-          setLiveClasses(defaultLiveClasses);
-        }
-      }, (err) => {
-        console.warn("Live classes snapshot warning:", err?.message || String(err));
-      });
-      return () => unsub();
-    } catch (err: any) {
-      console.warn("Live classes listener error:", err?.message || String(err));
-    }
-  }, []);
+  // Real-time listener removed - using static data load instead
 
   const addLiveClass = async (classData: Omit<LiveClass, 'id'>): Promise<string> => {
     const id = 'live_' + Date.now();
@@ -519,38 +456,7 @@ export const DataProvider = ({ children }: any) => {
     return defaultLeaderboard;
   });
 
-  // Real-time listener for leaderboard collection
-  useEffect(() => {
-    try {
-      const unsub = onSnapshot(collection(db, 'leaderboard'), (snapshot) => {
-        if (!snapshot.empty) {
-          const listFromDb: LeaderboardEntry[] = [];
-          snapshot.forEach((docSnap) => {
-            listFromDb.push({ id: docSnap.id, ...(docSnap.data() as any) });
-          });
-          const merged = [...listFromDb];
-          defaultLeaderboard.forEach((def) => {
-            if (!merged.some(m => m.id === def.id || (m.studentName === def.studentName && m.score === def.score))) {
-              merged.push(def);
-            }
-          });
-          // Sort by score descending
-          merged.sort((a, b) => b.score - a.score);
-          setLeaderboard(merged);
-          try {
-            localStorage.setItem('bseb_leaderboard_cache', JSON.stringify(merged));
-          } catch {}
-        } else {
-          setLeaderboard(defaultLeaderboard);
-        }
-      }, (err) => {
-        console.warn("Leaderboard snapshot warning:", err?.message || String(err));
-      });
-      return () => unsub();
-    } catch (err: any) {
-      console.warn("Leaderboard listener error:", err?.message || String(err));
-    }
-  }, []);
+  // Real-time listener removed - using static data load instead
 
   const addLeaderboardScore = async (entryData: Omit<LeaderboardEntry, 'id'>): Promise<string> => {
     const id = 'lb_' + Date.now();
@@ -746,28 +652,7 @@ export const DataProvider = ({ children }: any) => {
     return defaultNotifications;
   });
 
-  // Notifications Firestore listener
-  useEffect(() => {
-    try {
-      const unsub = onSnapshot(collection(db, 'notifications'), (snapshot) => {
-        if (!snapshot.empty) {
-          const list: NotificationItem[] = [];
-          snapshot.forEach((docSnap) => {
-            list.push({ id: docSnap.id, ...(docSnap.data() as any) });
-          });
-          const merged = [...list];
-          defaultNotifications.forEach((def) => {
-            if (!merged.some(m => m.id === def.id)) merged.push(def);
-          });
-          setNotifications(merged);
-          try {
-            localStorage.setItem('bseb_notifications_cache', JSON.stringify(merged));
-          } catch {}
-        }
-      }, () => {});
-      return () => unsub();
-    } catch {}
-  }, []);
+  // Notifications Firestore listener removed - using static data load instead
 
   const addNotification = async (itemData: Omit<NotificationItem, 'id'>): Promise<string> => {
     const id = 'notif_' + Date.now();
@@ -809,21 +694,7 @@ export const DataProvider = ({ children }: any) => {
     return defaultAppConfig;
   });
 
-  useEffect(() => {
-    try {
-      const unsub = onSnapshot(doc(db, 'settings', 'app_config'), (docSnap) => {
-        if (docSnap.exists()) {
-          const data = docSnap.data() as AppConfig;
-          const merged = { ...defaultAppConfig, ...data };
-          setAppConfig(merged);
-          try {
-            localStorage.setItem('bseb_app_config_cache', JSON.stringify(merged));
-          } catch {}
-        }
-      }, () => {});
-      return () => unsub();
-    } catch {}
-  }, []);
+  // App Config Firestore listener removed - using static data load instead
 
   const updateSettings = async (newConfig: AppConfig): Promise<void> => {
     setAppConfig(newConfig);
