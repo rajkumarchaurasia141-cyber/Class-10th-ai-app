@@ -78,7 +78,7 @@ export function MyCoursesView({ onSelectSubject, onOpenVip }: MyCoursesViewProps
 
   return (
     <div className="p-4 max-w-2xl mx-auto space-y-4 pb-24">
-      {/* Topper Batch 2027 Hero Card */}
+      {/* Topper Batch फुल सिलेबस Hero Card */}
       <div className="relative overflow-hidden bg-gradient-to-br from-red-700 via-red-800 to-stone-900 rounded-3xl p-5 text-white shadow-lg border border-red-500/30">
         {/* Background glow effects */}
         <div className="absolute -right-8 -top-8 w-36 h-36 bg-amber-500/20 rounded-full blur-2xl" />
@@ -110,10 +110,10 @@ export function MyCoursesView({ onSelectSubject, onOpenVip }: MyCoursesViewProps
           <div>
             <h2 className="text-xl sm:text-2xl font-black tracking-tight text-white flex items-center gap-2">
               <GraduationCap className="w-6 h-6 text-amber-300" />
-              टॉपर बैच (Topper Batch 2027)
+              टॉपर बैच (Topper Batch फुल सिलेबस)
             </h2>
             <p className="text-xs text-stone-200 mt-1">
-              कक्षा 10वीं बिहार विद्यालय परीक्षा समिति (BSEB) 2027 के लिए सम्पूर्ण डिजिटल कोर्स, हस्तलिखित पेड नोट्स व टेस्ट सीरीज़।
+              कक्षा 10वीं बिहार विद्यालय परीक्षा समिति (BSEB) फुल सिलेबस के लिए सम्पूर्ण डिजिटल कोर्स, हस्तलिखित पेड नोट्स व टेस्ट सीरीज़।
             </p>
           </div>
 

@@ -124,6 +124,35 @@
       "scheduledAt": "आज"
     }
   ],
+  "daily_quizzes": [
+    {
+      "id": "dq_1",
+      "dateLabel": "19 सितम्बर",
+      "subjectName": "संस्कृत",
+      "title": "संस्कृत - मङ्गलम् एवं व्याकरण टेस्ट",
+      "chaptersCount": 16,
+      "totalQuestions": 438,
+      "createdAt": "2026-09-23T00:00:00.000Z"
+    },
+    {
+      "id": "dq_2",
+      "dateLabel": "18 सितम्बर",
+      "subjectName": "अर्थव्यवस्था",
+      "title": "भारतीय अर्थव्यवस्था का विकास - वस्तुनिष्ठ प्रश्न",
+      "chaptersCount": 5,
+      "totalQuestions": 150,
+      "createdAt": "2026-09-23T00:00:00.000Z"
+    },
+    {
+      "id": "dq_3",
+      "dateLabel": "17 सितम्बर",
+      "subjectName": "भूगोल",
+      "title": "भारत - संसाधन एवं उपयोग टेस्ट",
+      "chaptersCount": 7,
+      "totalQuestions": 200,
+      "createdAt": "2026-09-23T00:00:00.000Z"
+    }
+  ],
   "leaderboard": [],
   "routine": [],
   "motivational_quotes": [],

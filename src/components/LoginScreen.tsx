@@ -83,10 +83,10 @@ export function LoginScreen() {
             </div>
             <div className="text-left">
               <h1 className="text-2xl sm:text-3xl font-black text-white leading-none tracking-tight">
-                टॉपर बैच <span className="text-amber-400">2027</span>
+                टॉपर बैच <span className="text-amber-400">फुल सिलेबस</span>
               </h1>
               <p className="text-xs text-stone-300 font-medium mt-0.5">
-                बिहार बोर्ड कक्षा 10वीं (BSEB 2027) टॉपर पोर्टल
+                बिहार बोर्ड कक्षा 10वीं (BSEB फुल सिलेबस) टॉपर पोर्टल
               </p>
             </div>
           </div>
@@ -219,7 +219,7 @@ export function LoginScreen() {
             <div className="space-y-1.5">
               <div className="flex items-center gap-1.5 text-amber-400 text-[11px] font-extrabold uppercase tracking-wider">
                 <Flame className="w-3.5 h-3.5 text-amber-400" />
-                <span>टॉपर संकल्प 2027</span>
+                <span>टॉपर संकल्प फुल सिलेबस</span>
               </div>
               
               <p className="text-white font-black text-sm sm:text-base leading-snug">
@@ -236,7 +236,7 @@ export function LoginScreen() {
 
         {/* Footer info */}
         <p className="text-[11px] text-stone-400 text-center font-medium">
-          बिहार विद्यालय परीक्षा समिति (BSEB 2027) का 100% विश्वसनीय डिजिटल पोर्टल
+          बिहार विद्यालय परीक्षा समिति (BSEB फुल सिलेबस) का 100% विश्वसनीय डिजिटल पोर्टल
         </p>
 
       </div>

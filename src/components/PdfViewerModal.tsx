@@ -42,7 +42,7 @@ export function PdfViewerModal({ note, onClose }: PdfViewerModalProps) {
     if (navigator.share) {
       navigator.share({
         title: note.title,
-        text: `कक्षा 10वीं टॉपर बैच 2027 - ${note.subjectName}: ${note.title}`,
+        text: `कक्षा 10वीं टॉपर बैच फुल सिलेबस - ${note.subjectName}: ${note.title}`,
         url: window.location.href
       }).catch(() => {});
     } else {
@@ -186,7 +186,7 @@ export function PdfViewerModal({ note, onClose }: PdfViewerModalProps) {
                 <div>
                   <div className="flex items-center gap-2">
                     <span className="bg-red-700 text-white font-black text-xs px-2.5 py-0.5 rounded-full">
-                      BSEB 10TH TOPPER BATCH 2027
+                      BSEB 10TH TOPPER BATCH फुल सिलेबस
                     </span>
                     <span className="text-xs font-bold text-red-700">★ OFFICIAL STUDY MATERIAL</span>
                   </div>
@@ -260,7 +260,7 @@ export function PdfViewerModal({ note, onClose }: PdfViewerModalProps) {
 
               {/* Watermark Footer */}
               <div className="pt-4 border-t border-slate-200 flex items-center justify-between text-[11px] text-stone-400">
-                <span>कॉपीराइट © 2026-2027 बिहार बोर्ड 10वीं टॉपर बैच</span>
+                <span>कॉपीराइट © 2026-फुल सिलेबस बिहार बोर्ड 10वीं टॉपर बैच</span>
                 <span>पेज 1 / {note.totalPages || 12}</span>
               </div>
             </div>

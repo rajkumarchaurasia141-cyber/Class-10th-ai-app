@@ -19,11 +19,11 @@ export interface CoursePackage {
 
 const DEFAULT_COURSES: CoursePackage[] = [
   {
-    id: 'topper-batch-2027',
-    name: 'टॉपर बैच 2027 (Topper Batch)',
+    id: 'topper-batch-फुल सिलेबस',
+    name: 'टॉपर बैच फुल सिलेबस (Topper Batch)',
     subtitle: 'बिहार बोर्ड कक्षा 10वीं सम्पूर्ण तैयारी',
     description: 'सभी 7 मुख्य विषयों के हस्तलिखित नोट्स, VVI चैप्टर वाइज MCQs एवं लाइव क्लास।',
-    badge: 'BSEB 2027 अनिवार्य',
+    badge: 'BSEB फुल सिलेबस अनिवार्य',
     subjects: ['math', 'science', 'social_science', 'hindi', 'sanskrit', 'english'],
     price: 600,
     isFeatured: true,
@@ -41,7 +41,7 @@ export function AdminCoursesManager() {
   const [name, setName] = useState('');
   const [subtitle, setSubtitle] = useState('');
   const [description, setDescription] = useState('');
-  const [badge, setBadge] = useState('BSEB 2027');
+  const [badge, setBadge] = useState('BSEB फुल सिलेबस');
   const [price, setPrice] = useState(600);
   const [isFeatured, setIsFeatured] = useState(true);
   const [selectedSubjects, setSelectedSubjects] = useState<string[]>(['math', 'science', 'social_science', 'hindi', 'sanskrit', 'english']);
@@ -81,7 +81,7 @@ export function AdminCoursesManager() {
         name: name.trim(),
         subtitle: subtitle.trim() || 'बिहार बोर्ड संपूर्ण तैयारी',
         description: description.trim() || 'उच्च गुणवत्ता वाले नोट्स और टेस्ट सीरीज़।',
-        badge: badge.trim() || '2027 Topper',
+        badge: badge.trim() || 'फुल सिलेबस Topper',
         subjects: selectedSubjects,
         price: Number(price) || 600,
         isFeatured,
@@ -163,7 +163,7 @@ export function AdminCoursesManager() {
           </div>
           <div>
             <h3 className="font-black text-stone-900 text-base">कोर्स प्रबंधक (Add & Manage Courses)</h3>
-            <p className="text-xs text-stone-500">अपना कस्टम कोर्स (जैसे: टॉपर बैच 2027) बनाएं और उसमें विषय जोड़ें</p>
+            <p className="text-xs text-stone-500">अपना कस्टम कोर्स (जैसे: टॉपर बैच फुल सिलेबस) बनाएं और उसमें विषय जोड़ें</p>
           </div>
         </div>
 
@@ -184,7 +184,7 @@ export function AdminCoursesManager() {
                 type="text"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                placeholder="जैसे: टॉपर बैच 2027 (Topper Batch)"
+                placeholder="जैसे: टॉपर बैच फुल सिलेबस (Topper Batch)"
                 required
                 className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs font-semibold text-stone-900 focus:outline-none focus:border-red-600 focus:bg-white"
               />
@@ -209,7 +209,7 @@ export function AdminCoursesManager() {
                 type="text"
                 value={badge}
                 onChange={(e) => setBadge(e.target.value)}
-                placeholder="जैसे: BSEB 2027"
+                placeholder="जैसे: BSEB फुल सिलेबस"
                 className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs font-semibold text-stone-900 focus:outline-none focus:border-red-600 focus:bg-white"
               />
             </div>

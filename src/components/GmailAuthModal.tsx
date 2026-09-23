@@ -100,7 +100,7 @@ export function GmailAuthModal({ isOpen, onClose, adminPrompt = false }: GmailAu
               <h3 className="font-black text-lg leading-tight flex items-center gap-2">
                 <span>विद्यार्थी लॉगिन</span>
                 <span className="text-[10px] bg-amber-400 text-stone-950 font-black px-2 py-0.5 rounded-full uppercase">
-                  BSEB 2027
+                  BSEB फुल सिलेबस
                 </span>
               </h3>
               <p className="text-xs text-stone-200 mt-0.5">

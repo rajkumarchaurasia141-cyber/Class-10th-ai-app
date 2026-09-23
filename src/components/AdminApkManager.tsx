@@ -56,12 +56,12 @@ export function AdminApkManager() {
   };
 
   const shareOnWhatsApp = (url: string) => {
-    const text = encodeURIComponent(`🔥 बिहार बोर्ड 2027 (10th BSEB) ऑफिशियल टॉपर ऐप डाउनलोड करें!\n\n📥 सीधे मोबाइल में APK डाउनलोड करने के लिए यहाँ क्लिक करें:\n${url}\n\nइस ऐप में सभी विषयों के चैप्टर नोट्स, लाइव क्लासेस और 50 MCQ टेस्ट बिल्कुल फ्री हैं!`);
+    const text = encodeURIComponent(`🔥 बिहार बोर्ड फुल सिलेबस (10th BSEB) ऑफिशियल टॉपर ऐप डाउनलोड करें!\n\n📥 सीधे मोबाइल में APK डाउनलोड करने के लिए यहाँ क्लिक करें:\n${url}\n\nइस ऐप में सभी विषयों के चैप्टर नोट्स, लाइव क्लासेस और 50 MCQ टेस्ट बिल्कुल फ्री हैं!`);
     window.open(`https://wa.me/?text=${text}`, '_blank');
   };
 
   const shareOnTelegram = (url: string) => {
-    const text = encodeURIComponent(`🔥 बिहार बोर्ड 2027 (10th BSEB) ऑफिशियल टॉपर ऐप डाउनलोड करें!\n\n📥 डायरेक्ट APK डाउनलोड लिंक:\n${url}`);
+    const text = encodeURIComponent(`🔥 बिहार बोर्ड फुल सिलेबस (10th BSEB) ऑफिशियल टॉपर ऐप डाउनलोड करें!\n\n📥 डायरेक्ट APK डाउनलोड लिंक:\n${url}`);
     window.open(`https://t.me/share/url?url=${url}&text=${text}`, '_blank');
   };
 

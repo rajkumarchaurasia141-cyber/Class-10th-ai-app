@@ -66,7 +66,7 @@ export function LiveClassesView({ onOpenVip }: LiveClassesViewProps) {
         <div className="flex items-center justify-between relative z-10">
           <span className="bg-red-500/20 text-red-300 border border-red-500/30 text-[10px] font-black px-2.5 py-0.5 rounded-full flex items-center gap-1.5">
             <span className="w-2 h-2 rounded-full bg-red-500 animate-ping" />
-            BSEB 2027 LIVE CLASSES
+            BSEB फुल सिलेबस LIVE CLASSES
           </span>
         </div>
 

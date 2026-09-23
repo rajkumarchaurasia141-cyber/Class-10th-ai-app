@@ -189,7 +189,7 @@ export function SubjectsExplorer({ subjectId, onBack }: any) {
           onOpenVip={() => setShowPaywall(true)} 
           isVIP={isVIP}
           testTitle={`${subject.subject_name_hindi} • अध्याय ${currentChapter.chapter_no}: ${currentChapter.chapter_name_hindi}`}
-          testSubtitle={`${currentChapter.mcq?.length || 50} प्रश्न • ${Math.max(10, currentChapter.mcq?.length || 50)} मिनट समय • OMR टेस्ट मोड (BSEB 2027)`}
+          testSubtitle={`${currentChapter.mcq?.length || 50} प्रश्न • ${Math.max(10, currentChapter.mcq?.length || 50)} मिनट समय • OMR टेस्ट मोड (BSEB फुल सिलेबस)`}
           questions={currentChapter.mcq && currentChapter.mcq.length > 0 ? currentChapter.mcq.map((m: any, idx: number) => ({
             id: m.id || idx + 1,
             subject: subject.subject_name_hindi,

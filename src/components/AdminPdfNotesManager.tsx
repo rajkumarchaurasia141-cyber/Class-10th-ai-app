@@ -167,7 +167,7 @@ export function AdminPdfNotesManager() {
             <h3 className="text-lg font-black text-white">पेड PDF नोट्स अपलोड & प्रबंधन</h3>
           </div>
           <p className="text-xs text-stone-300 mt-1">
-            यहाँ से आप सीधे मोबाइल या कंप्यूटर से PDF नोट्स अपलोड कर सकते हैं। यह सीधे "माय कोर्स (टॉपर बैच 2027)" और "डाउनलोड्स" दोनों जगह प्रदर्शित होगा।
+            यहाँ से आप सीधे मोबाइल या कंप्यूटर से PDF नोट्स अपलोड कर सकते हैं। यह सीधे "माय कोर्स (टॉपर बैच फुल सिलेबस)" और "डाउनलोड्स" दोनों जगह प्रदर्शित होगा।
           </p>
         </div>
 
@@ -282,7 +282,7 @@ export function AdminPdfNotesManager() {
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               className="w-full bg-stone-950 border border-stone-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-red-500"
-              placeholder="उदा. बोर्ड परीक्षा 2027 टॉपर स्पेशल हस्तलिखित नोट्स व मॉडल प्रश्नोत्तर"
+              placeholder="उदा. बोर्ड परीक्षा फुल सिलेबस टॉपर स्पेशल हस्तलिखित नोट्स व मॉडल प्रश्नोत्तर"
             />
           </div>
 

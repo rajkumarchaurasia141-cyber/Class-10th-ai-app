@@ -234,7 +234,7 @@ export function PaywallModal({ onClose }: { onClose: () => void }) {
               <Crown className="w-5 h-5 text-amber-500" />
             </div>
             <div>
-              <h3 className="text-sm font-black text-stone-900 tracking-tight uppercase">बिहार बोर्ड परीक्षा 2027</h3>
+              <h3 className="text-sm font-black text-stone-900 tracking-tight uppercase">बिहार बोर्ड परीक्षा फुल सिलेबस</h3>
               <p className="text-[10px] text-stone-500 font-bold">Board Exam Crash Course</p>
             </div>
           </div>

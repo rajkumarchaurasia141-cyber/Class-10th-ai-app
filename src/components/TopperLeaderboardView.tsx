@@ -50,7 +50,7 @@ export function TopperLeaderboardView({ onOpenVip }: TopperLeaderboardViewProps)
   const [district, setDistrict] = useState(BIHAR_DISTRICTS[0]);
   const [score, setScore] = useState('');
   const [totalMarks, setTotalMarks] = useState('500');
-  const [testName, setTestName] = useState('बिहार बोर्ड 2027 विज्ञान मॉडल टेस्ट');
+  const [testName, setTestName] = useState('बिहार बोर्ड फुल सिलेबस विज्ञान मॉडल टेस्ट');
   const [subjectName, setSubjectName] = useState('विज्ञान');
   const [submitting, setSubmitting] = useState(false);
   const [successMsg, setSuccessMsg] = useState('');
@@ -121,7 +121,7 @@ export function TopperLeaderboardView({ onOpenVip }: TopperLeaderboardViewProps)
         <div className="flex items-center justify-between relative z-10">
           <span className="bg-amber-400/20 text-amber-300 border border-amber-400/30 text-[10px] font-black px-2.5 py-0.5 rounded-full flex items-center gap-1.5">
             <Trophy className="w-3 h-3 text-amber-300" />
-            BSEB 2027 TOPPER RANKINGS
+            BSEB फुल सिलेबस TOPPER RANKINGS
           </span>
 
           <button

@@ -32,7 +32,7 @@ export function PaidCourseModal({ isOpen, onClose, onSelectSubject, onOpenPaidTe
             </div>
             <div>
               <h3 className="font-extrabold text-base tracking-wide">Padhega Bihar - Topper Batch</h3>
-              <p className="text-[11px] text-indigo-200">बिहार बोर्ड कक्षा 10वीं संपूर्ण तैयारी (2027)</p>
+              <p className="text-[11px] text-indigo-200">बिहार बोर्ड कक्षा 10वीं संपूर्ण तैयारी (फुल सिलेबस)</p>
             </div>
           </div>
           <button
@@ -82,7 +82,7 @@ export function PaidCourseModal({ isOpen, onClose, onSelectSubject, onOpenPaidTe
           {/* Section 2: Subjects Preparation */}
           <div className="space-y-3">
             <h4 className="text-center font-extrabold text-xs sm:text-sm text-indigo-950 uppercase tracking-wide">
-              अब होगी हर विषय की पूरी तैयारी (टॉपर बैच 2027)
+              अब होगी हर विषय की पूरी तैयारी (टॉपर बैच फुल सिलेबस)
             </h4>
 
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
@@ -141,7 +141,7 @@ export function PaidCourseModal({ isOpen, onClose, onSelectSubject, onOpenPaidTe
 
           <a
             href="#about"
-            onClick={(e) => { e.preventDefault(); alert('Padhega Bihar - Bihar Board Class 10 Topper App 2027.\nDirector: Raj Kumar Chaurasia.\nHelpline: 9241511070'); }}
+            onClick={(e) => { e.preventDefault(); alert('Padhega Bihar - Bihar Board Class 10 Topper App फुल सिलेबस.\nDirector: Raj Kumar Chaurasia.\nHelpline: 9241511070'); }}
             className="flex flex-col items-center justify-center py-1.5 px-1 bg-amber-600 hover:bg-amber-700 text-stone-950 font-black rounded-xl transition-all shadow-xs"
           >
             <Users className="w-4 h-4 mb-0.5" />

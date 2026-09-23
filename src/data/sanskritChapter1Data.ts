@@ -43,7 +43,7 @@ export const sanskritChapter1Data: Chapter = {
 ▶ सरलार्थ: मैं अज्ञान रूपी अंधकार से परे सूर्य के समान प्रकाशमान उस परम दिव्य पुरुष (ईश्वर) को जानता हूँ। केवल उसी को जानकर मृत्यु पर विजय प्राप्त की जा सकती है, मुक्ति का इसके अतिरिक्त अन्य कोई मार्ग नहीं है।`,
 
   // 3. टॉपर टिप्स (Topper Tips)
-  topper_tips: `【 🏆 VVI टॉपर परीक्षा टिप्स (BSEB 10th Board Exam 2027 Special) 】
+  topper_tips: `【 🏆 VVI टॉपर परीक्षा टिप्स (BSEB 10th Board Exam फुल सिलेबस Special) 】
 
 ★ 1. किस उपनिषद से कौन-सा मंत्र है (100% बोर्ड प्रश्न):
   • 'हिरण्मयेन पात्रेण...' ➔ ईशावास्योपनिषद
@@ -91,7 +91,7 @@ export const sanskritChapter1Data: Chapter = {
     }
   ],
 
-  // 5. 50 रोचक एवं स्तरीय वस्तुनिष्ठ प्रश्न (50 Test-Crafted MCQs for BSEB 2027)
+  // 5. 50 रोचक एवं स्तरीय वस्तुनिष्ठ प्रश्न (50 Test-Crafted MCQs for BSEB फुल सिलेबस)
   mcq: [
     {
       id: 'snk1-1',

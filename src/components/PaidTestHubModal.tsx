@@ -158,7 +158,7 @@ export function PaidTestHubModal({ onClose, onOpenVip, isVIP = true }: PaidTestH
 
       setActiveTest({
         title: `${currentSubject?.subject_name_hindi} • अध्याय ${ch.chapter_no}: ${ch.chapter_name_hindi}`,
-        subtitle: `${formattedQuestions.length} वस्तुनिष्ठ प्रश्न • 50 मिनट समय • OMR टेस्ट मोड (BSEB 2027)`,
+        subtitle: `${formattedQuestions.length} वस्तुनिष्ठ प्रश्न • 50 मिनट समय • OMR टेस्ट मोड (BSEB फुल सिलेबस)`,
         questions: formattedQuestions
       });
     } else {
@@ -173,7 +173,7 @@ export function PaidTestHubModal({ onClose, onOpenVip, isVIP = true }: PaidTestH
     }
 
     setActiveTest({
-      title: 'बिहार बोर्ड 10वीं 2027 • सम्पूर्ण ऑल-सब्जेक्ट महा-मॉक टेस्ट',
+      title: 'बिहार बोर्ड 10वीं फुल सिलेबस • सम्पूर्ण ऑल-सब्जेक्ट महा-मॉक टेस्ट',
       subtitle: '50 प्रश्न • 50 मिनट • संस्कृत, हिन्दी, गणित, विज्ञान, सामाजिक विज्ञान • OMR मोड',
       questions: PAID_TEST_50_QUESTIONS as unknown as GenericTestQuestion[]
     });
@@ -192,10 +192,10 @@ export function PaidTestHubModal({ onClose, onOpenVip, isVIP = true }: PaidTestH
             <div>
               <div className="flex items-center gap-2">
                 <h2 className="font-black text-base sm:text-lg text-white tracking-tight">
-                  बिहार बोर्ड 10वीं 2027 • पेड टेस्ट सीरीज
+                  बिहार बोर्ड 10वीं फुल सिलेबस • पेड टेस्ट सीरीज
                 </h2>
                 <span className="px-2 py-0.5 rounded-full bg-amber-400 text-stone-950 text-[10px] font-black uppercase tracking-wider">
-                  BSEB 2027
+                  BSEB फुल सिलेबस
                 </span>
               </div>
               <p className="text-xs text-blue-200 mt-0.5">
@@ -278,7 +278,7 @@ export function PaidTestHubModal({ onClose, onOpenVip, isVIP = true }: PaidTestH
                 <div className="absolute top-0 right-0 w-64 h-64 bg-amber-400/10 rounded-full blur-3xl pointer-events-none" />
                 <div className="relative z-10">
                   <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-400 text-stone-950 font-black text-xs uppercase tracking-wider mb-4 shadow-sm">
-                    <Flame className="w-4 h-4 text-red-600" /> ऑल-सब्जेक्ट महा-मॉक टेस्ट (2027)
+                    <Flame className="w-4 h-4 text-red-600" /> ऑल-सब्जेक्ट महा-मॉक टेस्ट (फुल सिलेबस)
                   </div>
                   
                   <h3 className="text-xl sm:text-2xl font-black text-white mb-2 leading-tight">

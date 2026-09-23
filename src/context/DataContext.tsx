@@ -6,13 +6,13 @@ import { useAuth } from './AuthContext';
 import { getStaticCollection, getStaticData } from '../lib/staticData';
 import { defaultSubjectsData } from '../data/defaultCurriculum';
 import { defaultPaidPdfNotes } from '../data/defaultPdfNotes';
-import { Subject, PaidPdfNote, LiveClass, LeaderboardEntry, RoutineItem, MotivationalQuote, NotificationItem, AppConfig, BannerItem } from '../types';
+import { Subject, PaidPdfNote, LiveClass, DailyQuizItem, LeaderboardEntry, RoutineItem, MotivationalQuote, NotificationItem, AppConfig, BannerItem } from '../types';
 
 export const defaultBanners: BannerItem[] = [
   {
     id: 'banner_1',
-    tag: 'बिहार बोर्ड परीक्षा 2027',
-    title: 'टॉपर बैच - 2027',
+    tag: 'बिहार बोर्ड परीक्षा फुल सिलेबस',
+    title: 'टॉपर बैच - फुल सिलेबस',
     subtitle: '10th All Subjects (NCERT)',
     features: [
       'लाइव & रिकॉर्डेड क्लासेस',
@@ -40,7 +40,7 @@ export const defaultBanners: BannerItem[] = [
       'गणित सूत्र एवं ट्रिक्स',
       'बोर्ड परीक्षा मॉडल पेपर्स'
     ],
-    subjects: ['NCERT आधारित', 'PYQ 2016-2027', '100% स्कोरिंग'],
+    subjects: ['NCERT आधारित', 'PYQ संग्रह', '100% स्कोरिंग'],
     oldPrice: '₹999',
     newPrice: '₹99 मात्र',
     priceLabel: '1 Month Fee',
@@ -52,7 +52,7 @@ export const defaultBanners: BannerItem[] = [
   {
     id: 'banner_3',
     tag: '50 Objective MCQ Series',
-    title: 'महा-टेस्ट सीरीज 2027',
+    title: 'महा-टेस्ट सीरीज फुल सिलेबस',
     subtitle: 'प्रत्येक अध्याय के 50 चुनिंदा प्रश्न',
     features: [
       'तुरंत रिजल्ट व स्कोर कार्ड',
@@ -77,7 +77,7 @@ export const defaultAppConfig: AppConfig = {
   qrCodeDataUrl: '',
   youtubeUrl: 'https://www.youtube.com/@Vidyaagent2.0',
   instagramUrl: 'https://www.instagram.com/unbroken_raj_01?stkn=dmJwNzNhNDl0cXhz',
-  whatsappGroupUrl: 'https://wa.me/919241511070?text=' + encodeURIComponent('नमस्ते सर, मुझे 10th BSEB 2027 WhatsApp ग्रुप में जोड़ें।'),
+  whatsappGroupUrl: 'https://wa.me/919241511070?text=' + encodeURIComponent('नमस्ते सर, मुझे 10th BSEB फुल सिलेबस WhatsApp ग्रुप में जोड़ें।'),
   telegramUrl: 'https://t.me',
   price1Month: 99,
   price1Year: 600,
@@ -144,7 +144,7 @@ export const defaultQuotes: MotivationalQuote[] = [
   },
   {
     id: 'q_2',
-    quote: 'अशिक्षा को हराओ, बिहार बोर्ड 2027 में 90%+ अंक लाकर अपने माता-पिता का नाम रोशन करो!',
+    quote: 'अशिक्षा को हराओ, बिहार बोर्ड फुल सिलेबस में 90%+ अंक लाकर अपने माता-पिता का नाम रोशन करो!',
     author: 'राज सर',
     isActive: true,
     createdAt: new Date().toISOString()
@@ -161,7 +161,7 @@ export const defaultQuotes: MotivationalQuote[] = [
 export const defaultNotifications: NotificationItem[] = [
   {
     id: 'notif-1',
-    title: '🎉 टॉपर बैच 2027 स्पेशल ऑफर!',
+    title: '🎉 टॉपर बैच फुल सिलेबस स्पेशल ऑफर!',
     description: 'बिहार बोर्ड 10वीं के सभी 6 विषयों का सम्पूर्ण कोर्स अब मात्र ₹99 (1 माह) या ₹600 (पूरे 1 वर्ष) में उपलब्ध है। अभी VIP बैच अनलॉक करें।',
     timeLabel: '10 मिनट पहले',
     isNew: true,
@@ -188,7 +188,7 @@ export const defaultLiveClasses: LiveClass[] = [
     teacherName: 'राज सर',
     scheduledAt: 'आज शाम 6:00 बजे',
     isLive: true,
-    description: 'बिहार बोर्ड 2027 परीक्षा के लिए संस्कृत प्रथम अध्याय मङ्गलम् का लाइव महामौरथन।',
+    description: 'बिहार बोर्ड फुल सिलेबस परीक्षा के लिए संस्कृत प्रथम अध्याय मङ्गलम् का लाइव महामौरथन।',
     createdAt: new Date().toISOString()
   },
   {
@@ -204,6 +204,22 @@ export const defaultLiveClasses: LiveClass[] = [
   }
 ];
 
+export const defaultDailyQuizzes: DailyQuizItem[] = [
+  { id: 'dq_1', dateLabel: '19 सितम्बर', subjectName: 'संस्कृत', title: 'संस्कृत - मङ्गलम् एवं व्याकरण टेस्ट', chaptersCount: 16, totalQuestions: 438, createdAt: new Date().toISOString() },
+  { id: 'dq_2', dateLabel: '18 सितम्बर', subjectName: 'अर्थव्यवस्था', title: 'भारतीय अर्थव्यवस्था का विकास - वस्तुनिष्ठ प्रश्न', chaptersCount: 5, totalQuestions: 150, createdAt: new Date().toISOString() },
+  { id: 'dq_3', dateLabel: '17 सितम्बर', subjectName: 'भूगोल', title: 'भारत - संसाधन एवं उपयोग टेस्ट', chaptersCount: 7, totalQuestions: 200, createdAt: new Date().toISOString() },
+  { id: 'dq_4', dateLabel: '16 सितम्बर', subjectName: 'इतिहास', title: 'यूरोप में राष्ट्रवाद - महत्वपूर्ण प्रश्न', chaptersCount: 8, totalQuestions: 250, createdAt: new Date().toISOString() },
+  { id: 'dq_5', dateLabel: '15 सितम्बर', subjectName: 'गणित', title: 'वास्तविक संख्याएँ & बहुपद - सुपर टेस्ट', chaptersCount: 15, totalQuestions: 300, createdAt: new Date().toISOString() },
+  { id: 'dq_6', dateLabel: '14 सितम्बर', subjectName: 'Mix - विज्ञान', title: 'भौतिकी, रसायन एवं जीवविज्ञान महामॉक टेस्ट', chaptersCount: 16, totalQuestions: 500, createdAt: new Date().toISOString() },
+  { id: 'dq_7', dateLabel: '13 सितम्बर', subjectName: 'Mix - All Subject', title: 'बिहार बोर्ड 10वीं ऑल-सब्जेक्ट ग्रैंड टेस्ट', chaptersCount: 20, totalQuestions: 600, createdAt: new Date().toISOString() },
+  { id: 'dq_8', dateLabel: '11 सितम्बर', subjectName: 'हिंदी - वर्णिका', title: 'वर्णिका भाग 2 सम्पूर्ण कथा वस्तुनिष्ठ टेस्ट', chaptersCount: 5, totalQuestions: 150, createdAt: new Date().toISOString() },
+  { id: 'dq_9', dateLabel: '10 सितम्बर', subjectName: 'हिंदी - पद्य', title: 'पद्य खंड - सूरदास, कबीर के पद व कविताएँ', chaptersCount: 12, totalQuestions: 350, createdAt: new Date().toISOString() },
+  { id: 'dq_10', dateLabel: '5 सितम्बर', subjectName: 'हिंदी - गद्य', title: 'गद्य खंड - श्रम विभाजन और जाति प्रथा', chaptersCount: 12, totalQuestions: 350, createdAt: new Date().toISOString() },
+  { id: 'dq_11', dateLabel: '4 सितम्बर', subjectName: 'भौतिकी', title: 'प्रकाश का परावर्तन तथा अपवर्तन टेस्ट', chaptersCount: 4, totalQuestions: 120, createdAt: new Date().toISOString() },
+  { id: 'dq_12', dateLabel: '3 सितम्बर', subjectName: 'रसायनशास्त्र', title: 'रासायनिक अभिक्रियाएँ एवं समीकरण', chaptersCount: 5, totalQuestions: 150, createdAt: new Date().toISOString() },
+  { id: 'dq_13', dateLabel: '20 अगस्त', subjectName: 'जीवविज्ञान', title: 'जैव प्रक्रम (Life Processes) महाटेस्ट', chaptersCount: 6, totalQuestions: 180, createdAt: new Date().toISOString() }
+];
+
 export const defaultLeaderboard: LeaderboardEntry[] = [
   {
     id: 'lb_1',
@@ -211,7 +227,7 @@ export const defaultLeaderboard: LeaderboardEntry[] = [
     district: 'पटना (Patna)',
     score: 492,
     totalMarks: 500,
-    testName: 'बिहार बोर्ड 2027 फाइनल मेगा टेस्ट',
+    testName: 'बिहार बोर्ड फुल सिलेबस फाइनल मेगा टेस्ट',
     subjectName: 'सभी विषय (All Subjects)',
     createdAt: new Date().toISOString(),
     isVip: true
@@ -277,6 +293,7 @@ interface DataContextType {
   subjects: Record<string, Subject>;
   paidNotes: PaidPdfNote[];
   liveClasses: LiveClass[];
+  dailyQuizzes: DailyQuizItem[];
   leaderboard: LeaderboardEntry[];
   routine: RoutineItem[];
   motivationalQuotes: MotivationalQuote[];
@@ -287,6 +304,8 @@ interface DataContextType {
   deletePaidNote: (id: string) => Promise<void>;
   addLiveClass: (cls: Omit<LiveClass, 'id'>) => Promise<string>;
   deleteLiveClass: (id: string) => Promise<void>;
+  addDailyQuiz: (quiz: Omit<DailyQuizItem, 'id'>) => Promise<string>;
+  deleteDailyQuiz: (id: string) => Promise<void>;
   addLeaderboardScore: (entry: Omit<LeaderboardEntry, 'id'>) => Promise<string>;
   addRoutineItem: (item: Omit<RoutineItem, 'id'>) => Promise<string>;
   updateRoutineItem: (id: string, item: Partial<RoutineItem>) => Promise<void>;
@@ -329,6 +348,9 @@ export const DataProvider = ({ children }: any) => {
 
         // Live Classes
         setLiveClasses(data.live_classes || defaultLiveClasses);
+
+        // Daily Quizzes
+        setDailyQuizzes(data.daily_quizzes || defaultDailyQuizzes);
 
         // Leaderboard
         setLeaderboard(data.leaderboard || defaultLeaderboard);
@@ -461,6 +483,70 @@ export const DataProvider = ({ children }: any) => {
       await safeDeleteDoc(doc(db, 'live_classes', id));
     } catch (e: any) {
       console.warn("Firestore live class delete notice:", e?.message || String(e));
+    }
+  };
+
+  const [dailyQuizzes, setDailyQuizzes] = useState<DailyQuizItem[]>(() => {
+    try {
+      const cached = localStorage.getItem('bseb_daily_quizzes_cache');
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
+    } catch {}
+    return defaultDailyQuizzes;
+  });
+
+  useEffect(() => {
+    try {
+      const unsub = onSnapshot(collection(db, 'daily_quizzes'), (snapshot) => {
+        const quizzesFromDb: DailyQuizItem[] = [];
+        snapshot.forEach((docSnap) => {
+          quizzesFromDb.push({ id: docSnap.id, ...(docSnap.data() as any) });
+        });
+        setDailyQuizzes(quizzesFromDb.length > 0 ? quizzesFromDb : defaultDailyQuizzes);
+      }, (err) => {
+        console.warn("Daily quizzes snapshot warning:", err?.message || String(err));
+      });
+      return () => unsub();
+    } catch (err: any) {
+      console.warn("Daily quizzes listener error:", err?.message || String(err));
+    }
+  }, []);
+
+  const addDailyQuiz = async (quizData: Omit<DailyQuizItem, 'id'>): Promise<string> => {
+    const id = 'quiz_' + Date.now();
+    const newQuiz: DailyQuizItem = {
+      id,
+      ...quizData,
+      createdAt: quizData.createdAt || new Date().toISOString()
+    };
+
+    setDailyQuizzes((prev) => [newQuiz, ...prev]);
+    try {
+      const updated = [newQuiz, ...dailyQuizzes];
+      localStorage.setItem('bseb_daily_quizzes_cache', JSON.stringify(updated));
+    } catch {}
+
+    try {
+      await safeSetDoc(doc(db, 'daily_quizzes', id), newQuiz);
+    } catch (e: any) {
+      console.warn("Firestore daily quiz save notice:", e?.message || String(e));
+    }
+    return id;
+  };
+
+  const deleteDailyQuiz = async (id: string): Promise<void> => {
+    setDailyQuizzes((prev) => prev.filter((q) => q.id !== id));
+    try {
+      const updated = dailyQuizzes.filter((q) => q.id !== id);
+      localStorage.setItem('bseb_daily_quizzes_cache', JSON.stringify(updated));
+    } catch {}
+
+    try {
+      await safeDeleteDoc(doc(db, 'daily_quizzes', id));
+    } catch (e: any) {
+      console.warn("Firestore daily quiz delete notice:", e?.message || String(e));
     }
   };
 
@@ -736,6 +822,7 @@ export const DataProvider = ({ children }: any) => {
       subjects, 
       paidNotes, 
       liveClasses,
+      dailyQuizzes,
       leaderboard,
       routine,
       motivationalQuotes,
@@ -747,6 +834,8 @@ export const DataProvider = ({ children }: any) => {
       deletePaidNote,
       addLiveClass,
       deleteLiveClass,
+      addDailyQuiz,
+      deleteDailyQuiz,
       addLeaderboardScore,
       addRoutineItem,
       updateRoutineItem,

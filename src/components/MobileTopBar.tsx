@@ -44,7 +44,7 @@ export function MobileTopBar({
               पढ़ेगा <span className="text-red-600">बिहार</span>
             </span>
             <span className="text-[9px] font-bold text-amber-600 tracking-wider uppercase block truncate">
-              टॉपर बैच 2027
+              टॉपर बैच फुल सिलेबस
             </span>
           </div>
         </div>

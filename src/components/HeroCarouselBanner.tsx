@@ -18,8 +18,8 @@ export function HeroCarouselBanner({ onOpenVip, onExploreCourses }: HeroCarousel
     : [
         {
           id: 'topper-batch',
-          tag: 'बिहार बोर्ड परीक्षा 2027',
-          title: 'टॉपर बैच - 2027',
+          tag: 'बिहार बोर्ड परीक्षा फुल सिलेबस',
+          title: 'टॉपर बैच - फुल सिलेबस',
           subtitle: '10th All Subjects (NCERT)',
           features: [
             'लाइव & रिकॉर्डेड क्लासेस',

@@ -232,7 +232,7 @@ export const ChapterContentRenderer: React.FC<ChapterContentRendererProps> = ({
             </div>
             <div>
               <span className="text-[11px] uppercase font-black tracking-widest text-amber-200 block">
-                BSEB 2027 • आधिकारिक पाठ्यक्रम परिचय
+                BSEB फुल सिलेबस • आधिकारिक पाठ्यक्रम परिचय
               </span>
               <h3 className="font-black text-base sm:text-xl text-white tracking-wide mt-0.5">
                 {title}
@@ -322,7 +322,7 @@ export const ChapterContentRenderer: React.FC<ChapterContentRendererProps> = ({
           </div>
           <div>
             <span className="bg-amber-400 text-stone-950 font-black text-[9px] px-2 py-0.5 rounded-full uppercase tracking-wider">
-              Class 10th BSEB 2027
+              Class 10th BSEB फुल सिलेबस
             </span>
             <h4 className="font-black text-sm sm:text-base tracking-tight text-white mt-0.5">
               PADHEGA BIHAR — HINDI FULL NOTES

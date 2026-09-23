@@ -30,6 +30,7 @@ import { AdminPaymentRequests } from './AdminPaymentRequests';
 import { AdminStudentsList } from './AdminStudentsList';
 import { AdminPdfNotesManager } from './AdminPdfNotesManager';
 import { AdminLiveClassesManager } from './AdminLiveClassesManager';
+import { AdminDailyQuizManager } from './AdminDailyQuizManager';
 import { AdminRoutineManager } from './AdminRoutineManager';
 import { AdminQuotesManager } from './AdminQuotesManager';
 import { AdminNotificationsManager } from './AdminNotificationsManager';
@@ -419,6 +420,7 @@ export function AdminPanel({ onBack }: any) {
             <option value="pdf_notes">📄 Paid PDF नोट्स</option>
             <option value="courses">🎓 कोर्स प्रबंधक (Add Course)</option>
             <option value="live_classes">🔴 YouTube लाइव क्लास</option>
+            <option value="daily_quizzes">🏆 डेली क्विज़ & टेस्ट</option>
             <option value="routine">📅 क्लास रूटीन</option>
             <option value="quotes">💡 सुविचार / कोट्स</option>
             <option value="notifications">🔔 पुश नोटिफिकेशन्स</option>
@@ -480,6 +482,14 @@ export function AdminPanel({ onBack }: any) {
             }`}
           >
             <Radio className="w-4 h-4 text-red-500 animate-pulse" /> 🔴 YouTube लाइव क्लास
+          </button>
+          <button 
+            onClick={() => setActiveTab('daily_quizzes')} 
+            className={`pb-3 px-4 font-bold text-sm flex items-center gap-2 transition-colors cursor-pointer whitespace-nowrap ${
+              activeTab === 'daily_quizzes' ? 'border-b-2 border-amber-500 text-amber-500' : 'text-stone-400 hover:text-stone-200'
+            }`}
+          >
+            <CheckCircle2 className="w-4 h-4 text-emerald-500" /> 🏆 डेली क्विज़ & टेस्ट
           </button>
           <button 
             onClick={() => setActiveTab('routine')} 
@@ -593,6 +603,13 @@ export function AdminPanel({ onBack }: any) {
         {activeTab === 'live_classes' && (
           <div className="relative z-10">
             <AdminLiveClassesManager />
+          </div>
+        )}
+
+        {/* Daily Quizzes Tab */}
+        {activeTab === 'daily_quizzes' && (
+          <div className="relative z-10">
+            <AdminDailyQuizManager />
           </div>
         )}
 

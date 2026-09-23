@@ -11,7 +11,7 @@ export function AdminBannersManager() {
   const [isAdding, setIsAdding] = useState(false);
 
   // Form states
-  const [tag, setTag] = useState('बिहार बोर्ड परीक्षा 2027');
+  const [tag, setTag] = useState('बिहार बोर्ड परीक्षा फुल सिलेबस');
   const [title, setTitle] = useState('');
   const [subtitle, setSubtitle] = useState('');
   const [oldPrice, setOldPrice] = useState('₹999');
@@ -28,7 +28,7 @@ export function AdminBannersManager() {
   const handleStartAdd = () => {
     setIsAdding(true);
     setEditingId(null);
-    setTag('विशेष ऑफर 2027');
+    setTag('विशेष ऑफर फुल सिलेबस');
     setTitle('नया टॉपर कोर्स');
     setSubtitle('सम्पूर्ण तैयारी बिहार बोर्ड');
     setOldPrice('₹1500');
@@ -182,7 +182,7 @@ export function AdminBannersManager() {
                 required
                 value={tag}
                 onChange={e => setTag(e.target.value)}
-                placeholder="उदा: बिहार बोर्ड परीक्षा 2027"
+                placeholder="उदा: बिहार बोर्ड परीक्षा फुल सिलेबस"
                 className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-bold text-stone-900 focus:outline-none focus:border-red-500"
               />
             </div>
@@ -194,7 +194,7 @@ export function AdminBannersManager() {
                 required
                 value={title}
                 onChange={e => setTitle(e.target.value)}
-                placeholder="उदा: टॉपर बैच - 2027"
+                placeholder="उदा: टॉपर बैच - फुल सिलेबस"
                 className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-bold text-stone-900 focus:outline-none focus:border-red-500"
               />
             </div>

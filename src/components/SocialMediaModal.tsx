@@ -29,7 +29,7 @@ export function SocialMediaModal({ onClose }: SocialMediaModalProps) {
   const HELPLINE_NUMBER = appConfig.helplineNumber;
   const HELPLINE_TEL = '+91' + appConfig.helplineNumber;
   const WHATSAPP_HELPLINE_URL = `https://wa.me/91${appConfig.helplineNumber}?text=${encodeURIComponent('नमस्ते सर, मुझे पढ़ेगा बिहार 10वीं टॉपर बैच और नोट्स के बारे में जानकारी चाहिए।')}`;
-  const WHATSAPP_GROUP_URL = appConfig.whatsappGroupUrl || `https://wa.me/91${appConfig.helplineNumber}?text=${encodeURIComponent('नमस्ते सर, मुझे 10th BSEB 2027 WhatsApp ग्रुप में जोड़ें।')}`;
+  const WHATSAPP_GROUP_URL = appConfig.whatsappGroupUrl || `https://wa.me/91${appConfig.helplineNumber}?text=${encodeURIComponent('नमस्ते सर, मुझे 10th BSEB फुल सिलेबस WhatsApp ग्रुप में जोड़ें।')}`;
   const TELEGRAM_URL = appConfig.telegramUrl || 'https://t.me';
 
   const handleCopy = (text: string, id: string) => {
@@ -93,7 +93,7 @@ export function SocialMediaModal({ onClose }: SocialMediaModalProps) {
             </div>
 
             <p className="text-xs text-stone-600 leading-relaxed">
-              बिहार बोर्ड मैट्रिक (BSEB 2027) की सभी लाइव मैराथन क्लासेज, मॉडल पेपर्स और चैप्टर-वाइज वीडियो लेक्चर्स देखने के लिए तुरंत सब्सक्राइब करें।
+              बिहार बोर्ड मैट्रिक (BSEB फुल सिलेबस) की सभी लाइव मैराथन क्लासेज, मॉडल पेपर्स और चैप्टर-वाइज वीडियो लेक्चर्स देखने के लिए तुरंत सब्सक्राइब करें।
             </p>
 
             <div className="flex items-center gap-2 pt-1">

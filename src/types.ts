@@ -59,6 +59,18 @@ export interface LiveClass {
   createdAt: string;
 }
 
+export interface DailyQuizItem {
+  id: string;
+  dateLabel: string; // e.g. "19 सितम्बर"
+  subjectName: string; // e.g. "संस्कृत"
+  title: string; // e.g. "संस्कृत - मङ्गलम् टेस्ट"
+  chaptersCount?: number;
+  totalQuestions?: number;
+  youtubeUrl?: string;
+  description?: string;
+  createdAt: string;
+}
+
 export interface LeaderboardEntry {
   id: string;
   studentName: string;

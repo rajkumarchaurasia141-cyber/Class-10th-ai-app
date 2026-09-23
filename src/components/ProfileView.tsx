@@ -64,7 +64,7 @@ export function ProfileView({
             {user?.email || 'जीमेल कनेक्ट नहीं है'}
           </p>
           <span className="inline-block mt-1 text-[10px] font-bold text-red-700 bg-red-50 border border-red-200 px-2 py-0.5 rounded-full">
-            बिहार बोर्ड कक्षा 10वीं (BSEB 2027)
+            बिहार बोर्ड कक्षा 10वीं (BSEB फुल सिलेबस)
           </span>
         </div>
       </div>

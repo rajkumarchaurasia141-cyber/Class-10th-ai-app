@@ -30,5 +30,5 @@
 
   <!-- Brand Hindi Typography -->
   <text x="256" y="380" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="46" font-weight="900" fill="#ffffff" letter-spacing="1">पढ़ेगा बिहार</text>
-  <text x="256" y="425" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="24" font-weight="800" fill="url(#goldGrad)" letter-spacing="3">टॉपर बैच 2027</text>
+  <text x="256" y="425" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="24" font-weight="800" fill="url(#goldGrad)" letter-spacing="3">टॉपर बैच फुल सिलेबस</text>
 </svg>

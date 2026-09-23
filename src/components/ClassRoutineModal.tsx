@@ -20,7 +20,7 @@ export function ClassRoutineModal({ onClose }: ClassRoutineModalProps) {
             </div>
             <div>
               <h3 className="font-black text-base sm:text-lg text-white leading-tight">
-                टॉपर बैच 2027 - टाइम टेबल
+                टॉपर बैच फुल सिलेबस - टाइम टेबल
               </h3>
               <p className="text-xs text-amber-200">बिहार बोर्ड कक्षा 10वीं दैनिक क्लास रूटीन (एडमिन द्वारा अपडेटेड)</p>
             </div>

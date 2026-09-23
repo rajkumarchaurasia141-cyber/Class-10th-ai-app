@@ -12,7 +12,7 @@ export function DownloadPage({ onBackToApp }: { onBackToApp: () => void }) {
       try {
         const link = document.createElement('a');
         link.href = apkUrl;
-        link.setAttribute('download', 'BSEB_10th_Topper_2027.apk');
+        link.setAttribute('download', 'BSEB_10th_Topper_फुल सिलेबस.apk');
         link.style.display = 'none';
         document.body.appendChild(link);
         link.click();
@@ -58,7 +58,7 @@ export function DownloadPage({ onBackToApp }: { onBackToApp: () => void }) {
               <Sparkles className="w-3.5 h-3.5 text-amber-400" /> ऑटो-डाउनलोड शुरू हो रहा है...
             </div>
             <h1 className="text-xl sm:text-2xl font-black text-white tracking-tight">
-              10th BSEB Topper App 2027
+              10th BSEB Topper App फुल सिलेबस
             </h1>
             <p className="text-xs text-stone-300">
               बिहार बोर्ड परीक्षा की संपूर्ण तैयारी (Live Classes, Notes & 50 MCQ Tests)
@@ -118,7 +118,7 @@ export function DownloadPage({ onBackToApp }: { onBackToApp: () => void }) {
         </div>
 
         <div className="text-center text-[11px] text-stone-500 pt-2">
-          Bihar School Examination Board (BSEB) 2027 Prep App • Powered by Vidya Agent
+          Bihar School Examination Board (BSEB) फुल सिलेबस Prep App • Powered by Vidya Agent
         </div>
       </div>
     </div>

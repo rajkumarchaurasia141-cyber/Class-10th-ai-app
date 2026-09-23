@@ -42,8 +42,8 @@ export function PaidTestModal({
   onClose, 
   onOpenVip, 
   isVIP = true,
-  testTitle = 'बिहार बोर्ड 10वीं 2027 महा-मॉक टेस्ट',
-  testSubtitle = '50 प्रश्न • 50 मिनट समय • OMR मोड • BSEB 2027 स्पेशल',
+  testTitle = 'बिहार बोर्ड 10वीं फुल सिलेबस महा-मॉक टेस्ट',
+  testSubtitle = '50 प्रश्न • 50 मिनट समय • OMR मोड • BSEB फुल सिलेबस स्पेशल',
   questions 
 }: PaidTestModalProps) {
   const activeQuestions: GenericTestQuestion[] = useMemo(() => {

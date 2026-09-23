@@ -1,5 +1,5 @@
 import React from 'react';
-import { Home, BookOpen, Radio, Trophy, DownloadCloud, MessageCircle, User } from 'lucide-react';
+import { Home, BookOpen, Radio, CheckSquare, Trophy, DownloadCloud, MessageCircle, User } from 'lucide-react';
 
 interface BottomNavBarProps {
   activeTab: string;
@@ -11,6 +11,7 @@ export function BottomNavBar({ activeTab, onTabChange }: BottomNavBarProps) {
     { id: 'home', label: 'Home', hindiLabel: 'होम', icon: Home },
     { id: 'my_courses', label: 'My Courses', hindiLabel: 'कोर्स', icon: BookOpen },
     { id: 'live', label: 'Live', hindiLabel: 'लाइव', icon: Radio },
+    { id: 'daily_quiz', label: 'Quiz & Test', hindiLabel: 'क्विज', icon: CheckSquare },
     { id: 'leaderboard', label: 'Leaderboard', hindiLabel: 'टॉपर', icon: Trophy },
     { id: 'downloads', label: 'Downloads', hindiLabel: 'नोट्स', icon: DownloadCloud },
     { id: 'chat', label: 'Chat', hindiLabel: 'डाउट/चैट', icon: MessageCircle },

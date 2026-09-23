@@ -161,7 +161,7 @@ export function FeatureGrid({ onNavigate }: FeatureGridProps) {
       id: 'routine',
       title: 'Class Routine',
       subtitle: 'टाइम टेबल / शेड्यूल',
-      badge: '2027',
+      badge: 'फुल सिलेबस',
       badgeColor: 'bg-purple-600 text-white',
       bgIcon: 'bg-gradient-to-br from-purple-500 to-fuchsia-600',
       icon: CalendarDays,

@@ -18,6 +18,7 @@ import { DoubtChatView } from './components/DoubtChatView';
 import { ProfileView } from './components/ProfileView';
 import { MyCoursesView } from './components/MyCoursesView';
 import { LiveClassesView } from './components/LiveClassesView';
+import { DailyQuizView } from './components/DailyQuizView';
 import { TopperLeaderboardView } from './components/TopperLeaderboardView';
 import { DownloadPage } from './components/DownloadPage';
 import { InstallAppBanner } from './components/InstallAppBanner';
@@ -156,6 +157,16 @@ function MainApp() {
           {activeTab === 'live' && (
             <LiveClassesView 
               onOpenVip={() => setShowVipModal(true)}
+            />
+          )}
+
+          {activeTab === 'daily_quiz' && (
+            <DailyQuizView 
+              onOpenVip={() => setShowVipModal(true)}
+              onSelectSubject={(id: string) => {
+                setSelectedSubject(id);
+                setActiveTab('explorer');
+              }}
             />
           )}
 

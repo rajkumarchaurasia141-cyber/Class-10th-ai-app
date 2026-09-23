@@ -83,7 +83,7 @@ export function DownloadsNotesView({ onOpenSubject, onOpenVip }: DownloadsNotesV
           )}
         </div>
         <p className="text-xs text-stone-200">
-          कक्षा 10वीं 2027 टॉपर बैच के सभी 6 विषयों के सम्पूर्ण हस्तलिखित व प्रिंटेबल पीडीएफ नोट्स।
+          कक्षा 10वीं फुल सिलेबस टॉपर बैच के सभी 6 विषयों के सम्पूर्ण हस्तलिखित व प्रिंटेबल पीडीएफ नोट्स।
         </p>
       </div>
 
