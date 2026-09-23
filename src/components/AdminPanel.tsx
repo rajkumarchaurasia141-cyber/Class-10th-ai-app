@@ -289,7 +289,7 @@ export function AdminPanel({ onBack }: any) {
       const chNo = Number(chapterNo);
       const chapterRef = doc(db, 'subjects', subId, 'chapters', `ch${chNo}`);
       
-      const ok = await safeSetDoc(chapterRef, {
+      const newChapter = {
         chapter_no: chNo,
         chapter_name: chapterNameEng,
         chapter_name_hindi: chapterNameHindi,
@@ -299,7 +299,33 @@ export function AdminPanel({ onBack }: any) {
         mcq: finalMcq,
         subjective_qa: finalQa,
         updatedAt: new Date().toISOString()
-      }, { merge: true }, 3000, true);
+      };
+
+      // Save to localStorage cache for instant display across the app (0 DB read)
+      try {
+        const cached = localStorage.getItem('bseb_admin_chapters_cache');
+        const parsed = cached ? JSON.parse(cached) : {};
+        if (!parsed[subId]) {
+          parsed[subId] = {
+            id: subId,
+            subject_name: subjectName || subId,
+            subject_name_hindi: subjectNameHindi || subId,
+            chapters: []
+          };
+        }
+        const existingIdx = parsed[subId].chapters.findIndex((c: any) => Number(c.chapter_no) === chNo);
+        if (existingIdx >= 0) {
+          parsed[subId].chapters[existingIdx] = newChapter;
+        } else {
+          parsed[subId].chapters.push(newChapter);
+          parsed[subId].chapters.sort((a: any, b: any) => a.chapter_no - b.chapter_no);
+        }
+        localStorage.setItem('bseb_admin_chapters_cache', JSON.stringify(parsed));
+      } catch (err) {
+        console.warn("Failed to cache admin chapter locally:", err);
+      }
+
+      const ok = await safeSetDoc(chapterRef, newChapter, { merge: true }, 3000, true);
 
       if (ok) {
         setCMsg(`अध्याय ${chNo} (${chapterNameHindi || subjectNameHindi}) सफलतापूर्वक Firestore में सेव हो गया!`);

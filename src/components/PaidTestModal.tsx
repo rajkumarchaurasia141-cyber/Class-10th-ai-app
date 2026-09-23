@@ -47,10 +47,13 @@ export function PaidTestModal({
   questions 
 }: PaidTestModalProps) {
   const activeQuestions: GenericTestQuestion[] = useMemo(() => {
-    if (questions && questions.length > 0) {
-      return questions;
-    }
-    return PAID_TEST_50_QUESTIONS;
+    const raw = (questions && questions.length > 0) ? questions : PAID_TEST_50_QUESTIONS;
+    return raw.map((q: any) => ({
+      ...q,
+      correct_answer: typeof q.correct_answer === 'number' 
+        ? q.correct_answer 
+        : (typeof q.correctIndex === 'number' ? q.correctIndex : 0)
+    }));
   }, [questions]);
 
   const TOTAL_QUESTIONS = activeQuestions.length; // usually 50

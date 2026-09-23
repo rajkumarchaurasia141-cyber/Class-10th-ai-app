@@ -81,8 +81,31 @@ import {
   scienceChapter15Data, 
   scienceChapter16Data 
 } from './scienceChapters14to16';
+import { historyChapter1Data } from './historyChapter1Data';
+import { historyChapter2Data } from './historyChapter2Data';
+import { historyChapter3Data } from './historyChapter3Data';
+import { historyChapter4Data } from './historyChapter4Data';
+import { historyChapter5Data } from './historyChapter5Data';
+import { historyChapter6Data } from './historyChapter6Data';
+import { historyChapter7Data } from './historyChapter7Data';
+import { historyChapter8Data } from './historyChapter8Data';
 
 export const defaultSubjectsData: Record<string, Subject> = {
+  history: {
+    id: 'history',
+    subject_name: 'History (Social Science)',
+    subject_name_hindi: 'इतिहास (इतिहास की दुनिया भाग-2)',
+    chapters: [
+      historyChapter1Data,
+      historyChapter2Data,
+      historyChapter3Data,
+      historyChapter4Data,
+      historyChapter5Data,
+      historyChapter6Data,
+      historyChapter7Data,
+      historyChapter8Data
+    ]
+  },
   sanskrit: {
     id: 'sanskrit',
     subject_name: 'Sanskrit',

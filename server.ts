@@ -1,5 +1,6 @@
 import express, { Request, Response } from 'express';
 import path from 'path';
+import fs from 'fs';
 import { createServer as createViteServer } from 'vite';
 import { GoogleGenAI } from '@google/genai';
 import { getAccurateDoubtAnswer } from './src/utils/doubtKnowledgeEngine';
@@ -211,6 +212,80 @@ async function startServer() {
     } catch (error) {
       console.error('Email error:', error);
       res.status(500).json({ error: 'Failed to send email' });
+    }
+  });
+
+  // Endpoint to permanently save Live Class to app_data.json
+  app.post('/api/save-live-class', (req: Request, res: Response) => {
+    try {
+      const newClass = req.body;
+      if (!newClass || !newClass.id || !newClass.title) {
+        return res.status(400).json({ error: 'Invalid live class data' });
+      }
+
+      const paths = [
+        path.join(process.cwd(), 'public', 'app_data.json'),
+        path.join(process.cwd(), 'dist', 'app_data.json')
+      ];
+
+      for (const filePath of paths) {
+        if (fs.existsSync(filePath)) {
+          try {
+            const raw = fs.readFileSync(filePath, 'utf-8');
+            const data = JSON.parse(raw);
+            if (!Array.isArray(data.live_classes)) {
+              data.live_classes = [];
+            }
+            const existingIdx = data.live_classes.findIndex((c: any) => c.id === newClass.id);
+            if (existingIdx >= 0) {
+              data.live_classes[existingIdx] = newClass;
+            } else {
+              data.live_classes.unshift(newClass);
+            }
+            fs.writeFileSync(filePath, JSON.stringify(data, null, 2), 'utf-8');
+          } catch (e) {
+            console.error('Failed to write to file:', filePath, e);
+          }
+        }
+      }
+
+      res.json({ success: true, liveClass: newClass });
+    } catch (err: any) {
+      console.error('Save live class error:', err);
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  // Endpoint to permanently delete Live Class from app_data.json
+  app.post('/api/delete-live-class', (req: Request, res: Response) => {
+    try {
+      const { id } = req.body;
+      if (!id) return res.status(400).json({ error: 'ID is required' });
+
+      const paths = [
+        path.join(process.cwd(), 'public', 'app_data.json'),
+        path.join(process.cwd(), 'dist', 'app_data.json')
+      ];
+
+      for (const filePath of paths) {
+        if (fs.existsSync(filePath)) {
+          try {
+            const raw = fs.readFileSync(filePath, 'utf-8');
+            const data = JSON.parse(raw);
+            if (Array.isArray(data.live_classes)) {
+              data.live_classes = data.live_classes.filter((c: any) => c.id !== id);
+              fs.writeFileSync(filePath, JSON.stringify(data, null, 2), 'utf-8');
+            }
+          } catch (e) {
+            console.error('Failed to delete from file:', filePath, e);
+          }
+        }
+      }
+
+      res.json({ success: true });
+    } catch (err: any) {
+      console.error('Delete live class error:', err);
+      res.status(500).json({ error: err.message });
     }
   });
 

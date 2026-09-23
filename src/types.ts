@@ -1,14 +1,18 @@
 export interface MCQItem {
+  id?: string;
   question: string;
   options: string[];
-  correct_answer: number; // index 0-3
+  correct_answer?: number; // index 0-3
+  correctIndex?: number;
   explanation?: string;
 }
 
 export interface QAItem {
+  id?: string;
+  qNumber?: number | string;
   question: string;
   answer: string;
-  type?: 'लघु उत्तरीय' | 'दीर्घ उत्तरीय' | 'NCERT';
+  type?: string;
 }
 
 export interface Chapter {
@@ -16,7 +20,10 @@ export interface Chapter {
   chapter_no: number;
   chapter_name: string;
   chapter_name_hindi: string;
+  section_name?: string;
+  subCategory?: string;
   intro_hindi?: string; // पाठ परिचय
+  intro_hidden?: boolean;
   notes_hindi: string; // विस्तृत नोट्स एवं व्याख्या
   topper_tips?: string; // VVI टॉपर टिप्स
   mcq: MCQItem[];

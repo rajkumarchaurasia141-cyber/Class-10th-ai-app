@@ -53,6 +53,15 @@ export function DailyQuizView({ onOpenVip, onSelectSubject, onOpenSubject }: Dai
       icon: FileText
     },
     {
+      id: 'history',
+      name: 'इतिहास (History)',
+      desc: 'यूरोप में राष्ट्रवाद, समाजवाद, भारत में राष्ट्रवाद (संपूर्ण 8 अध्याय - 50-50 MCQs)',
+      totalChapters: 8,
+      color: 'from-amber-700 to-red-800',
+      lightBg: 'bg-amber-50 border-amber-200 text-amber-900',
+      icon: BookOpen
+    },
+    {
       id: 'sst',
       name: 'सामाजिक विज्ञान (Social Science)',
       desc: 'इतिहास, भूगोल, राजनीति विज्ञान, अर्थशास्त्र',
@@ -80,14 +89,19 @@ export function DailyQuizView({ onOpenVip, onSelectSubject, onOpenSubject }: Dai
     
     // If chapter has mcq array
     if (chapter.mcq && Array.isArray(chapter.mcq) && chapter.mcq.length > 0) {
-      chapterQuestions = chapter.mcq.map((m: any, idx: number) => ({
-        id: m.id || `ch_${chapter.chapter_no}_q_${idx}`,
-        question: m.question || m.text || `प्रश्न ${idx + 1}`,
-        options: m.options || m.choices || ['विकल्प A', 'विकल्प B', 'विकल्प C', 'विकल्प D'],
-        correctIndex: typeof m.correctIndex === 'number' ? m.correctIndex : 0,
-        explanation: m.explanation || `अध्याय ${chapter.chapter_no} (${chapter.chapter_name_hindi}) का महत्वपूर्ण वस्तुनिष्ठ प्रश्न।`,
-        subject: currentSubject?.subject_name_hindi || activeSubjectId || 'बिहार बोर्ड'
-      }));
+      chapterQuestions = chapter.mcq.map((m: any, idx: number) => {
+        const correctVal = typeof m.correctIndex === 'number' ? m.correctIndex : (typeof m.correct_answer === 'number' ? m.correct_answer : 0);
+        return {
+          id: m.id || `ch_${chapter.chapter_no}_q_${idx}`,
+          question: m.question || m.text || `प्रश्न ${idx + 1}`,
+          options: m.options || m.choices || ['विकल्प A', 'विकल्प B', 'विकल्प C', 'विकल्प D'],
+          correctIndex: correctVal,
+          correct_answer: correctVal,
+          explanation: m.explanation || `अध्याय ${chapter.chapter_no} (${chapter.chapter_name_hindi}) का महत्वपूर्ण वस्तुनिष्ठ प्रश्न।`,
+          subject: currentSubject?.subject_name_hindi || activeSubjectId || 'बिहार बोर्ड',
+          chapter: chapter.chapter_name_hindi || `अध्याय ${chapter.chapter_no}`
+        };
+      });
     }
 
     // Ensure we have 50 questions by padding with subject questions from PAID_TEST_50_QUESTIONS or repeating/slicing

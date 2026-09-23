@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { db } from '../lib/firebase';
-import { doc } from 'firebase/firestore';
+import { doc, collection, onSnapshot } from 'firebase/firestore';
 import { safeSetDoc, safeDeleteDoc } from '../utils/firestoreSafe';
 import { useAuth } from './AuthContext';
 import { getStaticCollection, getStaticData } from '../lib/staticData';
@@ -321,9 +321,41 @@ interface DataContextType {
 
 const DataContext = createContext<DataContextType | null>(null);
 
+const getMergedSubjects = (baseSubjects: Record<string, Subject>) => {
+  const merged = { ...baseSubjects };
+  try {
+    const cached = localStorage.getItem('bseb_admin_chapters_cache');
+    if (cached) {
+      const parsed = JSON.parse(cached);
+      Object.keys(parsed).forEach(sId => {
+        if (!merged[sId]) {
+          merged[sId] = parsed[sId];
+        } else {
+          const existingMap = new Map((merged[sId].chapters || []).map((c: any) => [Number(c.chapter_no), c]));
+          (parsed[sId].chapters || []).forEach((c: any) => {
+            const chNo = Number(c.chapter_no);
+            const baseCh = existingMap.get(chNo);
+            if (baseCh && (baseCh.mcq?.length || 0) > (c.mcq?.length || 0)) {
+              existingMap.set(chNo, { ...c, mcq: baseCh.mcq });
+            } else {
+              existingMap.set(chNo, c);
+            }
+          });
+          merged[sId] = {
+            ...merged[sId],
+            subject_name_hindi: parsed[sId].subject_name_hindi || merged[sId].subject_name_hindi,
+            chapters: Array.from(existingMap.values()).sort((a: any, b: any) => a.chapter_no - b.chapter_no)
+          };
+        }
+      });
+    }
+  } catch {}
+  return merged;
+};
+
 export const DataProvider = ({ children }: any) => {
   const { user } = useAuth();
-  const [subjects, setSubjects] = useState<Record<string, Subject>>(defaultSubjectsData);
+  const [subjects, setSubjects] = useState<Record<string, Subject>>(() => getMergedSubjects(defaultSubjectsData));
   const [paidNotes, setPaidNotes] = useState<PaidPdfNote[]>(defaultPaidPdfNotes);
   const [loading, setLoading] = useState(false);
 
@@ -341,13 +373,27 @@ export const DataProvider = ({ children }: any) => {
             subjectsMap[sub.id] = sub as Subject;
           });
         }
-        setSubjects(Object.keys(subjectsMap).length > 0 ? subjectsMap : defaultSubjectsData);
+        const baseSub = Object.keys(subjectsMap).length > 0 ? subjectsMap : defaultSubjectsData;
+        setSubjects(getMergedSubjects(baseSub));
 
         // Paid Notes
         setPaidNotes(data.paid_notes || defaultPaidPdfNotes);
 
         // Live Classes
-        setLiveClasses(data.live_classes || defaultLiveClasses);
+        const staticLive = data.live_classes || defaultLiveClasses;
+        setLiveClasses((prev) => {
+          const map = new Map<string, LiveClass>();
+          staticLive.forEach((c: LiveClass) => map.set(c.id, c));
+          prev.forEach(c => map.set(c.id, c));
+          try {
+            const cached = localStorage.getItem('bseb_live_classes_cache');
+            if (cached) {
+              const parsed = JSON.parse(cached);
+              if (Array.isArray(parsed)) parsed.forEach((c: LiveClass) => map.set(c.id, c));
+            }
+          } catch {}
+          return Array.from(map.values()).sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
+        });
 
         // Daily Quizzes
         setDailyQuizzes(data.daily_quizzes || defaultDailyQuizzes);
@@ -423,7 +469,12 @@ export const DataProvider = ({ children }: any) => {
       const cached = localStorage.getItem('bseb_live_classes_cache');
       if (cached) {
         const parsed = JSON.parse(cached);
-        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          const map = new Map<string, LiveClass>();
+          defaultLiveClasses.forEach(c => map.set(c.id, c));
+          parsed.forEach(c => map.set(c.id, c));
+          return Array.from(map.values()).sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
+        }
       }
     } catch {}
     return defaultLiveClasses;
@@ -437,10 +488,18 @@ export const DataProvider = ({ children }: any) => {
         snapshot.forEach((docSnap) => {
           classesFromDb.push({ id: docSnap.id, ...(docSnap.data() as any) });
         });
-        console.log("DataContext: Firestore snapshot size:", snapshot.size);
-        console.log("DataContext: classesFromDb length:", classesFromDb.length);
         
-        setLiveClasses(classesFromDb.length > 0 ? classesFromDb : defaultLiveClasses);
+        setLiveClasses((prev) => {
+          const map = new Map<string, LiveClass>();
+          defaultLiveClasses.forEach(c => map.set(c.id, c));
+          prev.forEach(c => map.set(c.id, c));
+          classesFromDb.forEach(c => map.set(c.id, c));
+          const combined = Array.from(map.values()).sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
+          try {
+            localStorage.setItem('bseb_live_classes_cache', JSON.stringify(combined));
+          } catch {}
+          return combined;
+        });
       }, (err) => {
         console.warn("Live classes snapshot warning:", err?.message || String(err));
       });
@@ -458,10 +517,21 @@ export const DataProvider = ({ children }: any) => {
       createdAt: classData.createdAt || new Date().toISOString()
     };
 
-    setLiveClasses((prev) => [newClass, ...prev]);
+    setLiveClasses((prev) => {
+      const updated = [newClass, ...prev];
+      try {
+        localStorage.setItem('bseb_live_classes_cache', JSON.stringify(updated));
+      } catch {}
+      return updated;
+    });
+
+    // Save to server app_data.json permanently so it never disappears across sessions
     try {
-      const updated = [newClass, ...liveClasses];
-      localStorage.setItem('bseb_live_classes_cache', JSON.stringify(updated));
+      fetch('/api/save-live-class', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(newClass)
+      }).catch(() => {});
     } catch {}
 
     try {
@@ -477,6 +547,14 @@ export const DataProvider = ({ children }: any) => {
     try {
       const updated = liveClasses.filter((c) => c.id !== id);
       localStorage.setItem('bseb_live_classes_cache', JSON.stringify(updated));
+    } catch {}
+
+    try {
+      fetch('/api/delete-live-class', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id })
+      }).catch(() => {});
     } catch {}
 
     try {
