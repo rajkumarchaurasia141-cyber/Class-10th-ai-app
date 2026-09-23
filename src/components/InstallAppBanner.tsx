@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Smartphone, Download, X, Sparkles, CheckCircle2 } from 'lucide-react';
+import { AppLogo } from './AppLogo';
 
 export function InstallAppBanner() {
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
@@ -46,12 +47,10 @@ export function InstallAppBanner() {
   return (
     <div className="fixed bottom-4 left-4 right-4 z-50 max-w-md mx-auto bg-gradient-to-r from-stone-900 via-red-950 to-stone-900 border-2 border-amber-400 text-white p-4 rounded-3xl shadow-2xl backdrop-blur-xl animate-bounce-short flex items-center justify-between gap-3">
       <div className="flex items-center gap-3">
-        <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-amber-500 to-red-600 flex items-center justify-center shrink-0 shadow-lg border border-amber-300/40">
-          <Smartphone className="w-6 h-6 text-stone-950" />
-        </div>
+        <AppLogo className="w-12 h-12 ring-2 ring-amber-400 shrink-0 shadow-lg" />
         <div>
           <div className="flex items-center gap-1 text-[10px] font-bold text-amber-400 uppercase tracking-wider">
-            <Sparkles className="w-3 h-3" /> 1-Click Mobile App
+            <Sparkles className="w-3 h-3" /> पढ़ेगा BR Mobile App
           </div>
           <h4 className="text-sm font-black text-white">फोन में ऐप इनस्टॉल करें</h4>
           <p className="text-[11px] text-stone-300">बिना ब्राउज़र के सीधे होम स्क्रीन पर चलाएँ!</p>

@@ -1,6 +1,7 @@
 import React from 'react';
 import { Menu, Bell, Crown, ShieldCheck, Mail } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { AppLogo } from './AppLogo';
 
 interface MobileTopBarProps {
   onOpenDrawer: () => void;
@@ -36,15 +37,13 @@ export function MobileTopBar({
 
         {/* Brand / Logo */}
         <div className="flex items-center gap-2 min-w-0">
-          <div className="w-8 h-8 rounded-full bg-gradient-to-br from-red-600 to-red-800 text-white flex items-center justify-center font-black text-xs shadow-sm border border-amber-300 shrink-0">
-            10th
-          </div>
+          <AppLogo className="w-8.5 h-8.5 ring-2 ring-amber-400 shadow-xs shrink-0 cursor-pointer" onClick={onOpenDrawer} />
           <div className="leading-none min-w-0">
             <span className="text-xs sm:text-sm font-black text-stone-900 tracking-tight block truncate">
-              पढ़ेगा <span className="text-red-600">बिहार</span>
+              पढ़ेगा <span className="text-amber-500 font-black">BR</span>
             </span>
-            <span className="text-[9px] font-bold text-amber-600 tracking-wider uppercase block truncate">
-              टॉपर बैच फुल सिलेबस
+            <span className="text-[9px] font-bold text-red-600 tracking-wider uppercase block truncate">
+              Study • Learn • Grow
             </span>
           </div>
         </div>

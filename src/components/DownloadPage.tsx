@@ -1,6 +1,7 @@
 import React, { useEffect } from 'react';
 import { Smartphone, Download, CheckCircle2, ShieldCheck, Sparkles, ArrowLeft, BookOpen, Award } from 'lucide-react';
 import { useData } from '../context/DataContext';
+import { AppLogo } from './AppLogo';
 
 export function DownloadPage({ onBackToApp }: { onBackToApp: () => void }) {
   const { appConfig } = useData();
@@ -49,8 +50,8 @@ export function DownloadPage({ onBackToApp }: { onBackToApp: () => void }) {
         <div className="bg-stone-900/90 border border-amber-500/30 rounded-3xl p-6 text-center space-y-4 shadow-2xl backdrop-blur-md relative overflow-hidden">
           <div className="absolute top-0 right-0 w-32 h-32 bg-amber-500/10 rounded-full blur-2xl pointer-events-none"></div>
 
-          <div className="w-20 h-20 bg-gradient-to-tr from-amber-500 to-red-600 rounded-2xl mx-auto flex items-center justify-center shadow-lg border border-amber-300/30 animate-pulse">
-            <Smartphone className="w-10 h-10 text-stone-950" />
+          <div className="flex justify-center">
+            <AppLogo className="w-24 h-24 ring-3 ring-amber-400 shadow-2xl mx-auto" />
           </div>
 
           <div className="space-y-1.5">
@@ -58,10 +59,10 @@ export function DownloadPage({ onBackToApp }: { onBackToApp: () => void }) {
               <Sparkles className="w-3.5 h-3.5 text-amber-400" /> ऑटो-डाउनलोड शुरू हो रहा है...
             </div>
             <h1 className="text-xl sm:text-2xl font-black text-white tracking-tight">
-              10th BSEB Topper App फुल सिलेबस
+              पढ़ेगा <span className="text-amber-400">BR</span> (10th Topper App)
             </h1>
             <p className="text-xs text-stone-300">
-              बिहार बोर्ड परीक्षा की संपूर्ण तैयारी (Live Classes, Notes & 50 MCQ Tests)
+              Study • Learn • Grow — बिहार बोर्ड परीक्षा की संपूर्ण तैयारी
             </p>
           </div>
 

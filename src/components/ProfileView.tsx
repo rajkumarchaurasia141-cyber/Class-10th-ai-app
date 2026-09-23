@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useRef, useState } from 'react';
 import { 
   User, 
   Crown, 
@@ -11,11 +11,15 @@ import {
   ShieldCheck, 
   LogOut, 
   Sparkles, 
-  ChevronRight,
-  BookOpen,
-  CheckCircle2
+  ChevronRight, 
+  BookOpen, 
+  CheckCircle2,
+  Camera,
+  Upload
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { useData } from '../context/DataContext';
+import { AppLogo } from './AppLogo';
 
 interface ProfileViewProps {
   onOpenVip: () => void;
@@ -35,15 +39,89 @@ export function ProfileView({
   onOpenGmailAuth
 }: ProfileViewProps) {
   const { user, isVIP, isAdmin, vipDetails, logout } = useAuth();
+  const { appConfig, updateSettings } = useData();
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [uploadStatus, setUploadStatus] = useState<string>('');
   const daysLeft = vipDetails?.daysRemaining;
+
+  const handleDpSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      alert('कृपया केवल इमेज (JPG, PNG) फाइल चुनें।');
+      return;
+    }
+
+    setUploadStatus('अपलोड हो रहा है...');
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const img = new Image();
+      img.onload = async () => {
+        const canvas = document.createElement('canvas');
+        const MAX = 512;
+        let w = img.width;
+        let h = img.height;
+        if (w > h) {
+          if (w > MAX) { h *= MAX / w; w = MAX; }
+        } else {
+          if (h > MAX) { w *= MAX / h; h = MAX; }
+        }
+        canvas.width = w;
+        canvas.height = h;
+        const ctx = canvas.getContext('2d');
+        if (ctx) {
+          ctx.drawImage(img, 0, 0, w, h);
+          const dataUrl = canvas.toDataURL('image/png', 0.95);
+          try {
+            await updateSettings({
+              ...appConfig,
+              appLogoUrl: dataUrl
+            });
+            setUploadStatus('✅ डीपी अपडेट हो गई!');
+            setTimeout(() => setUploadStatus(''), 3000);
+          } catch (err) {
+            console.error(err);
+            setUploadStatus('अपलोड विफल!');
+            setTimeout(() => setUploadStatus(''), 3000);
+          }
+        }
+      };
+      img.src = event.target?.result as string;
+    };
+    reader.readAsDataURL(file);
+  };
 
   return (
     <div className="max-w-lg mx-auto p-4 space-y-4 pb-20">
+      {/* Hidden File Input for DP */}
+      <input 
+        type="file" 
+        ref={fileInputRef} 
+        accept="image/*" 
+        onChange={handleDpSelect} 
+        className="hidden" 
+      />
+
       {/* Profile Card */}
       <div className="bg-white rounded-3xl p-5 border border-slate-200/90 shadow-sm flex items-center gap-4">
-        <div className="w-16 h-16 rounded-full bg-gradient-to-tr from-red-600 to-amber-500 text-white flex items-center justify-center font-black text-2xl shadow-md border-2 border-white shrink-0">
-          {isAdmin ? '👑' : user?.name ? user.name.charAt(0).toUpperCase() : 'B'}
-        </div>
+        {isAdmin ? (
+          <div className="relative group shrink-0">
+            <AppLogo className="w-16 h-16 ring-3 ring-amber-400 shadow-md" />
+            <button
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+              className="absolute -bottom-1 -right-1 w-6 h-6 bg-amber-400 text-stone-950 rounded-full flex items-center justify-center shadow-md hover:bg-amber-300 transition-transform active:scale-95 cursor-pointer border border-stone-900"
+              title="अपनी असली फोटो / डीपी बदलें"
+            >
+              <Camera className="w-3.5 h-3.5" />
+            </button>
+          </div>
+        ) : (
+          <div className="w-16 h-16 rounded-full bg-gradient-to-tr from-red-600 to-amber-500 text-white flex items-center justify-center font-black text-2xl shadow-md border-2 border-white shrink-0">
+            {user?.name ? user.name.charAt(0).toUpperCase() : 'B'}
+          </div>
+        )}
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2 flex-wrap">
             <h3 className="font-black text-stone-900 text-lg truncate">
@@ -63,9 +141,26 @@ export function ProfileView({
           <p className="text-xs text-stone-500 font-mono truncate">
             {user?.email || 'जीमेल कनेक्ट नहीं है'}
           </p>
-          <span className="inline-block mt-1 text-[10px] font-bold text-red-700 bg-red-50 border border-red-200 px-2 py-0.5 rounded-full">
-            बिहार बोर्ड कक्षा 10वीं (BSEB फुल सिलेबस)
-          </span>
+          <div className="flex items-center gap-2 mt-1 flex-wrap">
+            <span className="text-[10px] font-bold text-red-700 bg-red-50 border border-red-200 px-2 py-0.5 rounded-full">
+              बिहार बोर्ड कक्षा 10वीं (BSEB फुल सिलेबस)
+            </span>
+            {isAdmin && (
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                className="text-[10px] font-bold text-amber-900 bg-amber-100 hover:bg-amber-200 border border-amber-300 px-2 py-0.5 rounded-full flex items-center gap-1 cursor-pointer transition-colors"
+              >
+                <Camera className="w-3 h-3" />
+                डीपी बदलें
+              </button>
+            )}
+          </div>
+          {uploadStatus && (
+            <div className="text-[11px] font-bold text-emerald-600 mt-1">
+              {uploadStatus}
+            </div>
+          )}
         </div>
       </div>
 

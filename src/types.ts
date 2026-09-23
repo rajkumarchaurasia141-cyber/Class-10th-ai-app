@@ -149,6 +149,7 @@ export interface AppConfig {
   adminEmails?: string[];
   apkUrl?: string;
   aabUrl?: string;
+  appLogoUrl?: string;
 }
 
 

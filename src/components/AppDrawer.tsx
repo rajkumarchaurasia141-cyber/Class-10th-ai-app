@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useRef, useState } from 'react';
 import { 
   X, 
   Crown, 
@@ -18,9 +18,14 @@ import {
   PhoneCall, 
   Radio, 
   Trophy,
-  Mail
+  Mail,
+  Camera,
+  CheckCircle2,
+  Upload
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { useData } from '../context/DataContext';
+import { AppLogo } from './AppLogo';
 
 interface AppDrawerProps {
   isOpen: boolean;
@@ -32,11 +37,71 @@ interface AppDrawerProps {
 
 export function AppDrawer({ isOpen, onClose, onNavigate, onOpenVip, onOpenGmailAuth }: AppDrawerProps) {
   const { user, isAdmin, isVIP, vipDetails, logout } = useAuth();
+  const { appConfig, updateSettings } = useData();
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [uploadStatus, setUploadStatus] = useState<string>('');
+
+  const handleDpSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      alert('कृपया केवल इमेज (JPG, PNG) फाइल चुनें।');
+      return;
+    }
+
+    setUploadStatus('अपलोड हो रहा है...');
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const img = new Image();
+      img.onload = async () => {
+        const canvas = document.createElement('canvas');
+        const MAX = 512;
+        let w = img.width;
+        let h = img.height;
+        if (w > h) {
+          if (w > MAX) { h *= MAX / w; w = MAX; }
+        } else {
+          if (h > MAX) { w *= MAX / h; h = MAX; }
+        }
+        canvas.width = w;
+        canvas.height = h;
+        const ctx = canvas.getContext('2d');
+        if (ctx) {
+          ctx.drawImage(img, 0, 0, w, h);
+          const dataUrl = canvas.toDataURL('image/png', 0.95);
+          try {
+            await updateSettings({
+              ...appConfig,
+              appLogoUrl: dataUrl
+            });
+            setUploadStatus('✅ डीपी अपडेट हो गई!');
+            setTimeout(() => setUploadStatus(''), 3000);
+          } catch (err) {
+            console.error(err);
+            setUploadStatus('अपलोड विफल!');
+            setTimeout(() => setUploadStatus(''), 3000);
+          }
+        }
+      };
+      img.src = event.target?.result as string;
+    };
+    reader.readAsDataURL(file);
+  };
 
   if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 z-50 flex animate-fade-in overflow-hidden">
+      {/* Hidden File Input for DP Selection */}
+      <input 
+        type="file" 
+        ref={fileInputRef} 
+        accept="image/*" 
+        onChange={handleDpSelect} 
+        className="hidden" 
+      />
+
       {/* Backdrop */}
       <div 
         onClick={onClose}
@@ -56,15 +121,26 @@ export function AppDrawer({ isOpen, onClose, onNavigate, onOpenVip, onOpenGmailA
           </button>
 
           <div className="flex items-center gap-3">
-            <div className="w-13 h-13 rounded-full bg-white text-red-700 flex items-center justify-center font-black text-xl shadow-md border-2 border-amber-300 shrink-0">
-              {isAdmin ? '👑' : user?.name ? user.name.charAt(0).toUpperCase() : 'B'}
+            <div className="relative group shrink-0">
+              <AppLogo className="w-14 h-14 ring-2 ring-amber-400 shadow-lg" />
+              {isAdmin && (
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  className="absolute -bottom-1 -right-1 w-6 h-6 bg-amber-400 text-stone-950 rounded-full flex items-center justify-center shadow-lg hover:bg-amber-300 transition-transform active:scale-95 cursor-pointer border border-stone-900"
+                  title="अपनी असली फोटो / डीपी 1-क्लिक में बदलें"
+                >
+                  <Camera className="w-3.5 h-3.5" />
+                </button>
+              )}
             </div>
+
             <div className="min-w-0 flex-1">
-              <h3 className="font-bold text-base text-white truncate leading-tight">
-                {isAdmin ? 'राजकुमार चौरसिया' : user?.name || 'अतिथि विद्यार्थी'}
+              <h3 className="font-bold text-base text-white truncate leading-tight flex items-center gap-1.5">
+                <span>{isAdmin ? 'राजकुमार चौरसिया' : user?.name || 'अतिथि विद्यार्थी'}</span>
               </h3>
               <p className="text-xs text-stone-300 truncate">
-                {user?.email || 'जीमेल कनेक्ट नहीं है'}
+                {user?.email || 'पढ़ेगा BR • टॉपर बैच'}
               </p>
               
               {/* VIP / Admin Status Badge */}
@@ -92,6 +168,25 @@ export function AppDrawer({ isOpen, onClose, onNavigate, onOpenVip, onOpenGmailA
               </div>
             </div>
           </div>
+
+          {/* Admin Direct Photo Upload Banner */}
+          {isAdmin && (
+            <div className="mt-3 pt-2.5 border-t border-white/15">
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                className="w-full py-1.5 px-3 rounded-xl bg-amber-400/20 hover:bg-amber-400/30 text-amber-300 border border-amber-400/40 text-xs font-bold flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+              >
+                <Camera className="w-3.5 h-3.5 text-amber-400" />
+                <span>📸 असली फोटो / डीपी अपलोड करें</span>
+              </button>
+              {uploadStatus && (
+                <div className="text-[11px] text-center font-bold text-amber-300 mt-1 animate-pulse">
+                  {uploadStatus}
+                </div>
+              )}
+            </div>
+          )}
 
           {/* Quick Gmail Auth button if not identified or if wants to switch */}
           {!isAdmin && onOpenGmailAuth && (

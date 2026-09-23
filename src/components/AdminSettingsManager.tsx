@@ -1,9 +1,10 @@
 import React, { useState, useRef } from 'react';
-import { Settings, Phone, QrCode, Youtube, Instagram, MessageCircle, Send, CheckCircle2, AlertCircle, Save, Upload } from 'lucide-react';
+import { Settings, Phone, QrCode, Youtube, Instagram, MessageCircle, Send, CheckCircle2, AlertCircle, Save, Upload, Image as ImageIcon, RotateCcw } from 'lucide-react';
 import { useData } from '../context/DataContext';
 import { db } from '../lib/firebase';
 import { doc } from 'firebase/firestore';
 import { safeSetDoc } from '../utils/firestoreSafe';
+import { AppLogo } from './AppLogo';
 
 export function AdminSettingsManager() {
   const { appConfig, updateSettings } = useData();
@@ -11,6 +12,7 @@ export function AdminSettingsManager() {
   const [helplineNumber, setHelplineNumber] = useState(appConfig.helplineNumber);
   const [upiId, setUpiId] = useState(appConfig.upiId || '9708868515@yb1');
   const [qrCodeDataUrl, setQrCodeDataUrl] = useState(appConfig.qrCodeDataUrl || '');
+  const [appLogoUrl, setAppLogoUrl] = useState(appConfig.appLogoUrl || '');
   const [youtubeUrl, setYoutubeUrl] = useState(appConfig.youtubeUrl);
   const [instagramUrl, setInstagramUrl] = useState(appConfig.instagramUrl);
   const [whatsappGroupUrl, setWhatsappGroupUrl] = useState(appConfig.whatsappGroupUrl);
@@ -19,8 +21,55 @@ export function AdminSettingsManager() {
   const [price1Year, setPrice1Year] = useState((appConfig.price1Year || 299).toString());
 
   const qrInputRef = useRef<HTMLInputElement>(null);
+  const logoInputRef = useRef<HTMLInputElement>(null);
   const [successMsg, setSuccessMsg] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
+
+  const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      setErrorMsg('कृपया केवल इमेज (JPG, PNG) फाइल चुनें।');
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const img = new Image();
+      img.onload = async () => {
+        const canvas = document.createElement('canvas');
+        const MAX = 512;
+        let w = img.width;
+        let h = img.height;
+        if (w > h) {
+          if (w > MAX) { h *= MAX / w; w = MAX; }
+        } else {
+          if (h > MAX) { w *= MAX / h; h = MAX; }
+        }
+        canvas.width = w;
+        canvas.height = h;
+        const ctx = canvas.getContext('2d');
+        if (ctx) {
+          ctx.drawImage(img, 0, 0, w, h);
+          const newLogoData = canvas.toDataURL('image/png', 0.95);
+          setAppLogoUrl(newLogoData);
+          try {
+            await updateSettings({
+              ...appConfig,
+              appLogoUrl: newLogoData
+            });
+            setSuccessMsg('✅ बधाई हो! आपकी ओरिजिनल फोटो/डीपी तुरंत सेव हो गई है और पूरे ऐप में सेट हो चुकी है!');
+            setTimeout(() => setSuccessMsg(''), 4000);
+          } catch (err) {
+            console.error(err);
+          }
+        }
+      };
+      img.src = event.target?.result as string;
+    };
+    reader.readAsDataURL(file);
+  };
 
   const handleQrUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -76,6 +125,7 @@ export function AdminSettingsManager() {
         helplineNumber: helplineNumber.trim(),
         upiId: upiId.trim(),
         qrCodeDataUrl: qrCodeDataUrl.trim(),
+        appLogoUrl: appLogoUrl.trim(),
         youtubeUrl: youtubeUrl.trim(),
         instagramUrl: instagramUrl.trim(),
         whatsappGroupUrl: whatsappGroupUrl.trim(),
@@ -85,15 +135,16 @@ export function AdminSettingsManager() {
       });
 
       // 2. Synchronize configuration to Firestore "app_settings/payment_config"
-      // to store config with fields: { upiId, price, qrCodeUrl } as requested
+      // to store config with fields: { upiId, price, qrCodeUrl, appLogoUrl }
       const paymentConfigRef = doc(db, 'app_settings', 'payment_config');
       await safeSetDoc(paymentConfigRef, {
         upiId: upiId.trim(),
         price: yPrice || 299,
-        qrCodeUrl: qrCodeDataUrl.trim()
+        qrCodeUrl: qrCodeDataUrl.trim(),
+        appLogoUrl: appLogoUrl.trim()
       }, { merge: true }, 5000, true);
 
-      setSuccessMsg('बधाई हो! सभी सेटिंग्स, UPI स्कैनर, सोशल मीडिया लिंक्स और कीमतें सफलतापूर्वक अपडेट हो गई हैं!');
+      setSuccessMsg('बधाई हो! सभी सेटिंग्स, ऐप लोगो/DP, UPI स्कैनर, सोशल मीडिया लिंक्स और कीमतें सफलतापूर्वक अपडेट हो गई हैं!');
       setTimeout(() => setSuccessMsg(''), 4000);
     } catch (err: any) {
       console.error("Save settings error:", err);
@@ -210,6 +261,78 @@ export function AdminSettingsManager() {
                 </div>
               </div>
             )}
+          </div>
+
+          {/* App Logo & DP Manager */}
+          <div className="space-y-2 pt-4 border-t border-slate-200/80">
+            <label className="text-xs font-bold text-stone-800 flex items-center justify-between">
+              <span className="flex items-center gap-1.5">
+                <ImageIcon className="w-4 h-4 text-amber-600" />
+                ऐप का आधिकारिक लोगो एवं डीपी (App Official Logo & DP):
+              </span>
+              <span className="text-[10px] bg-amber-100 text-amber-800 font-black px-2 py-0.5 rounded-full">
+                {appLogoUrl ? 'कस्टम डीपी एक्टिव' : 'डिफ़ॉल्ट लोगो एक्टिव'}
+              </span>
+            </label>
+            <input 
+              type="file" 
+              ref={logoInputRef}
+              accept="image/*" 
+              onChange={handleLogoUpload} 
+              className="hidden" 
+            />
+
+            <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200 flex items-center gap-4">
+              <div className="relative shrink-0">
+                <div className="w-20 h-20 rounded-full bg-stone-900 border-2 border-amber-400 p-0.5 shadow-md flex items-center justify-center overflow-hidden">
+                  {appLogoUrl ? (
+                    <img src={appLogoUrl} alt="App DP" className="w-full h-full object-cover rounded-full" />
+                  ) : (
+                    <AppLogo className="w-full h-full rounded-full" />
+                  )}
+                </div>
+              </div>
+              <div className="space-y-1.5 flex-1">
+                <div className="text-xs font-bold text-stone-900 flex items-center gap-1.5">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-600" /> 
+                  {appLogoUrl ? 'कस्टम डीपी फोटो सेव है' : 'आधिकारिक "पढ़ेगा BR" लोगो'}
+                </div>
+                <p className="text-[11px] text-stone-500">
+                  यह फोटो पूरे ऐप के हेडर, साइड मेनू, लॉगिन स्क्रीन और डाउनलोड पेज पर दिखाई देगी।
+                </p>
+                <div className="flex gap-2 pt-1 flex-wrap">
+                  <button
+                    type="button"
+                    onClick={() => logoInputRef.current?.click()}
+                    className="px-3.5 py-2 rounded-xl bg-gradient-to-r from-red-600 to-amber-600 text-white font-black text-xs hover:from-red-700 hover:to-amber-700 transition-all shadow-md cursor-pointer flex items-center gap-1.5 active:scale-95"
+                    style={{ minHeight: '38px' }}
+                  >
+                    <Upload className="w-4 h-4" />
+                    📸 अपनी असली फोटो चुनें (सेम टू सेम DP सेट करें)
+                  </button>
+                  {appLogoUrl && (
+                    <button
+                      type="button"
+                      onClick={async () => {
+                        setAppLogoUrl('');
+                        await updateSettings({
+                          ...appConfig,
+                          appLogoUrl: ''
+                        });
+                        setSuccessMsg('डिफ़ॉल्ट लोगो रीसेट कर दिया गया!');
+                        setTimeout(() => setSuccessMsg(''), 3000);
+                      }}
+                      className="px-3 py-1.5 rounded-lg bg-slate-200 text-stone-800 font-bold text-[11px] hover:bg-slate-300 transition-colors cursor-pointer flex items-center gap-1"
+                      style={{ minHeight: '38px' }}
+                      title="डिफ़ॉल्ट लोगो वापस लाएँ"
+                    >
+                      <RotateCcw className="w-3.5 h-3.5" />
+                      डिफ़ॉल्ट लोगो पर रीसेट करें
+                    </button>
+                  )}
+                </div>
+              </div>
+            </div>
           </div>
         </div>
 

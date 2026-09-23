@@ -1,6 +1,6 @@
 {
-  "name": "Padhega Bihar",
-  "short_name": "Padhega Bihar",
+  "name": "पढ़ेगा BR - Class 10 Topper App",
+  "short_name": "पढ़ेगा BR",
   "start_url": "/",
   "scope": "/",
   "display": "fullscreen",
@@ -10,6 +10,12 @@
   "icons": [
     {
       "src": "/icon.svg",
+      "sizes": "192x192 512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/app_logo.svg",
       "sizes": "192x192 512x512",
       "type": "image/svg+xml",
       "purpose": "any maskable"

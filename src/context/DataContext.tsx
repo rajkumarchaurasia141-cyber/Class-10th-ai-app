@@ -75,6 +75,7 @@ export const defaultAppConfig: AppConfig = {
   helplineNumber: '9241511070',
   upiId: '9708868515@ybl',
   qrCodeDataUrl: '',
+  appLogoUrl: '/app_logo.svg',
   youtubeUrl: 'https://www.youtube.com/@Vidyaagent2.0',
   instagramUrl: 'https://www.instagram.com/unbroken_raj_01?stkn=dmJwNzNhNDl0cXhz',
   whatsappGroupUrl: 'https://wa.me/919241511070?text=' + encodeURIComponent('नमस्ते सर, मुझे 10th BSEB फुल सिलेबस WhatsApp ग्रुप में जोड़ें।'),
@@ -877,7 +878,35 @@ export const DataProvider = ({ children }: any) => {
     return defaultAppConfig;
   });
 
-  // App Config Firestore listener removed - using static data load instead
+  // Listen to remote payment_config in real time to sync Logo / DP / UPI across devices
+  useEffect(() => {
+    try {
+      const paymentRef = doc(db, 'app_settings', 'payment_config');
+      const unsub = onSnapshot(paymentRef, (snap) => {
+        if (snap.exists()) {
+          const data = snap.data();
+          setAppConfig((prev) => {
+            const updated = {
+              ...prev,
+              ...(data.upiId ? { upiId: data.upiId } : {}),
+              ...(data.qrCodeUrl !== undefined ? { qrCodeDataUrl: data.qrCodeUrl } : {}),
+              ...(data.appLogoUrl ? { appLogoUrl: data.appLogoUrl } : {}),
+              ...(data.price ? { price1Year: Number(data.price) } : {}),
+              ...(data.price1Year ? { price1Year: Number(data.price1Year) } : {}),
+              ...(data.helplineNumber ? { helplineNumber: data.helplineNumber } : {})
+            };
+            try {
+              localStorage.setItem('bseb_app_config_cache', JSON.stringify(updated));
+            } catch {}
+            return updated;
+          });
+        }
+      }, (err) => {
+        console.warn("Payment config listener notice:", err?.message);
+      });
+      return () => unsub();
+    } catch {}
+  }, []);
 
   const updateSettings = async (newConfig: AppConfig): Promise<void> => {
     setAppConfig(newConfig);
@@ -888,6 +917,18 @@ export const DataProvider = ({ children }: any) => {
       await safeSetDoc(doc(db, 'settings', 'app_config'), newConfig);
     } catch (e: any) {
       console.warn("Firestore settings update notice:", e?.message);
+    }
+    try {
+      await safeSetDoc(doc(db, 'app_settings', 'payment_config'), {
+        upiId: newConfig.upiId,
+        qrCodeUrl: newConfig.qrCodeDataUrl,
+        appLogoUrl: newConfig.appLogoUrl,
+        price: newConfig.price1Year,
+        price1Year: newConfig.price1Year,
+        helplineNumber: newConfig.helplineNumber
+      }, { merge: true }, 5000, true);
+    } catch (e: any) {
+      console.warn("Firestore payment_config update notice:", e?.message);
     }
   };
 

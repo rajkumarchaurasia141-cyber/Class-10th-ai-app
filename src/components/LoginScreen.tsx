@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
+import { AppLogo } from './AppLogo';
 import { 
   GraduationCap, 
   AlertCircle, 
@@ -69,26 +70,27 @@ export function LoginScreen() {
       <div className="w-full max-w-md mx-auto space-y-4 overflow-x-hidden">
         
         {/* Top Branding Emblem */}
-        <div className="text-center space-y-2">
+        <div className="text-center space-y-2.5">
+          <div className="flex justify-center">
+            <div className="relative p-1 rounded-full bg-gradient-to-tr from-amber-400 via-red-600 to-amber-500 shadow-xl shadow-red-900/40">
+              <AppLogo className="w-20 h-20 sm:w-24 sm:h-24 shadow-2xl" />
+            </div>
+          </div>
+
           <div className="inline-flex items-center gap-2 bg-gradient-to-r from-red-600/20 via-amber-500/20 to-red-600/20 border border-amber-500/30 px-3.5 py-1.5 rounded-full shadow-inner">
             <Flame className="w-4 h-4 text-amber-400 animate-pulse" />
             <span className="text-xs font-black text-amber-300 tracking-wide uppercase">
-              पढ़ेगा बिहार • बढ़ेगा बिहार
+              Study • Learn • Grow
             </span>
           </div>
 
-          <div className="flex items-center justify-center gap-2.5">
-            <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-red-700 via-red-600 to-amber-600 text-white flex items-center justify-center shadow-lg shadow-red-900/30 border border-white/20">
-              <GraduationCap className="w-7 h-7" />
-            </div>
-            <div className="text-left">
-              <h1 className="text-2xl sm:text-3xl font-black text-white leading-none tracking-tight">
-                टॉपर बैच <span className="text-amber-400">फुल सिलेबस</span>
-              </h1>
-              <p className="text-xs text-stone-300 font-medium mt-0.5">
-                बिहार बोर्ड कक्षा 10वीं (BSEB फुल सिलेबस) टॉपर पोर्टल
-              </p>
-            </div>
+          <div>
+            <h1 className="text-2xl sm:text-3xl font-black text-white leading-none tracking-tight">
+              पढ़ेगा <span className="text-amber-400">BR</span> <span className="text-sm font-bold text-stone-300 block sm:inline mt-1 sm:mt-0 sm:ml-1.5">(टॉपर पोर्टल)</span>
+            </h1>
+            <p className="text-xs text-stone-300 font-medium mt-1">
+              बिहार बोर्ड कक्षा 10वीं (BSEB) संपूर्ण तैयारी एवं टेस्ट हब
+            </p>
           </div>
         </div>
 
