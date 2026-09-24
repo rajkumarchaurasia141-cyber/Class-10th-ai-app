@@ -206,6 +206,7 @@ export const defaultLiveClasses: LiveClass[] = [
 ];
 
 export const defaultDailyQuizzes: DailyQuizItem[] = [
+  { id: 'dq_pol_science', dateLabel: 'आज का टेस्ट', subjectName: 'राजनीति शास्त्र', title: 'लोकतांत्रिक राजनीति - संपूर्ण 5 अध्याय (250 वस्तुनिष्ठ प्रश्न)', chaptersCount: 5, totalQuestions: 250, createdAt: new Date().toISOString() },
   { id: 'dq_1', dateLabel: '19 सितम्बर', subjectName: 'संस्कृत', title: 'संस्कृत - मङ्गलम् एवं व्याकरण टेस्ट', chaptersCount: 16, totalQuestions: 438, createdAt: new Date().toISOString() },
   { id: 'dq_2', dateLabel: '18 सितम्बर', subjectName: 'अर्थव्यवस्था', title: 'भारतीय अर्थव्यवस्था का विकास - वस्तुनिष्ठ प्रश्न', chaptersCount: 5, totalQuestions: 150, createdAt: new Date().toISOString() },
   { id: 'dq_3', dateLabel: '17 सितम्बर', subjectName: 'भूगोल', title: 'भारत - संसाधन एवं उपयोग टेस्ट', chaptersCount: 7, totalQuestions: 200, createdAt: new Date().toISOString() },

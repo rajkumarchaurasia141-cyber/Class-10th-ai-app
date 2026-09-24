@@ -71,6 +71,24 @@ const SUBJECT_TABS: SubjectTab[] = [
     borderColor: 'border-emerald-300'
   },
   {
+    id: 'history',
+    name: 'History',
+    nameHindi: 'इतिहास (इतिहास की दुनिया)',
+    badge: 'सभी 8 अध्याय लाइव (400 MCQ)',
+    color: 'text-amber-900',
+    bgLight: 'bg-amber-500/10',
+    borderColor: 'border-amber-400'
+  },
+  {
+    id: 'political_science',
+    name: 'Political Science',
+    nameHindi: 'राजनीति शास्त्र (लोकतांत्रिक राजनीति)',
+    badge: 'सभी 5 अध्याय लाइव (250 MCQ)',
+    color: 'text-orange-900',
+    bgLight: 'bg-orange-500/10',
+    borderColor: 'border-orange-400'
+  },
+  {
     id: 'social',
     name: 'Social Science',
     nameHindi: 'सामाजिक विज्ञान',
@@ -125,7 +143,9 @@ export function PaidTestHubModal({ onClose, onOpenVip, isVIP = true }: PaidTestH
     );
   }
 
-  const currentSubject = subjects[selectedTab];
+  const currentSubject = subjects[selectedTab] || 
+    (selectedTab === 'political_science' ? (subjects['political_science'] || subjects['polscience'] || subjects['civics']) : null) ||
+    (selectedTab === 'history' ? subjects['history'] : null);
   const chapters = currentSubject?.chapters || [];
 
   // Filter chapters if search query is provided
@@ -152,7 +172,7 @@ export function PaidTestHubModal({ onClose, onOpenVip, isVIP = true }: PaidTestH
         chapter: ch.chapter_name_hindi,
         question: m.question,
         options: m.options,
-        correct_answer: m.correct_answer,
+        correct_answer: typeof m.correct_answer === 'number' ? m.correct_answer : (typeof m.correctIndex === 'number' ? m.correctIndex : 0),
         explanation: m.explanation || ''
       }));
 

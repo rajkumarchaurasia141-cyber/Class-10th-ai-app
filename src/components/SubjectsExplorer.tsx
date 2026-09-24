@@ -23,7 +23,11 @@ export function SubjectsExplorer({ subjectId, onBack }: any) {
   const [showPaidTest, setShowPaidTest] = useState(false);
   const [activeTab, setActiveTab] = useState<'intro' | 'notes' | 'tips' | 'qna' | 'mcq'>('intro');
 
-  const subject = subjects[subjectId] || subjects[subjectId?.toLowerCase()] || (subjectId?.toLowerCase().includes('sanskrit') ? subjects['sanskrit'] : undefined);
+  const subject = subjects[subjectId] || 
+    subjects[subjectId?.toLowerCase()] || 
+    (subjectId?.toLowerCase().includes('sanskrit') ? subjects['sanskrit'] : undefined) ||
+    (subjectId?.toLowerCase().includes('pol') || subjectId?.toLowerCase().includes('civic') || subjectId?.includes('राजनीति') ? (subjects['political_science'] || subjects['polscience']) : undefined) ||
+    (subjectId?.toLowerCase().includes('hist') || subjectId?.includes('इतिहास') ? subjects['history'] : undefined);
   if (!subject) return <div className="p-4 text-center text-stone-400">विषय नहीं मिला</div>;
 
   const chapters = subject.chapters || [];
@@ -196,7 +200,7 @@ export function SubjectsExplorer({ subjectId, onBack }: any) {
             chapter: currentChapter.chapter_name_hindi,
             question: m.question,
             options: m.options,
-            correct_answer: m.correct_answer,
+            correct_answer: typeof m.correct_answer === 'number' ? m.correct_answer : (typeof m.correctIndex === 'number' ? m.correctIndex : 0),
             explanation: m.explanation || ''
           })) : undefined}
         />

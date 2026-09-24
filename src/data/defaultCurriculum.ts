@@ -89,8 +89,49 @@ import { historyChapter5Data } from './historyChapter5Data';
 import { historyChapter6Data } from './historyChapter6Data';
 import { historyChapter7Data } from './historyChapter7Data';
 import { historyChapter8Data } from './historyChapter8Data';
+import { polScienceChapter1Data } from './polScienceChapter1Data';
+import { polScienceChapter2Data } from './polScienceChapter2Data';
+import { polScienceChapter3Data } from './polScienceChapter3Data';
+import { polScienceChapter4Data } from './polScienceChapter4Data';
+import { polScienceChapter5Data } from './polScienceChapter5Data';
 
 export const defaultSubjectsData: Record<string, Subject> = {
+  political_science: {
+    id: 'political_science',
+    subject_name: 'Political Science (Democratic Politics - II)',
+    subject_name_hindi: 'राजनीति शास्त्र (लोकतांत्रिक राजनीति भाग-2)',
+    chapters: [
+      polScienceChapter1Data,
+      polScienceChapter2Data,
+      polScienceChapter3Data,
+      polScienceChapter4Data,
+      polScienceChapter5Data
+    ]
+  },
+  polscience: {
+    id: 'polscience',
+    subject_name: 'Political Science (Democratic Politics - II)',
+    subject_name_hindi: 'राजनीति शास्त्र (लोकतांत्रिक राजनीति भाग-2)',
+    chapters: [
+      polScienceChapter1Data,
+      polScienceChapter2Data,
+      polScienceChapter3Data,
+      polScienceChapter4Data,
+      polScienceChapter5Data
+    ]
+  },
+  civics: {
+    id: 'civics',
+    subject_name: 'Civics / Political Science',
+    subject_name_hindi: 'राजनीति शास्त्र (लोकतांत्रिक राजनीति भाग-2)',
+    chapters: [
+      polScienceChapter1Data,
+      polScienceChapter2Data,
+      polScienceChapter3Data,
+      polScienceChapter4Data,
+      polScienceChapter5Data
+    ]
+  },
   history: {
     id: 'history',
     subject_name: 'History (Social Science)',

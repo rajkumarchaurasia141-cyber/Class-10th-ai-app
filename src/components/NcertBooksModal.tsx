@@ -38,6 +38,24 @@ export function NcertBooksModal({ onClose, onOpenSubject }: NcertBooksModalProps
       features: ['स्टेप बाई स्टेप समाधान', 'प्रमेय (Theorems) सिद्ध करना', 'शॉर्टकट ट्रिक्स']
     },
     {
+      id: 'history',
+      title: 'इतिहास - भारत और समकालीन विश्व (भाग-2)',
+      board: 'BSEB / NCERT',
+      chaptersCount: 8,
+      color: 'from-amber-700 to-red-800',
+      description: 'यूरोप में राष्ट्रवाद, समाजवाद एवं साम्यवाद, हिन्द-चीन में राष्ट्रवादी आंदोलन, भारत में राष्ट्रवाद, अर्थव्यवस्था, शहरीकरण, व्यापार, प्रेस संस्कृति।',
+      features: ['सम्पूर्ण 8 अध्याय (400 MCQs)', 'विस्तृत नोट्स व टॉपर टिप्स', 'BSEB परीक्षा उपयोगी अभ्यास']
+    },
+    {
+      id: 'political_science',
+      title: 'राजनीति शास्त्र - लोकतांत्रिक राजनीति (भाग-2)',
+      board: 'BSEB / NCERT',
+      chaptersCount: 5,
+      color: 'from-orange-600 to-amber-800',
+      description: 'लोकतंत्र में सत्ता की साझेदारी, कार्यप्रणाली, प्रतिस्पर्धा एवं संघर्ष, लोकतंत्र की उपलब्धियाँ एवं लोकतंत्र की चुनौतियाँ।',
+      features: ['सम्पूर्ण 5 अध्याय (250 MCQs)', 'प्रत्येक अध्याय में 50 वस्तुनिष्ठ प्रश्न', 'OMR टाइमर टेस्ट व समाधान']
+    },
+    {
       id: 'sst',
       title: 'सामाजिक विज्ञान (SST Combo)',
       board: 'BSEB 4 Books',

@@ -146,6 +146,7 @@ export function HomeScreen({ onSelect, onOpenSubject, onNavigateTab, onOpenVip }
           const el = document.getElementById('all-subjects-section');
           if (el) el.scrollIntoView({ behavior: 'smooth' });
         }}
+        onSelectSubject={(id: string) => handleSelectSubject(id)}
       />
 
       {/* 2. 3x3 Feature Grid (Matches exact 9 icons & labels in user screenshot) */}

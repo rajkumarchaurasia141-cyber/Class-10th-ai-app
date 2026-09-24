@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useData } from '../context/DataContext';
-import { CheckCircle2, BookOpen, Award, FileText, BookMarked, Sparkles, ChevronRight, ArrowLeft, Play } from 'lucide-react';
+import { CheckCircle2, BookOpen, Award, FileText, BookMarked, Sparkles, ChevronRight, ArrowLeft, Play, Scale } from 'lucide-react';
 import { PaidTestModal, TestQuestion } from './PaidTestModal';
 import { PAID_TEST_50_QUESTIONS } from '../data/paidTestQuestions';
 
@@ -62,6 +62,15 @@ export function DailyQuizView({ onOpenVip, onSelectSubject, onOpenSubject }: Dai
       icon: BookOpen
     },
     {
+      id: 'political_science',
+      name: 'राजनीति शास्त्र (Democratic Politics)',
+      desc: 'लोकतंत्र में सत्ता की साझेदारी, कार्यप्रणाली, प्रतिस्पर्धा, चुनौतियाँ (संपूर्ण 5 अध्याय - 50-50 MCQs)',
+      totalChapters: 5,
+      color: 'from-orange-600 to-amber-700',
+      lightBg: 'bg-orange-50 border-orange-200 text-orange-900',
+      icon: Scale
+    },
+    {
       id: 'sst',
       name: 'सामाजिक विज्ञान (Social Science)',
       desc: 'इतिहास, भूगोल, राजनीति विज्ञान, अर्थशास्त्र',
@@ -112,6 +121,8 @@ export function DailyQuizView({ onOpenVip, onSelectSubject, onOpenSubject }: Dai
       if (sId.includes('hindi') && qSub.includes('हिंदी')) return true;
       if (sId.includes('sanskrit') && qSub.includes('संस्कृत')) return true;
       if (sId.includes('math') && qSub.includes('गणित')) return true;
+      if (sId.includes('history') && (qSub.includes('इतिहास') || qSub.includes('राष्ट्रवाद'))) return true;
+      if ((sId.includes('pol') || sId.includes('civic')) && (qSub.includes('राजनीति') || qSub.includes('लोकतंत्र'))) return true;
       return false;
     });
 

@@ -710,9 +710,10 @@ export const ChapterContentRenderer: React.FC<ChapterContentRendererProps> = ({
                       {m.options?.map((opt: string, oIdx: number) => {
                         let optStyle = 'border-slate-200 bg-slate-50/70 text-slate-800 hover:border-indigo-300 hover:bg-indigo-50/40 cursor-pointer';
                         const optionLetter = String.fromCharCode(65 + oIdx);
+                        const isCorrectOption = (typeof m.correct_answer === 'number' ? m.correct_answer : m.correctIndex) === oIdx;
 
                         if (isAnswered) {
-                          if (m.correct_answer === oIdx) {
+                          if (isCorrectOption) {
                             optStyle = 'border-emerald-500 bg-emerald-50 text-emerald-950 font-bold shadow-xs';
                           } else if (selectedOption === oIdx) {
                             optStyle = 'border-rose-400 bg-rose-50 text-rose-950 font-semibold';
@@ -732,7 +733,7 @@ export const ChapterContentRenderer: React.FC<ChapterContentRendererProps> = ({
                             className={`p-3 rounded-2xl border-2 text-xs sm:text-sm font-semibold transition-all flex items-center gap-2.5 ${optStyle}`}
                           >
                             <span className={`w-6 h-6 rounded-lg text-xs font-black flex items-center justify-center shrink-0 ${
-                              isAnswered && m.correct_answer === oIdx 
+                              isAnswered && isCorrectOption 
                                 ? 'bg-emerald-600 text-white'
                                 : isAnswered && selectedOption === oIdx
                                   ? 'bg-rose-600 text-white'
@@ -741,7 +742,7 @@ export const ChapterContentRenderer: React.FC<ChapterContentRendererProps> = ({
                               {optionLetter}
                             </span>
                             <span className="flex-1 leading-snug">{opt}</span>
-                            {isAnswered && m.correct_answer === oIdx && (
+                            {isAnswered && isCorrectOption && (
                               <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
                             )}
                           </div>
