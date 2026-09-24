@@ -36,15 +36,16 @@ export function HeroCarouselBanner({ onOpenVip, onExploreCourses, onSelectSubjec
   const touchStartX = useRef<number | null>(null);
   const touchEndX = useRef<number | null>(null);
 
-  const SLIDE_DURATION = 5500; // 5.5 seconds per slide
+  const SLIDE_COUNT = 3;
+  const SLIDE_DURATION = 5000; // 5 seconds per slide
 
   const handleNext = useCallback(() => {
-    setCurrentSlide((prev) => (prev + 1) % 3);
+    setCurrentSlide((prev) => (prev + 1) % SLIDE_COUNT);
     setProgress(0);
   }, []);
 
   const handlePrev = useCallback(() => {
-    setCurrentSlide((prev) => (prev - 1 + 3) % 3);
+    setCurrentSlide((prev) => (prev - 1 + SLIDE_COUNT) % SLIDE_COUNT);
     setProgress(0);
   }, []);
 
@@ -52,21 +53,20 @@ export function HeroCarouselBanner({ onOpenVip, onExploreCourses, onSelectSubjec
   useEffect(() => {
     if (isPaused) return;
 
-    const intervalTime = 50;
-    const step = (intervalTime / SLIDE_DURATION) * 100;
+    const slideTimer = setInterval(() => {
+      setCurrentSlide((prev) => (prev + 1) % SLIDE_COUNT);
+      setProgress(0);
+    }, SLIDE_DURATION);
 
-    const timer = setInterval(() => {
-      setProgress((prev) => {
-        if (prev >= 100) {
-          handleNext();
-          return 0;
-        }
-        return prev + step;
-      });
-    }, intervalTime);
+    const progressTimer = setInterval(() => {
+      setProgress((prev) => Math.min(prev + (100 / (SLIDE_DURATION / 50)), 100));
+    }, 50);
 
-    return () => clearInterval(timer);
-  }, [isPaused, handleNext]);
+    return () => {
+      clearInterval(slideTimer);
+      clearInterval(progressTimer);
+    };
+  }, [isPaused, currentSlide]);
 
   // Touch swipe handling for mobile
   const handleTouchStart = (e: React.TouchEvent) => {

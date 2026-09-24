@@ -94,8 +94,75 @@ import { polScienceChapter2Data } from './polScienceChapter2Data';
 import { polScienceChapter3Data } from './polScienceChapter3Data';
 import { polScienceChapter4Data } from './polScienceChapter4Data';
 import { polScienceChapter5Data } from './polScienceChapter5Data';
+import { geographyChapter1Data } from './geographyChapter1Data';
+import { geographyChapter2Data } from './geographyChapter2Data';
+import { geographyChapter3Data } from './geographyChapter3Data';
+import { geographyChapter4Data } from './geographyChapter4Data';
+import { geographyChapter5Data } from './geographyChapter5Data';
+import { geographyChapter6Data } from './geographyChapter6Data';
+import { economicsChapter1Data } from './economicsChapter1Data';
+import { economicsChapter2Data } from './economicsChapter2Data';
+import { economicsChapter3Data } from './economicsChapter3Data';
+import { economicsChapter4Data } from './economicsChapter4Data';
+import { economicsChapter5Data } from './economicsChapter5Data';
+import { economicsChapter6Data } from './economicsChapter6Data';
+import { economicsChapter7Data } from './economicsChapter7Data';
 
 export const defaultSubjectsData: Record<string, Subject> = {
+  economics: {
+    id: 'economics',
+    subject_name: 'Economics (Our Economy Part-2)',
+    subject_name_hindi: 'अर्थशास्त्र (हमारी अर्थव्यवस्था भाग-2)',
+    chapters: [
+      economicsChapter1Data,
+      economicsChapter2Data,
+      economicsChapter3Data,
+      economicsChapter4Data,
+      economicsChapter5Data,
+      economicsChapter6Data,
+      economicsChapter7Data
+    ]
+  },
+  arthashastra: {
+    id: 'arthashastra',
+    subject_name: 'Economics (Our Economy Part-2)',
+    subject_name_hindi: 'अर्थशास्त्र (हमारी अर्थव्यवस्था भाग-2)',
+    chapters: [
+      economicsChapter1Data,
+      economicsChapter2Data,
+      economicsChapter3Data,
+      economicsChapter4Data,
+      economicsChapter5Data,
+      economicsChapter6Data,
+      economicsChapter7Data
+    ]
+  },
+  geography: {
+    id: 'geography',
+    subject_name: 'Geography (India: Resources and Utilization)',
+    subject_name_hindi: 'भूगोल (भारत : संसाधन एवं उपयोग भाग-2)',
+    chapters: [
+      geographyChapter1Data,
+      geographyChapter2Data,
+      geographyChapter3Data,
+      geographyChapter4Data,
+      geographyChapter5Data,
+      geographyChapter6Data
+    ]
+  },
+  bhugol: {
+    id: 'bhugol',
+    subject_name: 'Geography (India: Resources and Utilization)',
+    subject_name_hindi: 'भूगोल (भारत : संसाधन एवं उपयोग भाग-2)',
+    chapters: [
+      geographyChapter1Data,
+      geographyChapter2Data,
+      geographyChapter3Data,
+      geographyChapter4Data,
+      geographyChapter5Data,
+      geographyChapter6Data
+    ]
+  },
   political_science: {
     id: 'political_science',
     subject_name: 'Political Science (Democratic Politics - II)',

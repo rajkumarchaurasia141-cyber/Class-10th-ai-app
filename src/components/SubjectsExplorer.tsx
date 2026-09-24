@@ -26,6 +26,8 @@ export function SubjectsExplorer({ subjectId, onBack }: any) {
   const subject = subjects[subjectId] || 
     subjects[subjectId?.toLowerCase()] || 
     (subjectId?.toLowerCase().includes('sanskrit') ? subjects['sanskrit'] : undefined) ||
+    (subjectId?.toLowerCase().includes('econ') || subjectId?.toLowerCase().includes('artha') || subjectId?.includes('अर्थशास्त्र') ? (subjects['economics'] || subjects['arthashastra']) : undefined) ||
+    (subjectId?.toLowerCase().includes('geog') || subjectId?.toLowerCase().includes('bhugol') || subjectId?.includes('भूगोल') ? (subjects['geography'] || subjects['bhugol']) : undefined) ||
     (subjectId?.toLowerCase().includes('pol') || subjectId?.toLowerCase().includes('civic') || subjectId?.includes('राजनीति') ? (subjects['political_science'] || subjects['polscience']) : undefined) ||
     (subjectId?.toLowerCase().includes('hist') || subjectId?.includes('इतिहास') ? subjects['history'] : undefined);
   if (!subject) return <div className="p-4 text-center text-stone-400">विषय नहीं मिला</div>;

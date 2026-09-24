@@ -89,6 +89,24 @@ const SUBJECT_TABS: SubjectTab[] = [
     borderColor: 'border-orange-400'
   },
   {
+    id: 'geography',
+    name: 'Geography',
+    nameHindi: 'भूगोल (भारत : संसाधन एवं उपयोग)',
+    badge: 'सभी 6 अध्याय लाइव (300 MCQ)',
+    color: 'text-emerald-900',
+    bgLight: 'bg-emerald-500/10',
+    borderColor: 'border-emerald-400'
+  },
+  {
+    id: 'economics',
+    name: 'Economics',
+    nameHindi: 'अर्थशास्त्र (हमारी अर्थव्यवस्था)',
+    badge: 'सभी 7 अध्याय लाइव (350 MCQ)',
+    color: 'text-teal-900',
+    bgLight: 'bg-teal-500/10',
+    borderColor: 'border-teal-400'
+  },
+  {
     id: 'social',
     name: 'Social Science',
     nameHindi: 'सामाजिक विज्ञान',
@@ -144,6 +162,8 @@ export function PaidTestHubModal({ onClose, onOpenVip, isVIP = true }: PaidTestH
   }
 
   const currentSubject = subjects[selectedTab] || 
+    (selectedTab === 'economics' ? (subjects['economics'] || subjects['arthashastra']) : null) ||
+    (selectedTab === 'geography' ? (subjects['geography'] || subjects['bhugol']) : null) ||
     (selectedTab === 'political_science' ? (subjects['political_science'] || subjects['polscience'] || subjects['civics']) : null) ||
     (selectedTab === 'history' ? subjects['history'] : null);
   const chapters = currentSubject?.chapters || [];

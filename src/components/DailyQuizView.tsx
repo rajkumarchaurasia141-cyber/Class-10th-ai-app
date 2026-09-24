@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useData } from '../context/DataContext';
-import { CheckCircle2, BookOpen, Award, FileText, BookMarked, Sparkles, ChevronRight, ArrowLeft, Play, Scale } from 'lucide-react';
+import { CheckCircle2, BookOpen, Award, FileText, BookMarked, Sparkles, ChevronRight, ArrowLeft, Play, Scale, Globe, TrendingUp } from 'lucide-react';
 import { PaidTestModal, TestQuestion } from './PaidTestModal';
 import { PAID_TEST_50_QUESTIONS } from '../data/paidTestQuestions';
 
@@ -71,6 +71,24 @@ export function DailyQuizView({ onOpenVip, onSelectSubject, onOpenSubject }: Dai
       icon: Scale
     },
     {
+      id: 'geography',
+      name: 'भूगोल (Geography)',
+      desc: 'भारत : संसाधन एवं उपयोग, कृषि, निर्माण उद्योग, परिवहन, बिहार (संपूर्ण 6 अध्याय - 50-50 MCQs)',
+      totalChapters: 6,
+      color: 'from-emerald-700 to-teal-800',
+      lightBg: 'bg-emerald-50 border-emerald-200 text-emerald-900',
+      icon: Globe
+    },
+    {
+      id: 'economics',
+      name: 'अर्थशास्त्र (Economics)',
+      desc: 'विकास का इतिहास, राज्य व राष्ट्र की आय, मुद्रा, संस्थाएं, वैश्वीकरण, उपभोक्ता (संपूर्ण 7 अध्याय - 50-50 MCQs)',
+      totalChapters: 7,
+      color: 'from-teal-700 to-emerald-900',
+      lightBg: 'bg-teal-50 border-teal-200 text-teal-900',
+      icon: TrendingUp
+    },
+    {
       id: 'sst',
       name: 'सामाजिक विज्ञान (Social Science)',
       desc: 'इतिहास, भूगोल, राजनीति विज्ञान, अर्थशास्त्र',
@@ -90,7 +108,12 @@ export function DailyQuizView({ onOpenVip, onSelectSubject, onOpenSubject }: Dai
     }
   ];
 
-  const currentSubject = activeSubjectId ? subjects[activeSubjectId] : null;
+  const currentSubject = activeSubjectId ? (
+    subjects[activeSubjectId] || 
+    (activeSubjectId === 'economics' ? (subjects['economics'] || subjects['arthashastra']) : null) ||
+    (activeSubjectId === 'geography' ? (subjects['geography'] || subjects['bhugol']) : null) || 
+    (activeSubjectId === 'political_science' ? (subjects['political_science'] || subjects['polscience'] || subjects['civics']) : null)
+  ) : null;
 
   // Generate 50 MCQs for a given chapter
   const handleStartChapterTest = (chapter: any) => {
@@ -123,6 +146,8 @@ export function DailyQuizView({ onOpenVip, onSelectSubject, onOpenSubject }: Dai
       if (sId.includes('math') && qSub.includes('गणित')) return true;
       if (sId.includes('history') && (qSub.includes('इतिहास') || qSub.includes('राष्ट्रवाद'))) return true;
       if ((sId.includes('pol') || sId.includes('civic')) && (qSub.includes('राजनीति') || qSub.includes('लोकतंत्र'))) return true;
+      if (sId.includes('geography') && (qSub.includes('भूगोल') || qSub.includes('संसाधन') || qSub.includes('कृषि') || qSub.includes('आपदा'))) return true;
+      if ((sId.includes('econ') || sId.includes('artha')) && (qSub.includes('अर्थशास्त्र') || qSub.includes('मुद्रा') || qSub.includes('आय'))) return true;
       return false;
     });
 
