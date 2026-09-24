@@ -107,6 +107,27 @@ import { economicsChapter4Data } from './economicsChapter4Data';
 import { economicsChapter5Data } from './economicsChapter5Data';
 import { economicsChapter6Data } from './economicsChapter6Data';
 import { economicsChapter7Data } from './economicsChapter7Data';
+import { mathChapter1Data } from './mathChapter1Data';
+import { 
+  mathChapter2Data, 
+  mathChapter3Data, 
+  mathChapter4Data, 
+  mathChapter5Data 
+} from './mathChapters2to5';
+import { 
+  mathChapter6Data, 
+  mathChapter7Data, 
+  mathChapter8Data, 
+  mathChapter9Data 
+} from './mathChapters6to9';
+import { 
+  mathChapter10Data, 
+  mathChapter11Data, 
+  mathChapter12Data, 
+  mathChapter13Data, 
+  mathChapter14Data, 
+  mathChapter15Data 
+} from './mathChapters10to15';
 
 export const defaultSubjectsData: Record<string, Subject> = {
   economics: {
@@ -275,75 +296,45 @@ export const defaultSubjectsData: Record<string, Subject> = {
   math: {
     id: 'math',
     subject_name: 'Mathematics',
-    subject_name_hindi: 'गणित (Maths)',
+    subject_name_hindi: 'गणित (Maths - सम्पूर्ण 15 अध्याय)',
     chapters: [
-      {
-        chapter_no: 1,
-        chapter_name: 'Real Numbers',
-        chapter_name_hindi: 'वास्तविक संख्याएँ',
-        intro_hindi: `【 पाठ परिचय 】
-कक्षा 9 में हमने परिमेय और अपरिमेय संख्याओं के बारे में जाना था। इन दोनों के सम्मिलित समुच्चय को 'वास्तविक संख्याएँ' (Real Numbers) कहते हैं। 
-
-कक्षा 10 के इस प्रथम अध्याय में हम वास्तविक संख्याओं के दो अति महत्वपूर्ण गुणों का अध्ययन करते हैं:
-१. यूक्लिड विभाजन प्रमेयिका (Euclid's Division Lemma) - जिसका प्रयोग दो धनात्मक पूर्णांकों का महत्तम समापवर्तक (HCF) ज्ञात करने के लिए किया जाता है।
-२. अंकगणित की आधारभूत प्रमेय (Fundamental Theorem of Arithmetic) - जिसके अनुसार प्रत्येक भाज्य संख्या को अभाज्य संख्याओं के गुणनफल के रूप में अद्वितीय रूप से व्यक्त किया जा सकता है। साथ ही √2, √3, √5 को अपरिमेय सिद्ध करना और दशमलव प्रसार (शांत या अशांत आवर्ती) की जाँच करना सीखते हैं।`,
-        notes_hindi: `【 मुख्य सूत्र एवं प्रमेय 】
-
-१. यूक्लिड विभाजन प्रमेयिका (Euclid's Division Lemma):
-▶ किन्हीं दो धनात्मक पूर्णांकों a और b के लिए ऐसी अद्वितीय पूर्ण संख्याएँ q (भागफल) और r (शेषफल) विद्यमान होती हैं कि:
-  a = bq + r , जहाँ 0 ≤ r < b
-  (भाज्य = भाजक × भागफल + शेषफल)
-
-२. दो संख्याओं का संबंध:
-▶ दो धनात्मक पूर्णांकों a और b के लिए:
-  HCF(a, b) × LCM(a, b) = a × b
-  (ल.स. × म.स. = पहली संख्या × दूसरी संख्या)
-
-३. अपरिमेयता सिद्ध करना:
-▶ यदि p एक अभाज्य संख्या है और p, a² को विभाजित करती है, तो p, a को भी विभाजित करेगी। (विरोधाभास विधि से √2, √3, √5 अपरिमेय सिद्ध किए जाते हैं)।
-
-४. परिमेय संख्याओं का दशमलव प्रसार:
-▶ यदि किसी परिमेय संख्या p/q (जहाँ p और q सह-अभाज्य हैं) के हर (q) का अभाज्य गुणनखंड:
-  2^n × 5^m के रूप का है (जहाँ n, m ऋणेतर पूर्णांक हैं), तो उसका दशमलव प्रसार 'शांत' (Terminating) होगा।
-▶ यदि हर में 2 और 5 के अतिरिक्त कोई अन्य अभाज्य संख्या (जैसे 3, 7) आती है, तो दशमलव प्रसार 'अशांत आवर्ती' (Non-terminating Repeating) होगा।`,
-        topper_tips: `【 🏆 VVI टॉपर परीक्षा टिप्स (Bihar Board Special) 】
-१. यूक्लिड विभाजन एल्गोरिथ्म से HCF निकालने का 2 अंक का प्रश्न हर वर्ष 100% पूछा जाता है।
-२. "सिद्ध कीजिए कि √5 एक अपरिमेय संख्या है" - यह 3 या 5 अंक का पक्का प्रश्न है।
-३. बिना लम्बी विभाजन प्रक्रिया किए बताइए कि 17/8 शांत है या अशांत? उत्तर: 8 = 2³, अतः 2^n के रूप का है, इसलिए यह शांत है।
-४. पाई (π) एक अपरिमेय संख्या है, जबकि 22/7 एक परिमेय संख्या है। यह ऑब्जेक्टिव में बार-बार आता है।`,
-        subjective_qa: [
-          {
-            type: 'लघु उत्तरीय',
-            question: 'यूक्लिड विभाजन एल्गोरिथ्म का प्रयोग करके 135 और 225 का HCF (म.स.) ज्ञात कीजिए।',
-            answer: 'चरण 1: 225 > 135\n225 = 135 × 1 + 90 (चूँकि शेषफल 90 ≠ 0)\nचरण 2: 135 = 90 × 1 + 45 (चूँकि शेषफल 45 ≠ 0)\nचरण 3: 90 = 45 × 2 + 0\nयहाँ शेषफल 0 प्राप्त हो गया है और इस चरण का भाजक 45 है।\nअतः HCF(135, 225) = 45।'
-          },
-          {
-            type: 'लघु उत्तरीय',
-            question: 'जाँच कीजिए कि क्या किसी प्राकृत संख्या n के लिए, संख्या 6^n अंक 0 पर समाप्त हो सकती है?',
-            answer: 'यदि कोई संख्या शून्य (0) पर समाप्त होना चाहती है, तो उसके अभाज्य गुणनखंड में कम से कम एक बार 2 × 5 आना अनिवार्य है।\nयहाँ 6^n = (2 × 3)^n = 2^n × 3^n है।\nचूँकि 6^n के अभाज्य गुणनखंडों में 5 नहीं है, अंकगणित की आधारभूत प्रमेय की अद्वितीयता के अनुसार 6^n का 5 कोई गुणनखंड नहीं हो सकता। अतः किसी भी प्राकृत संख्या n के लिए 6^n कभी भी शून्य (0) पर समाप्त नहीं हो सकती।'
-          }
-        ],
-        mcq: [
-          {
-            question: 'पाई (π) किस प्रकार की संख्या है?',
-            options: ['परिमेय संख्या', 'अपरिमेय संख्या', 'पूर्णांक संख्या', 'प्राकृत संख्या'],
-            correct_answer: 1,
-            explanation: 'पाई (π) एक अपरिमेय संख्या है, क्योंकि इसका दशमलव मान अशांत अनावर्ती होता है।'
-          },
-          {
-            question: 'यदि दो संख्याओं का HCF = 15 और LCM = 300 है, तथा एक संख्या 60 है, तो दूसरी संख्या क्या होगी?',
-            options: ['50', '75', '100', '125'],
-            correct_answer: 1,
-            explanation: 'दूसरी संख्या = (HCF × LCM) / पहली संख्या = (15 × 300) / 60 = 4500 / 60 = 75।'
-          },
-          {
-            question: 'निम्न में से किसका दशमलव प्रसार शांत (Terminating) है?',
-            options: ['17/8', '3/7', '7/30', '13/125'],
-            correct_answer: 0,
-            explanation: '17/8 में हर 8 = 2^3 है (2^n के रूप में), अतः यह शांत है। (13/125 भी 5^3 शांत है)।'
-          }
-        ]
-      }
+      mathChapter1Data,
+      mathChapter2Data,
+      mathChapter3Data,
+      mathChapter4Data,
+      mathChapter5Data,
+      mathChapter6Data,
+      mathChapter7Data,
+      mathChapter8Data,
+      mathChapter9Data,
+      mathChapter10Data,
+      mathChapter11Data,
+      mathChapter12Data,
+      mathChapter13Data,
+      mathChapter14Data,
+      mathChapter15Data
+    ]
+  },
+  mathematics: {
+    id: 'mathematics',
+    subject_name: 'Mathematics',
+    subject_name_hindi: 'गणित (Maths - सम्पूर्ण 15 अध्याय)',
+    chapters: [
+      mathChapter1Data,
+      mathChapter2Data,
+      mathChapter3Data,
+      mathChapter4Data,
+      mathChapter5Data,
+      mathChapter6Data,
+      mathChapter7Data,
+      mathChapter8Data,
+      mathChapter9Data,
+      mathChapter10Data,
+      mathChapter11Data,
+      mathChapter12Data,
+      mathChapter13Data,
+      mathChapter14Data,
+      mathChapter15Data
     ]
   }
 };

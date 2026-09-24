@@ -31,13 +31,12 @@ interface HeroCarouselBannerProps {
 export function HeroCarouselBanner({ onOpenVip, onExploreCourses, onSelectSubject }: HeroCarouselBannerProps) {
   const { isVIP } = useAuth();
   const [currentSlide, setCurrentSlide] = useState(0);
-  const [isPaused, setIsPaused] = useState(false);
   const [progress, setProgress] = useState(0);
   const touchStartX = useRef<number | null>(null);
   const touchEndX = useRef<number | null>(null);
 
   const SLIDE_COUNT = 3;
-  const SLIDE_DURATION = 5000; // 5 seconds per slide
+  const SLIDE_DURATION = 4000; // 4 seconds per slide for smooth automatic sliding
 
   const handleNext = useCallback(() => {
     setCurrentSlide((prev) => (prev + 1) % SLIDE_COUNT);
@@ -49,24 +48,22 @@ export function HeroCarouselBanner({ onOpenVip, onExploreCourses, onSelectSubjec
     setProgress(0);
   }, []);
 
-  // Auto-slide effect with progress tracking
+  // Continuous auto-slide effect with progress tracking
   useEffect(() => {
-    if (isPaused) return;
-
     const slideTimer = setInterval(() => {
       setCurrentSlide((prev) => (prev + 1) % SLIDE_COUNT);
       setProgress(0);
     }, SLIDE_DURATION);
 
     const progressTimer = setInterval(() => {
-      setProgress((prev) => Math.min(prev + (100 / (SLIDE_DURATION / 50)), 100));
-    }, 50);
+      setProgress((prev) => (prev >= 100 ? 0 : prev + (100 / (SLIDE_DURATION / 40))));
+    }, 40);
 
     return () => {
       clearInterval(slideTimer);
       clearInterval(progressTimer);
     };
-  }, [isPaused, currentSlide]);
+  }, [currentSlide]);
 
   // Touch swipe handling for mobile
   const handleTouchStart = (e: React.TouchEvent) => {
@@ -92,8 +89,6 @@ export function HeroCarouselBanner({ onOpenVip, onExploreCourses, onSelectSubjec
   return (
     <div 
       className="relative rounded-2xl sm:rounded-3xl overflow-hidden shadow-2xl border-2 border-red-900/40 select-none bg-stone-950 text-white"
-      onMouseEnter={() => setIsPaused(true)}
-      onMouseLeave={() => setIsPaused(false)}
       onTouchStart={handleTouchStart}
       onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}
@@ -583,8 +578,9 @@ export function HeroCarouselBanner({ onOpenVip, onExploreCourses, onSelectSubjec
           <span className="text-amber-400 font-black">{currentSlide + 1}</span>
           <span>/</span>
           <span>3</span>
-          <span className="text-[9px] text-stone-500 ml-1">
-            {isPaused ? '(रुका हुआ)' : '(ऑटो-स्लाइडिंग)'}
+          <span className="text-[9px] text-emerald-400 ml-1 flex items-center gap-1 font-semibold">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+            ऑटो-स्लाइडिंग
           </span>
         </div>
       </div>

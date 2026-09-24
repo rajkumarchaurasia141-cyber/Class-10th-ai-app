@@ -16,6 +16,9 @@ import {
 import { useData } from '../context/DataContext';
 import { PaidTestModal, GenericTestQuestion } from './PaidTestModal';
 import { PAID_TEST_50_QUESTIONS } from '../data/paidTestQuestions';
+import { MATH_PAID_50_QUESTIONS } from '../data/mathPaid50Questions';
+import { GEOGRAPHY_PAID_50_QUESTIONS } from '../data/geographyPaid50Questions';
+import { ECONOMICS_PAID_50_QUESTIONS } from '../data/economicsPaid50Questions';
 
 interface PaidTestHubModalProps {
   onClose: () => void;
@@ -56,7 +59,7 @@ const SUBJECT_TABS: SubjectTab[] = [
     id: 'math',
     name: 'Mathematics',
     nameHindi: 'गणित (Math)',
-    badge: 'मॉडल सेट',
+    badge: 'सभी 15 अध्याय लाइव (750 MCQ)',
     color: 'text-blue-800',
     bgLight: 'bg-blue-500/10',
     borderColor: 'border-blue-300'
@@ -162,6 +165,7 @@ export function PaidTestHubModal({ onClose, onOpenVip, isVIP = true }: PaidTestH
   }
 
   const currentSubject = subjects[selectedTab] || 
+    (selectedTab === 'math' ? (subjects['math'] || subjects['mathematics']) : null) ||
     (selectedTab === 'economics' ? (subjects['economics'] || subjects['arthashastra']) : null) ||
     (selectedTab === 'geography' ? (subjects['geography'] || subjects['bhugol']) : null) ||
     (selectedTab === 'political_science' ? (subjects['political_science'] || subjects['polscience'] || subjects['civics']) : null) ||
@@ -217,6 +221,93 @@ export function PaidTestHubModal({ onClose, onOpenVip, isVIP = true }: PaidTestH
       subtitle: '50 प्रश्न • 50 मिनट • संस्कृत, हिन्दी, गणित, विज्ञान, सामाजिक विज्ञान • OMR मोड',
       questions: PAID_TEST_50_QUESTIONS as unknown as GenericTestQuestion[]
     });
+  };
+
+  const handleStartSubjectMock = (tabId: string) => {
+    if (!isVIP && onOpenVip) {
+      onOpenVip();
+      return;
+    }
+
+    if (tabId === 'math') {
+      setActiveTest({
+        title: 'गणित (Mathematics) • सम्पूर्ण 15 अध्यायों का 50 MCQ महा-मॉक टेस्ट',
+        subtitle: '50 प्रश्न • 50 मिनट • वास्तविक संख्याएँ से प्रायिकता तक • OMR टेस्ट मोड (BSEB)',
+        questions: MATH_PAID_50_QUESTIONS as unknown as GenericTestQuestion[]
+      });
+      return;
+    }
+
+    if (tabId === 'geography') {
+      setActiveTest({
+        title: 'भूगोल (भारत : संसाधन एवं उपयोग) • सम्पूर्ण 6 अध्यायों का 50 MCQ महा-मॉक टेस्ट',
+        subtitle: '50 प्रश्न • 50 मिनट • संसाधन, कृषि, खनिज, उद्योग, परिवहन, आपदा प्रबंधन • OMR टेस्ट मोड (BSEB)',
+        questions: GEOGRAPHY_PAID_50_QUESTIONS as unknown as GenericTestQuestion[]
+      });
+      return;
+    }
+
+    if (tabId === 'economics') {
+      setActiveTest({
+        title: 'अर्थशास्त्र (हमारी अर्थव्यवस्था) • सम्पूर्ण 7 अध्यायों का 50 MCQ महा-मॉक टेस्ट',
+        subtitle: '50 प्रश्न • 50 मिनट • अर्थव्यवस्था, राष्ट्रीय आय, मुद्रा व साख, वित्तीय संस्थाएं, वैश्वीकरण • OMR मोड',
+        questions: ECONOMICS_PAID_50_QUESTIONS as unknown as GenericTestQuestion[]
+      });
+      return;
+    }
+
+    if (tabId === 'history') {
+      const allHistoryQ: GenericTestQuestion[] = [];
+      const historySub = subjects['history'];
+      (historySub?.chapters || []).forEach((ch) => {
+        (ch.mcq || []).forEach((m: any, idx: number) => {
+          allHistoryQ.push({
+            id: m.id || `hist_${ch.chapter_no}_${idx}`,
+            subject: 'इतिहास',
+            chapter: ch.chapter_name_hindi,
+            question: m.question,
+            options: m.options,
+            correct_answer: typeof m.correct_answer === 'number' ? m.correct_answer : (typeof m.correctIndex === 'number' ? m.correctIndex : 0),
+            explanation: m.explanation || ''
+          });
+        });
+      });
+      const selected50 = allHistoryQ.slice(0, 50);
+      setActiveTest({
+        title: 'इतिहास (इतिहास की दुनिया) • सम्पूर्ण 8 अध्यायों का 50 MCQ महा-मॉक टेस्ट',
+        subtitle: '50 प्रश्न • 50 मिनट • यूरोप में राष्ट्रवाद से प्रेस संस्कृति तक • OMR टेस्ट मोड (BSEB)',
+        questions: selected50.length > 0 ? selected50 : (PAID_TEST_50_QUESTIONS as unknown as GenericTestQuestion[])
+      });
+      return;
+    }
+
+    if (tabId === 'political_science') {
+      const allPolQ: GenericTestQuestion[] = [];
+      const polSub = subjects['political_science'] || subjects['polscience'] || subjects['civics'];
+      (polSub?.chapters || []).forEach((ch) => {
+        (ch.mcq || []).forEach((m: any, idx: number) => {
+          allPolQ.push({
+            id: m.id || `pol_${ch.chapter_no}_${idx}`,
+            subject: 'राजनीति शास्त्र',
+            chapter: ch.chapter_name_hindi,
+            question: m.question,
+            options: m.options,
+            correct_answer: typeof m.correct_answer === 'number' ? m.correct_answer : (typeof m.correctIndex === 'number' ? m.correctIndex : 0),
+            explanation: m.explanation || ''
+          });
+        });
+      });
+      const selected50 = allPolQ.slice(0, 50);
+      setActiveTest({
+        title: 'राजनीति शास्त्र (लोकतांत्रिक राजनीति) • सम्पूर्ण 5 अध्यायों का 50 MCQ महा-मॉक टेस्ट',
+        subtitle: '50 प्रश्न • 50 मिनट • लोकतंत्र, सत्ता की साझेदारी, प्रतिस्पर्धा, चुनौतियाँ • OMR टेस्ट मोड (BSEB)',
+        questions: selected50.length > 0 ? selected50 : (PAID_TEST_50_QUESTIONS as unknown as GenericTestQuestion[])
+      });
+      return;
+    }
+
+    // Default to full mock
+    handleStartFullMock();
   };
 
   return (
@@ -383,6 +474,48 @@ export function PaidTestHubModal({ onClose, onOpenVip, isVIP = true }: PaidTestH
                     className="w-full pl-9 pr-3 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-stone-800 placeholder-stone-400 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:bg-white transition-all"
                   />
                 </div>
+              </div>
+
+              {/* Subject Master 50 MCQ Spotlight Card */}
+              <div className="bg-gradient-to-r from-stone-900 via-indigo-950 to-stone-900 text-white p-4 sm:p-5 rounded-2xl border border-amber-400/40 shadow-lg flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 relative overflow-hidden">
+                <div className="absolute top-0 right-0 w-48 h-48 bg-amber-500/10 rounded-full blur-2xl pointer-events-none" />
+                <div className="relative z-10 space-y-1.5">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="px-2.5 py-0.5 rounded-full bg-amber-400 text-stone-950 text-[10px] font-black uppercase tracking-wider shadow-xs flex items-center gap-1">
+                      <Flame className="w-3 h-3 text-red-600 fill-current" />
+                      {currentSubject?.subject_name_hindi || 'विषय'} 50 MCQ महा-मॉक
+                    </span>
+                    <span className="text-[11px] text-amber-200 font-bold flex items-center gap-1">
+                      <Clock className="w-3 h-3 text-amber-300" /> 50 मिनट • 50 प्रश्न • 50 अंक
+                    </span>
+                    <span className="text-[11px] text-emerald-300 font-semibold bg-emerald-950/60 px-2 py-0.5 rounded border border-emerald-500/30">
+                      BSEB परीक्षा पैटर्न
+                    </span>
+                  </div>
+
+                  <h4 className="text-base sm:text-lg font-black text-white leading-tight">
+                    {selectedTab === 'math' && 'गणित (Math) संपूर्ण 15 अध्यायों का 50 MCQ महा-मॉक टेस्ट'}
+                    {selectedTab === 'geography' && 'भूगोल (Geography) संपूर्ण 6 अध्यायों का 50 MCQ महा-मॉक टेस्ट'}
+                    {selectedTab === 'economics' && 'अर्थशास्त्र (Economics) संपूर्ण 7 अध्यायों का 50 MCQ महा-मॉक टेस्ट'}
+                    {selectedTab === 'history' && 'इतिहास (History) संपूर्ण 8 अध्यायों का 50 MCQ महा-मॉक टेस्ट'}
+                    {selectedTab === 'political_science' && 'राजनीति शास्त्र (Civics) संपूर्ण 5 अध्यायों का 50 MCQ महा-मॉक टेस्ट'}
+                    {selectedTab === 'sanskrit' && 'संस्कृत (Sanskrit) संपूर्ण 14 अध्यायों का 50 MCQ महा-मॉक टेस्ट'}
+                    {selectedTab === 'hindi' && 'हिंदी (Hindi) संपूर्ण सिलेबस 50 MCQ महा-मॉक टेस्ट'}
+                    {!['math', 'geography', 'economics', 'history', 'political_science', 'sanskrit', 'hindi'].includes(selectedTab) && `${currentSubject?.subject_name_hindi || 'विषय'} संपूर्ण सिलेबस 50 MCQ मास्टर टेस्ट`}
+                  </h4>
+
+                  <p className="text-xs text-stone-300 max-w-xl leading-relaxed">
+                    बोर्ड परीक्षा की तैयारी परखने के लिए 50 चुनिंदा वस्तुनिष्ठ प्रश्न, OMR शीट चेकिंग और तुरंत मेरिट रैंक।
+                  </p>
+                </div>
+
+                <button
+                  onClick={() => handleStartSubjectMock(selectedTab)}
+                  className="w-full sm:w-auto px-6 py-3 rounded-xl bg-gradient-to-r from-amber-400 via-amber-300 to-yellow-400 hover:from-amber-300 hover:to-yellow-300 text-stone-950 font-black text-xs sm:text-sm flex items-center justify-center gap-2 shadow-lg hover:shadow-xl cursor-pointer shrink-0 transition-transform active:scale-95 border border-amber-200"
+                >
+                  <Play className="w-4 h-4 fill-current" />
+                  <span>50 MCQ टेस्ट शुरू करें</span>
+                </button>
               </div>
 
               {/* Chapters Grid */}

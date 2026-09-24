@@ -3,6 +3,9 @@ import { useData } from '../context/DataContext';
 import { CheckCircle2, BookOpen, Award, FileText, BookMarked, Sparkles, ChevronRight, ArrowLeft, Play, Scale, Globe, TrendingUp } from 'lucide-react';
 import { PaidTestModal, TestQuestion } from './PaidTestModal';
 import { PAID_TEST_50_QUESTIONS } from '../data/paidTestQuestions';
+import { MATH_PAID_50_QUESTIONS } from '../data/mathPaid50Questions';
+import { GEOGRAPHY_PAID_50_QUESTIONS } from '../data/geographyPaid50Questions';
+import { ECONOMICS_PAID_50_QUESTIONS } from '../data/economicsPaid50Questions';
 
 interface DailyQuizViewProps {
   onOpenVip?: () => void;
@@ -110,10 +113,58 @@ export function DailyQuizView({ onOpenVip, onSelectSubject, onOpenSubject }: Dai
 
   const currentSubject = activeSubjectId ? (
     subjects[activeSubjectId] || 
+    (activeSubjectId === 'math' ? (subjects['math'] || subjects['mathematics']) : null) ||
     (activeSubjectId === 'economics' ? (subjects['economics'] || subjects['arthashastra']) : null) ||
     (activeSubjectId === 'geography' ? (subjects['geography'] || subjects['bhugol']) : null) || 
     (activeSubjectId === 'political_science' ? (subjects['political_science'] || subjects['polscience'] || subjects['civics']) : null)
   ) : null;
+
+  const handleStartSubjectMasterTest = () => {
+    if (activeSubjectId === 'math') {
+      setActiveChapterTest({
+        chapterNo: 0,
+        chapterName: 'गणित (Math) संपूर्ण 15 अध्यायों का 50 MCQ महा-मॉक टेस्ट',
+        questions: MATH_PAID_50_QUESTIONS
+      });
+    } else if (activeSubjectId === 'geography') {
+      setActiveChapterTest({
+        chapterNo: 0,
+        chapterName: 'भूगोल (Geography) संपूर्ण 6 अध्यायों का 50 MCQ महा-मॉक टेस्ट',
+        questions: GEOGRAPHY_PAID_50_QUESTIONS
+      });
+    } else if (activeSubjectId === 'economics') {
+      setActiveChapterTest({
+        chapterNo: 0,
+        chapterName: 'अर्थशास्त्र (Economics) संपूर्ण 7 अध्यायों का 50 MCQ महा-मॉक टेस्ट',
+        questions: ECONOMICS_PAID_50_QUESTIONS
+      });
+    } else {
+      let allQuestions: TestQuestion[] = [];
+      (currentSubject?.chapters || []).forEach((ch: any) => {
+        (ch.mcq || []).forEach((m: any, idx: number) => {
+          const correctVal = typeof m.correctIndex === 'number' ? m.correctIndex : (typeof m.correct_answer === 'number' ? m.correct_answer : 0);
+          allQuestions.push({
+            id: m.id || `ch_${ch.chapter_no}_q_${idx}`,
+            question: m.question || m.text || `प्रश्न ${idx + 1}`,
+            options: m.options || m.choices || ['विकल्प A', 'विकल्प B', 'विकल्प C', 'विकल्प D'],
+            correctIndex: correctVal,
+            correct_answer: correctVal,
+            explanation: m.explanation || `अध्याय ${ch.chapter_no} का महत्वपूर्ण वस्तुनिष्ठ प्रश्न।`,
+            subject: currentSubject?.subject_name_hindi || activeSubjectId || 'बिहार बोर्ड',
+            chapter: ch.chapter_name_hindi || `अध्याय ${ch.chapter_no}`
+          });
+        });
+      });
+      if (allQuestions.length < 50) {
+        allQuestions = PAID_TEST_50_QUESTIONS;
+      }
+      setActiveChapterTest({
+        chapterNo: 0,
+        chapterName: `${currentSubject?.subject_name_hindi || 'विषय'} संपूर्ण 50 MCQ महा-मॉक टेस्ट`,
+        questions: allQuestions.slice(0, 50)
+      });
+    }
+  };
 
   // Generate 50 MCQs for a given chapter
   const handleStartChapterTest = (chapter: any) => {
@@ -136,22 +187,30 @@ export function DailyQuizView({ onOpenVip, onSelectSubject, onOpenSubject }: Dai
       });
     }
 
-    // Ensure we have 50 questions by padding with subject questions from PAID_TEST_50_QUESTIONS or repeating/slicing
-    const subjectPool = PAID_TEST_50_QUESTIONS.filter(q => {
-      const qSub = (q.subject || '').toLowerCase();
-      const sId = (activeSubjectId || '').toLowerCase();
-      if (sId.includes('science') && qSub.includes('विज्ञान')) return true;
-      if (sId.includes('hindi') && qSub.includes('हिंदी')) return true;
-      if (sId.includes('sanskrit') && qSub.includes('संस्कृत')) return true;
-      if (sId.includes('math') && qSub.includes('गणित')) return true;
-      if (sId.includes('history') && (qSub.includes('इतिहास') || qSub.includes('राष्ट्रवाद'))) return true;
-      if ((sId.includes('pol') || sId.includes('civic')) && (qSub.includes('राजनीति') || qSub.includes('लोकतंत्र'))) return true;
-      if (sId.includes('geography') && (qSub.includes('भूगोल') || qSub.includes('संसाधन') || qSub.includes('कृषि') || qSub.includes('आपदा'))) return true;
-      if ((sId.includes('econ') || sId.includes('artha')) && (qSub.includes('अर्थशास्त्र') || qSub.includes('मुद्रा') || qSub.includes('आय'))) return true;
-      return false;
-    });
-
-    const fallbackPool = subjectPool.length > 0 ? subjectPool : PAID_TEST_50_QUESTIONS;
+    // Ensure we have 50 questions by padding with subject questions from dedicated pools or PAID_TEST_50_QUESTIONS
+    let fallbackPool: TestQuestion[] = [];
+    if (activeSubjectId === 'math') {
+      fallbackPool = MATH_PAID_50_QUESTIONS;
+    } else if (activeSubjectId === 'geography') {
+      fallbackPool = GEOGRAPHY_PAID_50_QUESTIONS;
+    } else if (activeSubjectId === 'economics') {
+      fallbackPool = ECONOMICS_PAID_50_QUESTIONS;
+    } else {
+      const subjectPool = PAID_TEST_50_QUESTIONS.filter(q => {
+        const qSub = (q.subject || '').toLowerCase();
+        const sId = (activeSubjectId || '').toLowerCase();
+        if (sId.includes('science') && qSub.includes('विज्ञान')) return true;
+        if (sId.includes('hindi') && qSub.includes('हिंदी')) return true;
+        if (sId.includes('sanskrit') && qSub.includes('संस्कृत')) return true;
+        if (sId.includes('math') && qSub.includes('गणित')) return true;
+        if (sId.includes('history') && (qSub.includes('इतिहास') || qSub.includes('राष्ट्रवाद'))) return true;
+        if ((sId.includes('pol') || sId.includes('civic')) && (qSub.includes('राजनीति') || qSub.includes('लोकतंत्र'))) return true;
+        if (sId.includes('geography') && (qSub.includes('भूगोल') || qSub.includes('संसाधन') || qSub.includes('कृषि') || qSub.includes('आपदा'))) return true;
+        if ((sId.includes('econ') || sId.includes('artha')) && (qSub.includes('अर्थशास्त्र') || qSub.includes('मुद्रा') || qSub.includes('आय'))) return true;
+        return false;
+      });
+      fallbackPool = subjectPool.length > 0 ? subjectPool : PAID_TEST_50_QUESTIONS;
+    }
 
     while (chapterQuestions.length < 50) {
       const needed = 50 - chapterQuestions.length;
@@ -258,6 +317,32 @@ export function DailyQuizView({ onOpenVip, onSelectSubject, onOpenSubject }: Dai
             <div className="text-xs bg-white/10 border border-white/20 px-3 py-1.5 rounded-xl font-bold">
               कुल अध्याय: {currentSubject?.chapters?.length || 0}
             </div>
+          </div>
+
+          {/* Master 50 MCQ Full Subject Mock Test Banner */}
+          <div className="bg-gradient-to-r from-stone-900 via-indigo-950 to-stone-900 text-white rounded-2xl p-4 shadow-lg border border-amber-400/40 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div>
+              <div className="flex items-center gap-1.5 text-amber-400 text-[10px] font-black uppercase tracking-wider mb-1">
+                <Sparkles className="w-3.5 h-3.5" />
+                <span>सम्पूर्ण 50 MCQ मास्टर टेस्ट</span>
+              </div>
+              <h3 className="text-sm sm:text-base font-black text-white">
+                {activeSubjectId === 'math' && 'गणित संपूर्ण 15 अध्यायों का 50 MCQ महा-मॉक टेस्ट'}
+                {activeSubjectId === 'geography' && 'भूगोल संपूर्ण 6 अध्यायों का 50 MCQ महा-मॉक टेस्ट'}
+                {activeSubjectId === 'economics' && 'अर्थशास्त्र संपूर्ण 7 अध्यायों का 50 MCQ महा-मॉक टेस्ट'}
+                {activeSubjectId === 'history' && 'इतिहास संपूर्ण 8 अध्यायों का 50 MCQ महा-मॉक टेस्ट'}
+                {activeSubjectId === 'political_science' && 'राजनीति शास्त्र संपूर्ण 5 अध्यायों का 50 MCQ महा-मॉक टेस्ट'}
+                {!['math', 'geography', 'economics', 'history', 'political_science'].includes(activeSubjectId || '') && `${currentSubject?.subject_name_hindi || 'विषय'} 50 MCQ महा-मॉक टेस्ट`}
+              </h3>
+              <p className="text-xs text-blue-200 mt-0.5">50 मिनट • 50 प्रश्न • OMR आधारित बिहार बोर्ड परीक्षा पैटर्न</p>
+            </div>
+            <button
+              onClick={handleStartSubjectMasterTest}
+              className="bg-gradient-to-r from-amber-400 via-amber-300 to-yellow-400 hover:from-amber-300 hover:to-yellow-300 text-stone-950 font-black text-xs px-5 py-2.5 rounded-xl shadow-md transition-all flex items-center justify-center gap-1.5 cursor-pointer shrink-0 border border-amber-200"
+            >
+              <Play className="w-4 h-4 fill-current" />
+              <span>50 MCQ टेस्ट दें</span>
+            </button>
           </div>
 
           <div className="space-y-2">
