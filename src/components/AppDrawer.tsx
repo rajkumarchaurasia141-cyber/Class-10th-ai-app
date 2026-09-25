@@ -140,7 +140,7 @@ export function AppDrawer({ isOpen, onClose, onNavigate, onOpenVip, onOpenGmailA
                 <span>{isAdmin ? 'राजकुमार चौरसिया' : user?.name || 'अतिथि विद्यार्थी'}</span>
               </h3>
               <p className="text-xs text-stone-300 truncate">
-                {user?.email || 'पढ़ेगा BR • टॉपर बैच'}
+                {user?.email || 'BSEB GURU • टॉपर बैच'}
               </p>
               
               {/* VIP / Admin Status Badge */}

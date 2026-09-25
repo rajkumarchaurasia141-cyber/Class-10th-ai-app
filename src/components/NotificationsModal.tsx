@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { X, Bell, Crown, Sparkles, BookOpen, Clock, ChevronRight } from 'lucide-react';
 import { useData } from '../context/DataContext';
 
@@ -10,6 +10,31 @@ interface NotificationsModalProps {
 
 export function NotificationsModal({ onClose, onOpenVip, onOpenCourse }: NotificationsModalProps) {
   const { notifications } = useData();
+  const [notificationPermission, setNotificationPermission] = useState(
+    typeof window !== 'undefined' && 'Notification' in window ? Notification.permission : 'default'
+  );
+
+  const requestNotificationPermission = async () => {
+    if (typeof window !== 'undefined' && 'Notification' in window) {
+      try {
+        const perm = await Notification.requestPermission();
+        setNotificationPermission(perm);
+        if (perm === 'granted') {
+          alert('बधाई हो! अब आपके फोन पर नई क्लास और नोट्स की सूचनाएं सीधे पॉप-अप नोटिफिकेशन के रूप में आएंगी।');
+          new Notification('BSEB GURU', {
+            body: 'नोटिफिकेशन सेवा सफलतापूर्व चालू हो गई है!',
+            icon: '/app_logo.svg'
+          });
+        } else {
+          alert('आपने नोटिफिकेशन की अनुमति नहीं दी। आप ऐप के भीतर घंटी (🔔) आइकॉन पर क्लिक करके हमेशा सभी अपडेट देख सकते हैं।');
+        }
+      } catch (e) {
+        console.warn('Notification permission error:', e);
+      }
+    } else {
+      alert('आपका डिवाइस पुश नोटिफिकेशन समर्थित नहीं करता है।');
+    }
+  };
 
   return (
     <div className="fixed inset-0 z-50 bg-stone-950/75 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 animate-fade-in">
@@ -24,7 +49,7 @@ export function NotificationsModal({ onClose, onOpenVip, onOpenCourse }: Notific
               <h3 className="font-black text-base sm:text-lg text-white leading-tight">
                 सूचनाएं एवं अपडेट्स
               </h3>
-              <p className="text-xs text-amber-200">कक्षा 10वीं बिहार बोर्ड दैनिक सूचनाएं</p>
+              <p className="text-xs text-amber-200">BSEB GURU • क्लास और नोट्स अलर्ट</p>
             </div>
           </div>
           <button
@@ -34,6 +59,24 @@ export function NotificationsModal({ onClose, onOpenVip, onOpenCourse }: Notific
             <X className="w-4 h-4" />
           </button>
         </div>
+
+        {/* Notification Permission Banner */}
+        {notificationPermission !== 'granted' && (
+          <div className="bg-amber-50 border-b border-amber-200 p-3 flex items-center justify-between gap-2 shrink-0">
+            <div className="flex items-center gap-2">
+              <Bell className="w-4 h-4 text-amber-600 shrink-0 animate-bounce" />
+              <span className="text-[11px] font-bold text-stone-800">
+                हर क्लास और नोट्स का अलर्ट सीधे फोन स्क्रीन पर पाने के लिए:
+              </span>
+            </div>
+            <button
+              onClick={requestNotificationPermission}
+              className="px-3 py-1.5 bg-amber-500 hover:bg-amber-400 text-stone-950 font-black text-xs rounded-xl shadow-xs transition-all cursor-pointer whitespace-nowrap"
+            >
+              अनुमति दें
+            </button>
+          </div>
+        )}
 
         {/* List */}
         <div className="flex-1 overflow-y-auto p-4 space-y-3">

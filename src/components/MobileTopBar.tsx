@@ -37,13 +37,13 @@ export function MobileTopBar({
 
         {/* Brand / Logo */}
         <div className="flex items-center gap-2 min-w-0">
-          <AppLogo className="w-8.5 h-8.5 ring-2 ring-amber-400 shadow-xs shrink-0 cursor-pointer" onClick={onOpenDrawer} />
-          <div className="leading-none min-w-0">
-            <span className="text-xs sm:text-sm font-black text-stone-900 tracking-tight block truncate">
-              पढ़ेगा <span className="text-amber-500 font-black">BR</span>
+          <AppLogo className="w-9 h-9 ring-2 ring-amber-400 shadow-sm shrink-0 cursor-pointer rounded-xl" onClick={onOpenDrawer} />
+          <div className="leading-tight min-w-0">
+            <span className="text-xs sm:text-sm font-black text-stone-900 tracking-tight block truncate flex items-center gap-1">
+              <span>BSEB</span> <span className="text-amber-600 font-black">GURU</span>
             </span>
-            <span className="text-[9px] font-bold text-red-600 tracking-wider uppercase block truncate">
-              Study • Learn • Grow
+            <span className="text-[9px] font-extrabold text-red-600 tracking-wider uppercase block truncate">
+              Class 9-10 • Topper
             </span>
           </div>
         </div>
