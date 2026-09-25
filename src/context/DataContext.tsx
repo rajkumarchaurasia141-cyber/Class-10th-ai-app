@@ -72,13 +72,14 @@ export const defaultBanners: BannerItem[] = [
 ];
 
 export const defaultAppConfig: AppConfig = {
-  helplineNumber: '9241511070',
-  upiId: '9708868515@ybl',
+  helplineNumber: '9507464117',
+  whatsappNumber: '9507464117',
+  upiId: '9708868515',
   qrCodeDataUrl: '',
   appLogoUrl: '/app_logo.svg',
   youtubeUrl: 'https://www.youtube.com/@Vidyaagent2.0',
   instagramUrl: 'https://www.instagram.com/unbroken_raj_01?stkn=dmJwNzNhNDl0cXhz',
-  whatsappGroupUrl: 'https://wa.me/919241511070?text=' + encodeURIComponent('नमस्ते सर, मुझे 10th BSEB फुल सिलेबस WhatsApp ग्रुप में जोड़ें।'),
+  whatsappGroupUrl: 'https://wa.me/919507464117?text=' + encodeURIComponent('नमस्ते सर, मुझे 10th BSEB फुल सिलेबस WhatsApp ग्रुप में जोड़ें।'),
   telegramUrl: 'https://t.me',
   price1Month: 99,
   price1Year: 600,
@@ -189,6 +190,7 @@ export const defaultLiveClasses: LiveClass[] = [
     teacherName: 'राज सर',
     scheduledAt: 'आज शाम 6:00 बजे',
     isLive: true,
+    isVip: true,
     description: 'बिहार बोर्ड फुल सिलेबस परीक्षा के लिए संस्कृत प्रथम अध्याय मङ्गलम् का लाइव महामौरथन।',
     createdAt: new Date().toISOString()
   },
@@ -200,6 +202,7 @@ export const defaultLiveClasses: LiveClass[] = [
     teacherName: 'प्रिया मैम',
     scheduledAt: 'कल अपलोड किया गया',
     isLive: false,
+    isVip: true,
     description: 'कक्षा 10वीं रसायन विज्ञान चैप्टर 1 के सभी महत्वपूर्ण प्रश्न उत्तर।',
     createdAt: new Date().toISOString()
   }
@@ -305,6 +308,7 @@ interface DataContextType {
   addPaidNote: (note: Omit<PaidPdfNote, 'id'>) => Promise<string>;
   deletePaidNote: (id: string) => Promise<void>;
   addLiveClass: (cls: Omit<LiveClass, 'id'>) => Promise<string>;
+  updateLiveClass: (id: string, updates: Partial<LiveClass>) => Promise<void>;
   deleteLiveClass: (id: string) => Promise<void>;
   addDailyQuiz: (quiz: Omit<DailyQuizItem, 'id'>) => Promise<string>;
   deleteDailyQuiz: (id: string) => Promise<void>;
@@ -542,6 +546,22 @@ export const DataProvider = ({ children }: any) => {
       console.warn("Firestore live class save notice:", e?.message || String(e));
     }
     return id;
+  };
+
+  const updateLiveClass = async (id: string, updates: Partial<LiveClass>): Promise<void> => {
+    setLiveClasses((prev) => {
+      const updated = prev.map((c) => (c.id === id ? { ...c, ...updates } : c));
+      try {
+        localStorage.setItem('bseb_live_classes_cache', JSON.stringify(updated));
+      } catch {}
+      return updated;
+    });
+
+    try {
+      await safeSetDoc(doc(db, 'live_classes', id), updates, { merge: true }, 5000, true);
+    } catch (e: any) {
+      console.warn("Firestore live class update notice:", e?.message || String(e));
+    }
   };
 
   const deleteLiveClass = async (id: string): Promise<void> => {
@@ -890,6 +910,7 @@ export const DataProvider = ({ children }: any) => {
             const updated = {
               ...prev,
               ...(data.upiId ? { upiId: data.upiId } : {}),
+              ...(data.whatsappNumber ? { whatsappNumber: data.whatsappNumber } : {}),
               ...(data.qrCodeUrl !== undefined ? { qrCodeDataUrl: data.qrCodeUrl } : {}),
               ...(data.appLogoUrl ? { appLogoUrl: data.appLogoUrl } : {}),
               ...(data.price ? { price1Year: Number(data.price) } : {}),
@@ -922,6 +943,7 @@ export const DataProvider = ({ children }: any) => {
     try {
       await safeSetDoc(doc(db, 'app_settings', 'payment_config'), {
         upiId: newConfig.upiId,
+        whatsappNumber: newConfig.whatsappNumber || '9507464117',
         qrCodeUrl: newConfig.qrCodeDataUrl,
         appLogoUrl: newConfig.appLogoUrl,
         price: newConfig.price1Year,
@@ -953,6 +975,7 @@ export const DataProvider = ({ children }: any) => {
       addPaidNote,
       deletePaidNote,
       addLiveClass,
+      updateLiveClass,
       deleteLiveClass,
       addDailyQuiz,
       deleteDailyQuiz,

@@ -9,8 +9,9 @@ import { AppLogo } from './AppLogo';
 export function AdminSettingsManager() {
   const { appConfig, updateSettings } = useData();
 
-  const [helplineNumber, setHelplineNumber] = useState(appConfig.helplineNumber);
-  const [upiId, setUpiId] = useState(appConfig.upiId || '9708868515@yb1');
+  const [helplineNumber, setHelplineNumber] = useState(appConfig.helplineNumber || '9507464117');
+  const [whatsappNumber, setWhatsappNumber] = useState(appConfig.whatsappNumber || '9507464117');
+  const [upiId, setUpiId] = useState(appConfig.upiId || '9708868515');
   const [qrCodeDataUrl, setQrCodeDataUrl] = useState(appConfig.qrCodeDataUrl || '');
   const [appLogoUrl, setAppLogoUrl] = useState(appConfig.appLogoUrl || '');
   const [youtubeUrl, setYoutubeUrl] = useState(appConfig.youtubeUrl);
@@ -123,6 +124,7 @@ export function AdminSettingsManager() {
       // 1. Update general settings config
       await updateSettings({
         helplineNumber: helplineNumber.trim(),
+        whatsappNumber: whatsappNumber.trim(),
         upiId: upiId.trim(),
         qrCodeDataUrl: qrCodeDataUrl.trim(),
         appLogoUrl: appLogoUrl.trim(),
@@ -135,17 +137,19 @@ export function AdminSettingsManager() {
       });
 
       // 2. Synchronize configuration to Firestore "app_settings/payment_config"
-      // to store config with fields: { upiId, price, qrCodeUrl, appLogoUrl }
+      // to store config with fields: { upiId, whatsappNumber, price, qrCodeUrl, appLogoUrl, helplineNumber }
       const paymentConfigRef = doc(db, 'app_settings', 'payment_config');
       await safeSetDoc(paymentConfigRef, {
         upiId: upiId.trim(),
+        whatsappNumber: whatsappNumber.trim(),
         price: yPrice || 299,
         qrCodeUrl: qrCodeDataUrl.trim(),
-        appLogoUrl: appLogoUrl.trim()
+        appLogoUrl: appLogoUrl.trim(),
+        helplineNumber: helplineNumber.trim()
       }, { merge: true }, 5000, true);
 
-      setSuccessMsg('बधाई हो! सभी सेटिंग्स, ऐप लोगो/DP, UPI स्कैनर, सोशल मीडिया लिंक्स और कीमतें सफलतापूर्वक अपडेट हो गई हैं!');
-      setTimeout(() => setSuccessMsg(''), 4000);
+      setSuccessMsg('बधाई हो! UPI ID (9708868515), WhatsApp नंबर (9507464117), स्कैनर और सभी सेटिंग्स सफलतापूर्वक हमेशा के लिए सेव हो गई हैं!');
+      setTimeout(() => setSuccessMsg(''), 5000);
     } catch (err: any) {
       console.error("Save settings error:", err);
       setErrorMsg('सेटिंग्स सेव करने में त्रुटि: ' + (err?.message || String(err)));
@@ -170,36 +174,68 @@ export function AdminSettingsManager() {
         <div className="space-y-4">
           <h4 className="text-xs font-black uppercase tracking-wider text-stone-800 border-b border-slate-100 pb-2 flex items-center gap-2">
             <Phone className="w-4 h-4 text-amber-600" />
-            1. हेल्पलाइन नंबर एवं पेमेंट (UPI ID & QR Scanner)
+            1. हेल्पलाइन नंबर, WhatsApp एवं पेमेंट (UPI ID & QR Scanner)
           </h4>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div className="space-y-1.5">
-              <label className="text-xs font-bold text-stone-700">स्टूडेंट हेल्पलाइन / मोबाइल नंबर</label>
+              <label className="text-xs font-bold text-stone-700 flex items-center gap-1">
+                <Phone className="w-3.5 h-3.5 text-stone-500" /> कॉलिंग हेल्पलाइन नंबर
+              </label>
               <input
                 type="text"
                 required
                 value={helplineNumber}
                 onChange={(e) => setHelplineNumber(e.target.value)}
-                placeholder="उदा: 9241511070"
+                placeholder="उदा: 9507464117"
                 className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs text-stone-900 font-bold focus:outline-none focus:border-amber-500"
                 style={{ minHeight: '44px' }}
               />
-              <span className="text-[10px] text-stone-500">यह नंबर छात्रों को हेल्पलाइन और WhatsApp पर दिखेगा।</span>
+              <span className="text-[10px] text-stone-500">कॉल सहायता के लिए</span>
             </div>
 
             <div className="space-y-1.5">
-              <label className="text-xs font-bold text-stone-700">पेमेंट UPI ID (PhonePay/GPay/Paytm)</label>
+              <label className="text-xs font-bold text-emerald-800 flex items-center gap-1">
+                <MessageCircle className="w-3.5 h-3.5 text-emerald-600" /> WhatsApp मोबाइल नंबर
+              </label>
+              <input
+                type="text"
+                required
+                value={whatsappNumber}
+                onChange={(e) => setWhatsappNumber(e.target.value)}
+                placeholder="उदा: 9507464117"
+                className="w-full bg-emerald-50/50 border border-emerald-300 rounded-xl px-3.5 py-2.5 text-xs text-stone-900 font-bold focus:outline-none focus:border-emerald-500"
+                style={{ minHeight: '44px' }}
+              />
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] text-emerald-700 font-bold">पेमेंट स्क्रीनशॉट के लिए</span>
+                {whatsappNumber && (
+                  <a
+                    href={`https://wa.me/91${whatsappNumber}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-[10px] text-emerald-600 hover:underline font-bold"
+                  >
+                    चैट टेस्ट ↗
+                  </a>
+                )}
+              </div>
+            </div>
+
+            <div className="space-y-1.5">
+              <label className="text-xs font-bold text-red-800 flex items-center gap-1">
+                <QrCode className="w-3.5 h-3.5 text-red-600" /> पेमेंट UPI ID / नंबर
+              </label>
               <input
                 type="text"
                 required
                 value={upiId}
                 onChange={(e) => setUpiId(e.target.value)}
-                placeholder="उदा: 9708868515@yb1"
-                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs text-stone-900 font-bold focus:outline-none focus:border-amber-500"
+                placeholder="उदा: 9708868515"
+                className="w-full bg-red-50/40 border border-red-200 rounded-xl px-3.5 py-2.5 text-xs text-stone-900 font-bold focus:outline-none focus:border-red-500 font-mono"
                 style={{ minHeight: '44px' }}
               />
-              <span className="text-[10px] text-stone-500 font-bold">छात्र इसी UPI ID पर पेमेंट करके स्क्रीनशॉट भेजेंगे।</span>
+              <span className="text-[10px] text-red-700 font-bold">PhonePe/GPay/Paytm</span>
             </div>
           </div>
 

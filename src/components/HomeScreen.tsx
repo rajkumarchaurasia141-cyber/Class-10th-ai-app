@@ -170,6 +170,39 @@ export function HomeScreen({ onSelect, onOpenSubject, onNavigateTab, onOpenVip }
         </div>
       </div>
 
+      {/* 4. Bihar Guru AI Assistant Card */}
+      <div 
+        onClick={() => onNavigateTab && onNavigateTab('chat')}
+        className="bg-gradient-to-r from-red-900 via-stone-900 to-amber-950 text-white rounded-3xl p-4 shadow-md border border-amber-500/40 relative overflow-hidden cursor-pointer hover:border-amber-400 transition-all group"
+      >
+        <div className="flex items-center justify-between relative z-10">
+          <div className="flex items-center gap-3">
+            <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-amber-400 to-amber-600 text-stone-950 flex items-center justify-center font-black shadow-md group-hover:scale-105 transition-transform shrink-0">
+              <Sparkles className="w-6 h-6 fill-current" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <h4 className="font-black text-white text-sm sm:text-base leading-tight">
+                  बिहार गुरु (Bihar Guru) AI Assistant
+                </h4>
+                <span className="bg-emerald-500 text-white text-[9px] font-black px-2 py-0.5 rounded-full">
+                  LIVE
+                </span>
+              </div>
+              <p className="text-xs text-amber-200 mt-0.5 font-bold">
+                BSEB Class 9-10 • Hindi, English, Science, SST
+              </p>
+              <p className="text-[11px] text-stone-300 mt-0.5">
+                आसान भाषा में समझें और परीक्षा अनुसार सटीक उत्तर पाएं ↗
+              </p>
+            </div>
+          </div>
+          <div className="w-9 h-9 rounded-xl bg-white/10 group-hover:bg-amber-400 group-hover:text-stone-950 text-white flex items-center justify-center transition-all shrink-0 ml-2">
+            <ChevronRight className="w-5 h-5" />
+          </div>
+        </div>
+      </div>
+
 
 
       {/* 5. Modals */}

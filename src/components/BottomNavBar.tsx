@@ -14,7 +14,7 @@ export function BottomNavBar({ activeTab, onTabChange }: BottomNavBarProps) {
     { id: 'daily_quiz', label: 'Quiz', hindiLabel: 'क्विज', icon: CheckSquare },
     { id: 'leaderboard', label: 'Rank', hindiLabel: 'टॉपर', icon: Trophy },
     { id: 'downloads', label: 'Notes', hindiLabel: 'नोट्स', icon: DownloadCloud },
-    { id: 'chat', label: 'Chat', hindiLabel: 'डाउट', icon: MessageCircle },
+    { id: 'chat', label: 'Bihar Guru', hindiLabel: 'बिहार गुरु', icon: MessageCircle },
     { id: 'profile', label: 'Profile', hindiLabel: 'प्रोफाइल', icon: User }
   ];
 

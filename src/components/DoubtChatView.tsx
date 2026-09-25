@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { MessageCircle, Send, Bot, Mic, MicOff, Camera, Image as ImageIcon, X, Sparkles, Volume2, VolumeX } from 'lucide-react';
+import { MessageCircle, Send, Bot, Mic, MicOff, Camera, Image as ImageIcon, X, Sparkles, Volume2, VolumeX, GraduationCap } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { useData } from '../context/DataContext';
 import { getAccurateDoubtAnswer } from '../utils/doubtKnowledgeEngine';
 import { speakHindiText, stopHindiSpeech } from '../utils/speechHelper';
 
@@ -10,7 +11,7 @@ function FormattedBotMessage({ text, onReadAloud }: { text: string; onReadAloud:
     <div className="space-y-1.5">
       <div className="flex items-center justify-between pb-1 mb-1 border-b border-slate-100">
         <span className="text-[10px] font-bold text-red-700 bg-red-50 px-2 py-0.5 rounded-md flex items-center gap-1">
-          <Sparkles className="w-3 h-3 text-red-600" /> सटीक एवं VVI उत्तर
+          <Sparkles className="w-3 h-3 text-red-600" /> बिहार गुरु • BSEB Class 9-10 सटीक उत्तर
         </span>
         <button
           onClick={onReadAloud}
@@ -47,6 +48,7 @@ function FormattedBotMessage({ text, onReadAloud }: { text: string; onReadAloud:
 
 export function DoubtChatView({ onOpenVip }: { onOpenVip: () => void }) {
   const { user } = useAuth();
+  const { appConfig } = useData();
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
@@ -54,7 +56,7 @@ export function DoubtChatView({ onOpenVip }: { onOpenVip: () => void }) {
   const [messages, setMessages] = useState<Array<{ sender: 'user' | 'bot'; text: string; time: string; image?: string }>>([
     {
       sender: 'bot',
-      text: `नमस्ते ${user?.name || 'विद्यार्थी'}! मैं आपका 10th BSEB डाउट सॉल्वर हूँ। आप **लिखकर (Text)**, **बोलकर (Voice)** या **फोटो खींचकर (Camera/Image)** अपना कोई भी डाउट पूछ सकते हैं।`,
+      text: `नमस्ते ${user?.name || 'विद्यार्थी'}! 🙏\n\nमैं हूँ आपका **'बिहार गुरु' (पढ़ेगा बिहार AI Assistant)**।\n\nमैं केवल **बिहार बोर्ड कक्षा 9वीं एवं 10वीं** के 4 मुख्य विषयों:\n• 📖 **Hindi (हिंदी: गोधूलि, वर्णिका, व्याकरण)**\n• 🇬🇧 **English (अंग्रेजी: Panorama, Grammar, Translation)**\n• 🔬 **Science (विज्ञान: भौतिकी, रसायन, जीवविज्ञान)**\n• 🌍 **SST (सामाजिक विज्ञान: इतिहास, भूगोल, राजनीति, अर्थशास्त्र)**\nको पढ़ाता हूँ।\n\nआप **लिखकर**, **बोलकर (माइक 🎙️)** या **फोटो खींचकर (कैमरा 📷)** कोई भी सवाल पूछें — पहले मैं **एकदम सरल भाषा में समझाऊँगा**, फिर **बिहार बोर्ड परीक्षा के अनुसार सटीक उत्तर** दूँगा!`,
       time: 'अभी'
     }
   ]);
@@ -79,10 +81,14 @@ export function DoubtChatView({ onOpenVip }: { onOpenVip: () => void }) {
   }, []);
 
   const quickQuestions = [
-    'मङ्गलम् पाठ के रचनाकार कौन हैं?',
-    'सत्यमेव जयते किस उपनिषद से है?',
-    'प्रकाश के परावर्तन के नियम क्या हैं?',
-    'द्विघात समीकरण का सूत्र बताएं'
+    'प्रकाश संश्लेषण (Photosynthesis) क्या है?',
+    'श्रम विभाजन और जाति प्रथा का सारांश',
+    'Tense कितने प्रकार के होते हैं?',
+    '1848 की फ्रांसीसी क्रांति के कारण',
+    'ओम का नियम (Ohm\'s Law) और सूत्र',
+    'अम्ल और क्षार में क्या अंतर है?',
+    'Active and Passive Voice के नियम',
+    'चम्पारण सत्याग्रह (1917) का महत्व'
   ];
 
   // Speech Recognition (Bol kar poochhein)
@@ -248,32 +254,35 @@ export function DoubtChatView({ onOpenVip }: { onOpenVip: () => void }) {
       {/* Top Bar */}
       <div className="bg-white border-b border-slate-200 p-3.5 flex items-center justify-between shadow-xs">
         <div className="flex items-center gap-2.5">
-          <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-red-600 to-amber-600 text-white flex items-center justify-center font-bold shadow-sm">
-            <Bot className="w-5 h-5" />
+          <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-red-600 via-amber-600 to-red-700 text-white flex items-center justify-center font-bold shadow-sm">
+            <GraduationCap className="w-5 h-5" />
           </div>
           <div>
-            <h3 className="font-extrabold text-stone-900 text-sm leading-tight flex items-center gap-1.5">
-              <span>BSEB स्मार्ट डाउट सॉल्वर</span>
+            <h3 className="font-black text-stone-900 text-sm leading-tight flex items-center gap-1.5">
+              <span>बिहार गुरु (Bihar Guru)</span>
               <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
             </h3>
-            <p className="text-[11px] text-stone-500">लिखकर, बोलकर या फोटो से तुरंत उत्तर पाएं</p>
+            <p className="text-[10px] text-stone-500 font-semibold">
+              पढ़ेगा बिहार AI Assistant • Class 9-10 (Hindi, English, Science, SST)
+            </p>
           </div>
         </div>
 
         <div className="flex items-center gap-1.5">
           <button
             onClick={() => cameraInputRef.current?.click()}
-            className="px-2.5 py-1 rounded-xl bg-red-50 text-red-700 hover:bg-red-100 text-xs font-bold flex items-center gap-1 transition-all cursor-pointer border border-red-200"
+            className="px-2.5 py-1.5 rounded-xl bg-red-50 text-red-700 hover:bg-red-100 text-xs font-bold flex items-center gap-1 transition-all cursor-pointer border border-red-200"
             title="फोटो खींचकर पूछें"
           >
             <Camera className="w-3.5 h-3.5" />
             <span className="hidden sm:inline">कैमरा</span>
           </button>
           <a
-            href="https://whatsapp.com"
+            href={`https://wa.me/91${appConfig.whatsappNumber || '9507464117'}?text=${encodeURIComponent('नमस्ते बिहार गुरु सर, मुझे बिहार बोर्ड क्लास 9-10 पढ़ाई में सहायता चाहिए।')}`}
             target="_blank"
             rel="noopener noreferrer"
-            className="px-2.5 py-1 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold flex items-center gap-1 shadow-sm transition-all"
+            className="px-2.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold flex items-center gap-1 shadow-sm transition-all"
+            title="व्हाट्सएप पर सहायता पाएं"
           >
             <MessageCircle className="w-3.5 h-3.5" />
             <span>व्हाट्सएप</span>
@@ -332,7 +341,7 @@ export function DoubtChatView({ onOpenVip }: { onOpenVip: () => void }) {
               {activeSpeakingIndex === idx && (
                 <div className="flex items-center gap-1.5 bg-amber-50 border border-amber-200 text-amber-900 px-2.5 py-1 rounded-xl text-[10px] font-bold">
                   <span className="w-2 h-2 rounded-full bg-red-600 animate-ping"></span>
-                  <span>शिक्षक बोलकर पढ़ा रहे हैं...</span>
+                  <span>बिहार गुरु बोलकर समझा रहे हैं...</span>
                 </div>
               )}
             </div>
@@ -341,11 +350,11 @@ export function DoubtChatView({ onOpenVip }: { onOpenVip: () => void }) {
         ))}
 
         {isTyping && (
-          <div className="flex items-center gap-1.5 text-xs text-stone-400 p-2 bg-white rounded-xl border border-slate-200 w-fit">
+          <div className="flex items-center gap-1.5 text-xs text-stone-600 p-2 bg-white rounded-xl border border-slate-200 w-fit shadow-xs">
             <span className="w-2 h-2 rounded-full bg-red-600 animate-bounce"></span>
             <span className="w-2 h-2 rounded-full bg-red-600 animate-bounce delay-100"></span>
             <span className="w-2 h-2 rounded-full bg-red-600 animate-bounce delay-200"></span>
-            <span className="text-[10px] ml-1">फटाक से उत्तर तैयार हो रहा है...</span>
+            <span className="text-[10px] font-bold ml-1 text-red-700">बिहार गुरु उत्तर तैयार कर रहे हैं...</span>
           </div>
         )}
         <div ref={messagesEndRef} />

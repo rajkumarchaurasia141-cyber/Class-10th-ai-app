@@ -62,6 +62,7 @@ export interface LiveClass {
   teacherName: string;
   scheduledAt: string;
   isLive: boolean;
+  isVip?: boolean;
   description?: string;
   createdAt: string;
 }
@@ -137,6 +138,7 @@ export interface BannerItem {
 
 export interface AppConfig {
   helplineNumber: string;
+  whatsappNumber?: string;
   upiId: string;
   qrCodeDataUrl?: string;
   youtubeUrl: string;

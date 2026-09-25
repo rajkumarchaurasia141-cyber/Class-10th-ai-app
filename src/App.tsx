@@ -92,6 +92,10 @@ function MainApp() {
         setActiveTab('leaderboard');
         setSelectedSubject(null);
         break;
+      case 'chat':
+        setActiveTab('chat');
+        setSelectedSubject(null);
+        break;
       case 'routine':
         setShowRoutine(true);
         break;

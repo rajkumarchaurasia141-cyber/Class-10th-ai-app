@@ -10,12 +10,16 @@ import {
   Calendar, 
   User, 
   BookOpen,
-  PlaySquare
+  PlaySquare,
+  Lock,
+  Unlock,
+  Crown,
+  Gift
 } from 'lucide-react';
 import { useData } from '../context/DataContext';
 
 export function AdminLiveClassesManager() {
-  const { liveClasses, addLiveClass, deleteLiveClass } = useData();
+  const { liveClasses, addLiveClass, updateLiveClass, deleteLiveClass } = useData();
 
   const [title, setTitle] = useState('');
   const [youtubeUrl, setYoutubeUrl] = useState('');
@@ -23,6 +27,7 @@ export function AdminLiveClassesManager() {
   const [teacherName, setTeacherName] = useState('राज सर');
   const [scheduledAt, setScheduledAt] = useState('आज शाम 6:00 बजे');
   const [isLive, setIsLive] = useState(true);
+  const [isVip, setIsVip] = useState(true);
   const [description, setDescription] = useState('');
 
   const [loading, setLoading] = useState(false);
@@ -48,6 +53,7 @@ export function AdminLiveClassesManager() {
         teacherName: teacherName.trim() || 'राज सर',
         scheduledAt: scheduledAt.trim() || 'आज',
         isLive,
+        isVip,
         description: description.trim()
       });
 
@@ -60,6 +66,16 @@ export function AdminLiveClassesManager() {
       setErrorMsg('क्लास जोड़ने में त्रुटि: ' + (err?.message || String(err)));
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleToggleVip = async (id: string, currentIsVip: boolean) => {
+    try {
+      await updateLiveClass(id, { isVip: !currentIsVip });
+      setSuccessMsg(`क्लास का स्टेटस सफलतापूर्वक बदलकर "${!currentIsVip ? 'VIP लॉक्ड' : 'फ्री डेमो'}" कर दिया गया है।`);
+      setTimeout(() => setSuccessMsg(''), 3500);
+    } catch (err: any) {
+      setErrorMsg('स्टेटस बदलने में त्रुटि: ' + (err?.message || String(err)));
     }
   };
 
@@ -165,6 +181,20 @@ export function AdminLiveClassesManager() {
             >
               <option value="true">🔴 लाइव क्लास (Live Now)</option>
               <option value="false">📼 रिकॉर्डेड क्लास (Recorded)</option>
+            </select>
+          </div>
+
+          <div className="space-y-1.5">
+            <label className="text-xs font-bold text-amber-400 flex items-center gap-1.5">
+              <Lock className="w-3.5 h-3.5" /> एक्सेस नियंत्रण (VIP Lock Security)
+            </label>
+            <select
+              value={isVip ? 'true' : 'false'}
+              onChange={(e) => setIsVip(e.target.value === 'true')}
+              className="w-full bg-stone-900 border border-amber-600/40 rounded-xl px-3.5 py-2.5 text-xs text-amber-300 font-bold focus:outline-none focus:border-amber-500"
+            >
+              <option value="true">🔒 VIP केवल (केवल पेड छात्रों के लिए लॉक रखें - अनुशंसित)</option>
+              <option value="false">🎁 फ्री डेमो (सभी छात्रों के लिए खुला)</option>
             </select>
           </div>
         </div>

@@ -237,6 +237,22 @@ export function AppDrawer({ isOpen, onClose, onNavigate, onOpenVip, onOpenGmailA
             </button>
 
             <button
+              onClick={() => { onNavigate('chat'); onClose(); }}
+              className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-stone-700 hover:bg-red-50 hover:text-red-700 font-bold transition-colors cursor-pointer text-left"
+            >
+              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-red-600 to-amber-600 text-white flex items-center justify-center shadow-xs">
+                <Sparkles className="w-4 h-4" />
+              </div>
+              <div className="flex-1">
+                <div className="leading-tight flex items-center gap-1.5">
+                  <span>बिहार गुरु (AI Assistant)</span>
+                  <span className="text-[9px] bg-red-100 text-red-700 px-1.5 py-0.2 rounded-full font-black">9-10th</span>
+                </div>
+                <div className="text-[10px] text-stone-400 font-normal">Hindi, English, Science, SST</div>
+              </div>
+            </button>
+
+            <button
               onClick={() => { onNavigate('leaderboard'); onClose(); }}
               className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-stone-700 hover:bg-amber-50 hover:text-amber-700 font-semibold transition-colors cursor-pointer text-left"
             >
@@ -314,7 +330,7 @@ export function AppDrawer({ isOpen, onClose, onNavigate, onOpenVip, onOpenGmailA
             className="flex items-center gap-1.5 hover:text-red-700 font-semibold cursor-pointer"
           >
             <PhoneCall className="w-3.5 h-3.5 text-red-600" />
-            <span>हेल्पलाइन: 9241511070</span>
+            <span>हेल्पलाइन: {appConfig.whatsappNumber || appConfig.helplineNumber || '9507464117'}</span>
           </button>
           {user?.email ? (
             <button 

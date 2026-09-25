@@ -25,7 +25,8 @@ export function PaywallModal({ onClose }: { onClose: () => void }) {
   
   // Dynamic UPI and Price Config with standard default values
   const [config, setConfig] = useState({
-    upiId: "9708868515@yb1",
+    upiId: "9708868515",
+    whatsappNumber: "9507464117",
     price: 299,
     qrCodeUrl: ""
   });
@@ -50,7 +51,8 @@ export function PaywallModal({ onClose }: { onClose: () => void }) {
       if (snap.exists()) {
         const data = snap.data();
         setConfig({
-          upiId: data.upiId || "9708868515@yb1",
+          upiId: data.upiId || "9708868515",
+          whatsappNumber: data.whatsappNumber || "9507464117",
           price: Number(data.price) || 299,
           qrCodeUrl: data.qrCodeUrl || ""
         });
@@ -214,7 +216,7 @@ export function PaywallModal({ onClose }: { onClose: () => void }) {
       console.error("Payment submission failed:", err);
       const isQuota = err?.code === 'resource-exhausted' || err?.message?.includes('Quota') || err?.message?.includes('resource-exhausted');
       if (isQuota) {
-        setErrorMessage('⚠️ सर्वर दैनिक लिमिट समाप्त (Daily Quota Reached): हमारे डेटाबेस की आज की अपलोड सीमा समाप्त हो गई है। आप चिंता न करें - कृपया सीधे एडमिन के फोन नंबर या व्हाट्सएप (9708868515) पर पेमेंट स्क्रीनशॉट भेजकर अपना कोर्स तुरंत अनलॉक करवा लें!');
+        setErrorMessage(`⚠️ सर्वर दैनिक लिमिट समाप्त (Daily Quota Reached): हमारे डेटाबेस की आज की अपलोड सीमा समाप्त हो गई है। आप चिंता न करें - कृपया सीधे एडमिन के व्हाट्सएप (${config.whatsappNumber}) पर पेमेंट स्क्रीनशॉट भेजकर अपना कोर्स तुरंत अनलॉक करवा लें!`);
       } else {
         setErrorMessage(err?.message || 'कनेक्शन एरर। कृपया दोबारा सबमिट करने का प्रयास करें।');
       }
@@ -467,6 +469,17 @@ export function PaywallModal({ onClose }: { onClose: () => void }) {
                 </>
               )}
             </button>
+
+            {/* Direct WhatsApp Option */}
+            <a
+              href={`https://wa.me/91${config.whatsappNumber}?text=${encodeURIComponent(`नमस्ते सर, मैंने ₹${config.price} का कोर्स पेमेंट किया है। कृपया मेरा कोर्स अनलॉक करें। मेरी जीमेल: ${studentEmailInput || user?.email || ''}`)}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="w-full bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 font-bold py-2 px-4 rounded-xl flex items-center justify-center gap-2 text-xs transition-all cursor-pointer text-center"
+            >
+              <Smartphone className="w-4 h-4 text-emerald-600" />
+              <span>व्हाट्सएप ({config.whatsappNumber}) पर भी स्क्रीनशॉट भेज सकते हैं</span>
+            </a>
           </form>
 
           {/* Secure SSL Badge */}
