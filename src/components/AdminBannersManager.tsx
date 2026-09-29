@@ -11,13 +11,13 @@ export function AdminBannersManager() {
   const [isAdding, setIsAdding] = useState(false);
 
   // Form states
-  const [tag, setTag] = useState('बिहार बोर्ड परीक्षा फुल सिलेबस');
+  const [tag, setTag] = useState('🔥 स्पेशल बोर्ड परीक्षा क्रैश कोर्स');
   const [title, setTitle] = useState('');
   const [subtitle, setSubtitle] = useState('');
   const [oldPrice, setOldPrice] = useState('₹999');
-  const [newPrice, setNewPrice] = useState('₹99');
-  const [actionText, setActionText] = useState('ज्वाइन करें');
-  const [actionSub, setActionSub] = useState('VIP अनलॉक');
+  const [newPrice, setNewPrice] = useState('₹299');
+  const [actionText, setActionText] = useState('क्रैश कोर्स ज्वाइन करें');
+  const [actionSub, setActionSub] = useState('मात्र ₹299');
   const [featuresInput, setFeaturesInput] = useState('लाइव & रिकॉर्डेड क्लासेस, हस्तलिखित चैप्टर नोट्स (PDF), डाउट समाधान, 50 MCQ टेस्ट');
   const [subjectsInput, setSubjectsInput] = useState('गणित, विज्ञान, संस्कृत, हिंदी');
   const [bgGradient, setBgGradient] = useState('from-red-900 via-stone-900 to-red-950');
@@ -28,13 +28,13 @@ export function AdminBannersManager() {
   const handleStartAdd = () => {
     setIsAdding(true);
     setEditingId(null);
-    setTag('विशेष ऑफर फुल सिलेबस');
-    setTitle('नया टॉपर कोर्स');
-    setSubtitle('सम्पूर्ण तैयारी बिहार बोर्ड');
-    setOldPrice('₹1500');
-    setNewPrice('₹99');
-    setActionText('अभी खरीदें');
-    setActionSub('VIP अनलॉक');
+    setTag('⚡ स्पेशल बोर्ड परीक्षा क्रैश कोर्स');
+    setTitle('बिहार बोर्ड 10वीं टॉपर क्रैश कोर्स');
+    setSubtitle('कम समय में 450+ अंक लाने का पक्का फॉर्मूला');
+    setOldPrice('₹999');
+    setNewPrice('₹299 मात्र');
+    setActionText('क्रैश कोर्स ज्वाइन करें');
+    setActionSub('मात्र ₹299');
     setFeaturesInput('लाइव क्लास, PDF नोट्स, ऑनलाइन टेस्ट');
     setSubjectsInput('गणित, विज्ञान, सामाजिक विज्ञान');
     setBgGradient('from-amber-900 via-stone-900 to-stone-950');
@@ -223,7 +223,7 @@ export function AdminBannersManager() {
             </div>
 
             <div className="space-y-1">
-              <label className="text-xs font-bold text-stone-700">नया ऑफर मूल्य (उदा: ₹99 / ₹600)</label>
+              <label className="text-xs font-bold text-stone-700">नया ऑफर मूल्य (उदा: ₹299)</label>
               <input
                 type="text"
                 required

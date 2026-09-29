@@ -9,8 +9,12 @@ import { AppLogo } from './AppLogo';
 export function AdminSettingsManager() {
   const { appConfig, updateSettings } = useData();
 
-  const [helplineNumber, setHelplineNumber] = useState(appConfig.helplineNumber || '9507464117');
-  const [whatsappNumber, setWhatsappNumber] = useState(appConfig.whatsappNumber || '9507464117');
+  const [helplineNumber, setHelplineNumber] = useState(
+    (appConfig.helplineNumber === '9507464117' ? '9241511070' : appConfig.helplineNumber) || '9241511070'
+  );
+  const [whatsappNumber, setWhatsappNumber] = useState(
+    (appConfig.whatsappNumber === '9507464117' ? '9241511070' : appConfig.whatsappNumber) || '9241511070'
+  );
   const [upiId, setUpiId] = useState(appConfig.upiId || '9708868515');
   const [qrCodeDataUrl, setQrCodeDataUrl] = useState(appConfig.qrCodeDataUrl || '');
   const [appLogoUrl, setAppLogoUrl] = useState(appConfig.appLogoUrl || '');
@@ -148,7 +152,7 @@ export function AdminSettingsManager() {
         helplineNumber: helplineNumber.trim()
       }, { merge: true }, 5000, true);
 
-      setSuccessMsg('बधाई हो! UPI ID (9708868515), WhatsApp नंबर (9507464117), स्कैनर और सभी सेटिंग्स सफलतापूर्वक हमेशा के लिए सेव हो गई हैं!');
+      setSuccessMsg(`बधाई हो! UPI ID (${upiId.trim()}), WhatsApp नंबर (${whatsappNumber.trim()}), स्कैनर और सभी सेटिंग्स सफलतापूर्वक हमेशा के लिए सेव हो गई हैं!`);
       setTimeout(() => setSuccessMsg(''), 5000);
     } catch (err: any) {
       console.error("Save settings error:", err);
@@ -187,7 +191,7 @@ export function AdminSettingsManager() {
                 required
                 value={helplineNumber}
                 onChange={(e) => setHelplineNumber(e.target.value)}
-                placeholder="उदा: 9507464117"
+                placeholder="उदा: 9241511070"
                 className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs text-stone-900 font-bold focus:outline-none focus:border-amber-500"
                 style={{ minHeight: '44px' }}
               />
@@ -203,7 +207,7 @@ export function AdminSettingsManager() {
                 required
                 value={whatsappNumber}
                 onChange={(e) => setWhatsappNumber(e.target.value)}
-                placeholder="उदा: 9507464117"
+                placeholder="उदा: 9241511070"
                 className="w-full bg-emerald-50/50 border border-emerald-300 rounded-xl px-3.5 py-2.5 text-xs text-stone-900 font-bold focus:outline-none focus:border-emerald-500"
                 style={{ minHeight: '44px' }}
               />
@@ -394,7 +398,7 @@ export function AdminSettingsManager() {
             </div>
 
             <div className="space-y-1.5">
-              <label className="text-xs font-bold text-stone-700">बोर्ड परीक्षा क्रैश कोर्स पूरा मूल्य (₹) *</label>
+              <label className="text-xs font-bold text-stone-700">क्रैश कोर्स संपूर्ण मूल्य (₹) *</label>
               <input
                 type="number"
                 required

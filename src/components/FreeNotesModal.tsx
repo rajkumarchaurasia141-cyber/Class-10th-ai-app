@@ -142,7 +142,7 @@ export function FreeNotesModal({ onClose, onOpenVip, onOpenSubject }: FreeNotesM
               }}
               className="w-full py-2 bg-amber-500 hover:bg-amber-400 text-stone-950 font-black text-xs rounded-xl shadow-xs cursor-pointer"
             >
-              VIP बैच में देखें (मात्र ₹99 / ₹600)
+              VIP क्रैश कोर्स में देखें (मात्र ₹299)
             </button>
           </div>
         </div>

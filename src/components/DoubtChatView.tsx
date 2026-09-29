@@ -278,7 +278,7 @@ export function DoubtChatView({ onOpenVip }: { onOpenVip: () => void }) {
             <span className="hidden sm:inline">कैमरा</span>
           </button>
           <a
-            href={`https://wa.me/91${appConfig.whatsappNumber || '9507464117'}?text=${encodeURIComponent('नमस्ते बिहार गुरु सर, मुझे बिहार बोर्ड क्लास 9-10 पढ़ाई में सहायता चाहिए।')}`}
+            href={`https://wa.me/91${appConfig.whatsappNumber || '9241511070'}?text=${encodeURIComponent('नमस्ते बिहार गुरु सर, मुझे बिहार बोर्ड क्लास 9-10 पढ़ाई में सहायता चाहिए।')}`}
             target="_blank"
             rel="noopener noreferrer"
             className="px-2.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold flex items-center gap-1 shadow-sm transition-all"

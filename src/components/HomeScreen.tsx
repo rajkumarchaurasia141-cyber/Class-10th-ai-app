@@ -12,7 +12,9 @@ import {
   Award,
   ArrowRight,
   BookOpen,
-  ShieldCheck
+  ShieldCheck,
+  MessageCircle,
+  Zap
 } from 'lucide-react';
 import { HeroCarouselBanner } from './HeroCarouselBanner';
 import { FeatureGrid } from './FeatureGrid';
@@ -33,7 +35,7 @@ interface HomeScreenProps {
 }
 
 export function HomeScreen({ onSelect, onOpenSubject, onNavigateTab, onOpenVip }: HomeScreenProps) {
-  const { subjects, motivationalQuotes } = useData();
+  const { subjects, motivationalQuotes, appConfig } = useData();
   const { isVIP, vipDetails, isAdmin, user } = useAuth();
   const handleSelectSubject = onSelect || onOpenSubject || (() => {});
 
@@ -151,6 +153,48 @@ export function HomeScreen({ onSelect, onOpenSubject, onNavigateTab, onOpenVip }
 
       {/* 2. 3x3 Feature Grid (Matches exact 9 icons & labels in user screenshot) */}
       <FeatureGrid onNavigate={handleFeatureNavigate} />
+
+      {/* 2.5 Crash Course Spotlight Banner (₹299 Special Offer) */}
+      <div className="bg-gradient-to-br from-amber-600 via-red-600 to-stone-950 rounded-3xl p-4 sm:p-5 text-white shadow-xl border-2 border-yellow-400/80 relative overflow-hidden">
+        {/* Ambient Glows */}
+        <div className="absolute top-0 right-0 w-48 h-48 bg-yellow-400/20 rounded-full blur-2xl pointer-events-none" />
+        <div className="absolute -bottom-8 -left-8 w-40 h-40 bg-red-500/20 rounded-full blur-xl pointer-events-none" />
+        
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 relative z-10">
+          <div className="space-y-1">
+            <div className="inline-flex items-center gap-1.5 bg-yellow-400 text-stone-950 text-[10px] font-black px-2.5 py-0.5 rounded-full uppercase tracking-wider shadow-xs">
+              <Zap className="w-3.5 h-3.5 fill-current" />
+              <span>स्पेशल टॉपर क्रैश कोर्स</span>
+            </div>
+            <h3 className="text-lg sm:text-xl font-black text-white tracking-tight leading-tight flex items-baseline gap-2">
+              <span>बिहार बोर्ड 10वीं क्रैश कोर्स</span>
+              <span className="text-yellow-300 font-extrabold text-base sm:text-lg">मात्र ₹299</span>
+            </h3>
+            <p className="text-xs text-amber-100 font-medium leading-relaxed">
+              कम समय में 450+ अंक की पक्की तैयारी! सभी 6 विषयों के हस्तलिखित नोट्स, VVI प्रश्न और 50 MCQ टेस्ट।
+            </p>
+          </div>
+
+          <div className="flex items-center gap-2 self-stretch sm:self-auto shrink-0 pt-1 sm:pt-0">
+            <button
+              onClick={() => setShowPaywall(true)}
+              className="flex-1 sm:flex-initial px-4 py-2.5 bg-yellow-400 hover:bg-yellow-300 text-stone-950 font-black text-xs rounded-xl shadow-lg transition-all flex items-center justify-center gap-1.5 active:scale-95 cursor-pointer border border-yellow-200"
+            >
+              <span>कोर्स अनलॉक करें (₹299)</span>
+              <ChevronRight className="w-4 h-4 stroke-[3]" />
+            </button>
+            <a
+              href={`https://wa.me/91${appConfig.whatsappNumber || '9241511070'}?text=${encodeURIComponent('नमस्ते सर, मुझे BSEB 10वीं क्रैश कोर्स (₹299) ज्वाइन करना है।')}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="p-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl shadow-md transition-all flex items-center justify-center cursor-pointer border border-emerald-400/40"
+              title="व्हाट्सएप पर सहायता (9241511070)"
+            >
+              <MessageCircle className="w-4 h-4" />
+            </a>
+          </div>
+        </div>
+      </div>
 
       {/* 3. Free Study Campaign Announcement */}
       <div className="bg-gradient-to-r from-emerald-600/10 via-emerald-500/15 to-emerald-600/10 border border-emerald-300 rounded-2xl p-3.5 flex items-center justify-between shadow-xs">

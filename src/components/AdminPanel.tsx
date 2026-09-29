@@ -150,7 +150,7 @@ export function AdminPanel({ onBack }: any) {
         isVip: true,
         plan: vipPlan,
         planDuration: expiry.planDurationText,
-        planPrice: vipPlan === '1month' ? 99 : 600,
+        planPrice: vipPlan === '1month' ? 99 : 299,
         validFrom: expiry.validFrom,
         expiresAt: expiry.expiresAt,
         addedAt: new Date().toISOString()
@@ -1094,9 +1094,9 @@ export function AdminPanel({ onBack }: any) {
                         : 'bg-stone-900 border-stone-800 text-stone-400 hover:border-stone-700'
                     }`}
                   >
-                    <div className="font-bold text-sm">1 वर्ष प्लान (Best)</div>
-                    <div className="text-xl font-black text-amber-400 mt-1">₹600</div>
-                    <div className="text-[11px] text-stone-400 mt-0.5">पूरे साल का फुल एक्सेस</div>
+                    <div className="font-bold text-sm">क्रैश कोर्स प्लान (Best)</div>
+                    <div className="text-xl font-black text-amber-400 mt-1">₹299</div>
+                    <div className="text-[11px] text-stone-400 mt-0.5">संपूर्ण क्रैश कोर्स व नोट्स एक्सेस</div>
                   </div>
                 </div>
               </div>

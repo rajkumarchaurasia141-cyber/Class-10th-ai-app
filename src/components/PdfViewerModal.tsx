@@ -220,7 +220,7 @@ export function PdfViewerModal({ note, onClose }: PdfViewerModalProps) {
                     1. मुख्य बिन्दु एवं बोर्ड परीक्षा महत्वपूर्ण तथ्य
                   </h4>
                   <ul className="list-disc pl-5 space-y-1.5 text-stone-700">
-                    <li>एनसीईआरटी (NCERT / BSEB) नवीनतम पाठ्यक्रम 2026-27 के अनुसार प्रत्येक विषय के प्रत्येक बिंदु का सरल हिन्दी व्याख्या।</li>
+                    <li>एनसीईआरटी (NCERT / BSEB) नवीनतम पाठ्यक्रम के अनुसार प्रत्येक विषय के प्रत्येक बिंदु का सरल हिन्दी व्याख्या।</li>
                     <li>प्रत्येक अध्याय के प्रमुख मन्त्र/परिभाषाएं/सूत्र और उनके परीक्षा में पूछे जाने वाले वास्तविक उदाहरण।</li>
                     <li>पिछले 10 वर्षों में पूछे गए रिपीटेड प्रश्न और 100% आने वाले VVI मॉडल प्रश्नोत्तर।</li>
                   </ul>
@@ -260,7 +260,7 @@ export function PdfViewerModal({ note, onClose }: PdfViewerModalProps) {
 
               {/* Watermark Footer */}
               <div className="pt-4 border-t border-slate-200 flex items-center justify-between text-[11px] text-stone-400">
-                <span>कॉपीराइट © 2026-फुल सिलेबस बिहार बोर्ड 10वीं टॉपर बैच</span>
+                <span>कॉपीराइट © फुल सिलेबस बिहार बोर्ड 10वीं टॉपर बैच</span>
                 <span>पेज 1 / {note.totalPages || 12}</span>
               </div>
             </div>

@@ -25,7 +25,7 @@ const DEFAULT_COURSES: CoursePackage[] = [
     description: 'सभी 7 मुख्य विषयों के हस्तलिखित नोट्स, VVI चैप्टर वाइज MCQs एवं लाइव क्लास।',
     badge: 'BSEB फुल सिलेबस अनिवार्य',
     subjects: ['math', 'science', 'social_science', 'hindi', 'sanskrit', 'english'],
-    price: 600,
+    price: 299,
     isFeatured: true,
     createdAt: new Date().toISOString()
   }
@@ -42,7 +42,7 @@ export function AdminCoursesManager() {
   const [subtitle, setSubtitle] = useState('');
   const [description, setDescription] = useState('');
   const [badge, setBadge] = useState('BSEB फुल सिलेबस');
-  const [price, setPrice] = useState(600);
+  const [price, setPrice] = useState(299);
   const [isFeatured, setIsFeatured] = useState(true);
   const [selectedSubjects, setSelectedSubjects] = useState<string[]>(['math', 'science', 'social_science', 'hindi', 'sanskrit', 'english']);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -53,7 +53,12 @@ export function AdminCoursesManager() {
         if (!snapshot.empty) {
           const list: CoursePackage[] = [];
           snapshot.forEach((d) => {
-            list.push({ id: d.id, ...d.data() } as CoursePackage);
+            const data = d.data();
+            list.push({ 
+              id: d.id, 
+              ...data,
+              price: Number(data.price) === 600 ? 299 : (Number(data.price) || 299)
+            } as CoursePackage);
           });
           setCourses(list);
         }
@@ -83,7 +88,7 @@ export function AdminCoursesManager() {
         description: description.trim() || 'उच्च गुणवत्ता वाले नोट्स और टेस्ट सीरीज़।',
         badge: badge.trim() || 'फुल सिलेबस Topper',
         subjects: selectedSubjects,
-        price: Number(price) || 600,
+        price: Number(price) === 600 ? 299 : (Number(price) || 299),
         isFeatured,
         createdAt: new Date().toISOString()
       };

@@ -249,7 +249,7 @@ export function FreeTestModal({ onClose, onOpenVip }: FreeTestModalProps) {
                   }}
                   className="w-full py-2 bg-amber-500 hover:bg-amber-400 text-stone-950 font-black text-xs rounded-xl transition-all cursor-pointer shadow-sm"
                 >
-                  VIP बैच देखें (मात्र ₹99 / ₹600)
+                  VIP क्रैश कोर्स देखें (मात्र ₹299)
                 </button>
               </div>
 

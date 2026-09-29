@@ -35,7 +35,7 @@ export function HeroCarouselBanner({ onOpenVip, onExploreCourses, onSelectSubjec
   const touchStartX = useRef<number | null>(null);
   const touchEndX = useRef<number | null>(null);
 
-  const SLIDE_COUNT = 3;
+  const SLIDE_COUNT = 4;
   const SLIDE_DURATION = 4000; // 4 seconds per slide for smooth automatic sliding
 
   const handleNext = useCallback(() => {
@@ -107,7 +107,172 @@ export function HeroCarouselBanner({ onOpenVip, onExploreCourses, onSelectSubjec
         style={{ transform: `translateX(-${currentSlide * 100}%)` }}
       >
         {/* ============================================================== */}
-        {/* SLIDE 1: ALL IN ONE COURSE POSTER (₹99 / ₹600 Special Offer) */}
+        {/* SLIDE 0: SPECIAL CRASH COURSE BANNER (₹299 Special Offer)     */}
+        {/* ============================================================== */}
+        <div className="w-full shrink-0 relative bg-gradient-to-br from-stone-950 via-amber-950 to-red-950 p-4 sm:p-6 overflow-hidden">
+          {/* Background Glows & Accent Graphics */}
+          <div className="absolute -top-16 -right-16 w-64 h-64 bg-amber-500/25 rounded-full blur-3xl pointer-events-none" />
+          <div className="absolute -bottom-16 -left-16 w-64 h-64 bg-red-600/30 rounded-full blur-3xl pointer-events-none" />
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-80 h-80 bg-yellow-500/15 rounded-full blur-3xl pointer-events-none" />
+
+          {/* Top Header: Branding + Badge */}
+          <div className="flex items-center justify-between gap-2 border-b border-amber-500/40 pb-2.5 relative z-10">
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-amber-500 to-red-600 flex items-center justify-center font-black text-stone-950 text-xs shadow-md border border-amber-300">
+                ⚡
+              </div>
+              <div>
+                <div className="flex items-center gap-1.5">
+                  <span className="text-sm font-black tracking-tight text-white drop-shadow-sm">BSEB GURU</span>
+                  <span className="text-[10px] bg-amber-500 text-stone-950 px-1.5 py-0.2 rounded-md font-black">क्रैश कोर्स</span>
+                </div>
+                <div className="text-[9px] text-amber-200 font-bold tracking-wide">मिशन 450+ टॉपर मार्क्स</div>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-1.5 bg-gradient-to-r from-yellow-400/20 to-red-500/20 border border-yellow-400/50 px-2.5 py-1 rounded-full text-yellow-300 text-[10px] font-black shadow-xs animate-pulse">
+              <Flame className="w-3 h-3 text-yellow-400 fill-yellow-400" />
+              <span>सीमित समय ऑफर • मात्र ₹299</span>
+            </div>
+          </div>
+
+          {/* Center Title & Raj Sir Guidance */}
+          <div className="mt-3 relative z-10 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+            <div>
+              <div className="inline-flex items-center gap-1 bg-yellow-400 text-stone-950 text-[10px] sm:text-xs font-black px-2.5 py-0.5 rounded-md uppercase tracking-wider mb-1 shadow-sm">
+                <Crown className="w-3.5 h-3.5 fill-current" />
+                बिहार बोर्ड 10वीं बोर्ड परीक्षा
+              </div>
+              <h2 className="text-xl sm:text-3xl font-black tracking-tight text-white drop-shadow-md leading-tight">
+                <span className="text-transparent bg-clip-text bg-gradient-to-r from-yellow-300 via-amber-200 to-white">
+                  टॉपर क्रैश कोर्स (Crash Course)
+                </span>
+              </h2>
+              <p className="text-xs text-amber-300 font-bold mt-0.5">
+                कम समय में सम्पूर्ण 6 विषयों की 100% सटीक तैयारी • NCERT आधारित
+              </p>
+            </div>
+
+            {/* RAJ SIR Badge */}
+            <div className="self-end sm:self-auto bg-gradient-to-r from-amber-600 via-red-600 to-red-700 text-white px-3.5 py-1.5 rounded-xl border border-yellow-300/60 shadow-lg text-center transform sm:rotate-1 hover:rotate-0 transition-transform">
+              <div className="text-[9px] text-yellow-200 font-extrabold tracking-widest uppercase">DIRECTOR / TEACHER</div>
+              <div className="text-sm sm:text-base font-black tracking-wider text-white flex items-center justify-center gap-1">
+                <span>RAJ SIR</span>
+                <Sparkles className="w-3.5 h-3.5 text-yellow-300 fill-yellow-300" />
+              </div>
+            </div>
+          </div>
+
+          {/* 6 Feature Boxes */}
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 mt-3 relative z-10">
+            <div className="bg-amber-950/40 border border-yellow-500/50 rounded-xl p-2 flex items-center gap-2 shadow-xs">
+              <div className="w-7 h-7 rounded-lg bg-yellow-500 text-stone-950 flex items-center justify-center shrink-0 font-black">
+                <Zap className="w-3.5 h-3.5 fill-current" />
+              </div>
+              <div className="min-w-0">
+                <div className="text-[11px] font-black text-yellow-300 leading-tight">फास्ट-ट्रैक कोर्स</div>
+                <div className="text-[9px] text-stone-300 truncate">लाइव & रिकॉर्डेड महामौरथन</div>
+              </div>
+            </div>
+
+            <div className="bg-red-950/40 border border-red-500/50 rounded-xl p-2 flex items-center gap-2 shadow-xs">
+              <div className="w-7 h-7 rounded-lg bg-red-600 text-white flex items-center justify-center shrink-0">
+                <FileText className="w-3.5 h-3.5" />
+              </div>
+              <div className="min-w-0">
+                <div className="text-[11px] font-black text-red-300 leading-tight">VVI गैस नोट्स</div>
+                <div className="text-[9px] text-stone-300 truncate">हस्तलिखित परीक्षा स्पेशल PDF</div>
+              </div>
+            </div>
+
+            <div className="bg-emerald-950/40 border border-emerald-500/50 rounded-xl p-2 flex items-center gap-2 shadow-xs">
+              <div className="w-7 h-7 rounded-lg bg-emerald-600 text-white flex items-center justify-center shrink-0">
+                <Award className="w-3.5 h-3.5" />
+              </div>
+              <div className="min-w-0">
+                <div className="text-[11px] font-black text-emerald-300 leading-tight">50 MCQ टेस्ट सीरीज</div>
+                <div className="text-[9px] text-stone-300 truncate">OMR पैटर्न तुरंत रिजल्ट</div>
+              </div>
+            </div>
+
+            <div className="bg-blue-950/40 border border-blue-500/50 rounded-xl p-2 flex items-center gap-2 shadow-xs">
+              <div className="w-7 h-7 rounded-lg bg-blue-600 text-white flex items-center justify-center shrink-0">
+                <BookOpen className="w-3.5 h-3.5" />
+              </div>
+              <div className="min-w-0">
+                <div className="text-[11px] font-black text-blue-300 leading-tight">10 इयर्स PYQ संग्रह</div>
+                <div className="text-[9px] text-stone-300 truncate">पिछले 10 वर्षों के हल प्रश्न</div>
+              </div>
+            </div>
+
+            <div className="bg-purple-950/40 border border-purple-500/50 rounded-xl p-2 flex items-center gap-2 shadow-xs">
+              <div className="w-7 h-7 rounded-lg bg-purple-600 text-white flex items-center justify-center shrink-0">
+                <Sparkles className="w-3.5 h-3.5" />
+              </div>
+              <div className="min-w-0">
+                <div className="text-[11px] font-black text-purple-300 leading-tight">AI बिहार गुरु</div>
+                <div className="text-[9px] text-stone-300 truncate">24x7 सरल डाउट समाधान</div>
+              </div>
+            </div>
+
+            <div className="bg-teal-950/40 border border-teal-500/50 rounded-xl p-2 flex items-center gap-2 shadow-xs">
+              <div className="w-7 h-7 rounded-lg bg-teal-600 text-white flex items-center justify-center shrink-0">
+                <BookmarkCheck className="w-3.5 h-3.5" />
+              </div>
+              <div className="min-w-0">
+                <div className="text-[11px] font-black text-teal-300 leading-tight">संभावित मॉडल पेपर्स</div>
+                <div className="text-[9px] text-stone-300 truncate">बोर्ड पैटर्न संभावित पेपर</div>
+              </div>
+            </div>
+          </div>
+
+          {/* Pricing Row: ₹299 ONLY Special Offer */}
+          <div className="mt-3.5 bg-gradient-to-r from-amber-950 via-stone-900 to-red-950 border-2 border-yellow-400 rounded-2xl p-2.5 sm:p-3 relative z-10 flex flex-wrap items-center justify-between gap-2 shadow-xl">
+            <div className="flex items-center gap-2.5">
+              <div className="w-10 h-10 rounded-xl bg-yellow-400 text-stone-950 flex items-center justify-center font-black text-lg shadow-md shrink-0">
+                ₹
+              </div>
+              <div className="text-left">
+                <div className="text-[9px] font-extrabold text-amber-400 uppercase tracking-wider flex items-center gap-1">
+                  <span>CRASH COURSE COMPLETE FEE</span>
+                  <span className="bg-red-600 text-white px-1.5 py-0.2 rounded-xs text-[8px] font-black">70% OFF</span>
+                </div>
+                <div className="flex items-baseline gap-2 leading-none mt-0.5">
+                  <span className="text-[12px] text-stone-400 line-through">₹999</span>
+                  <span className="text-2xl sm:text-3xl font-black text-yellow-300 drop-shadow-md">
+                    ₹299
+                  </span>
+                  <span className="text-xs text-amber-200 font-extrabold">मात्र (सम्पूर्ण कोर्स)</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Action Button */}
+            <button
+              onClick={onOpenVip}
+              className="px-4 py-2.5 bg-gradient-to-r from-yellow-400 via-amber-400 to-yellow-300 hover:from-yellow-300 hover:to-amber-300 text-stone-950 font-black text-xs sm:text-sm rounded-xl shadow-lg transition-all flex items-center gap-1.5 active:scale-95 cursor-pointer shrink-0 border border-yellow-200"
+            >
+              <span>क्रैश कोर्स ज्वाइन करें (₹299)</span>
+              <ArrowRight className="w-4 h-4 stroke-[3]" />
+            </button>
+          </div>
+
+          {/* Bottom Trust Line */}
+          <div className="mt-2.5 flex items-center justify-between text-[9px] sm:text-[10px] text-stone-400 font-bold px-1 relative z-10 border-t border-stone-800/80 pt-2">
+            <span className="flex items-center gap-1 text-emerald-400">
+              <Check className="w-3 h-3 stroke-[3]" /> 100% बोर्ड परीक्षा में सीधे लड़ने वाले प्रश्न
+            </span>
+            <span className="flex items-center gap-1 text-amber-400">
+              <Flame className="w-3 h-3" /> राज सर का स्पेशल मार्गदर्शन
+            </span>
+            <span className="flex items-center gap-1 text-sky-400">
+              <Award className="w-3 h-3" /> व्हाट्सएप सपोर्ट: 9241511070
+            </span>
+          </div>
+        </div>
+
+        {/* ============================================================== */}
+        {/* SLIDE 1: ALL IN ONE COURSE POSTER */}
         {/* ============================================================== */}
         <div className="w-full shrink-0 relative bg-gradient-to-br from-stone-950 via-red-950 to-neutral-950 p-4 sm:p-6 overflow-hidden">
           {/* Background Glows & Accent Graphics */}
@@ -235,29 +400,29 @@ export function HeroCarouselBanner({ onOpenVip, onExploreCourses, onSelectSubjec
             </div>
           </div>
 
-          {/* Pricing Row: ₹99 PER MONTH & ₹600 YEARLY OFFER */}
+          {/* Pricing Row: ₹299 CRASH COURSE OFFER */}
           <div className="mt-3.5 bg-gradient-to-r from-red-950 via-stone-900 to-red-950 border-2 border-amber-400/60 rounded-2xl p-2.5 sm:p-3 relative z-10 flex flex-wrap items-center justify-between gap-2 shadow-xl">
-            {/* Offer 1: ₹99 / Month */}
+            {/* Offer 1: Crash Course ₹299 */}
             <div className="flex items-center gap-2 bg-black/40 px-3 py-1.5 rounded-xl border border-stone-800">
               <div className="text-left">
-                <div className="text-[9px] font-extrabold text-amber-400 uppercase tracking-wider">JOIN COURSE</div>
+                <div className="text-[9px] font-extrabold text-amber-400 uppercase tracking-wider">ALL SUBJECTS</div>
                 <div className="text-base sm:text-lg font-black text-white flex items-baseline gap-1 leading-none">
-                  <span className="text-amber-300">₹99</span>
-                  <span className="text-[10px] text-stone-300 font-bold">/ MONTH</span>
+                  <span className="text-amber-300">₹299</span>
+                  <span className="text-[10px] text-stone-300 font-bold">मात्र</span>
                 </div>
               </div>
             </div>
 
-            {/* Offer 2: Yearly ₹600 (The Big Offer!) */}
+            {/* Offer 2: Yearly Offer */}
             <div className="flex items-center gap-2.5">
               <div className="text-right">
-                <div className="text-[9px] font-extrabold text-amber-400 uppercase tracking-wider">YEARLY OFFER</div>
+                <div className="text-[9px] font-extrabold text-amber-400 uppercase tracking-wider">SPECIAL OFFER</div>
                 <div className="flex items-center gap-1.5">
-                  <span className="text-[11px] text-stone-400 line-through">₹700</span>
+                  <span className="text-[11px] text-stone-400 line-through">₹999</span>
                   <span className="text-xl sm:text-2xl font-black text-yellow-300 leading-none drop-shadow-md">
-                    ₹600
+                    ₹299
                   </span>
-                  <span className="text-[10px] text-amber-200 font-extrabold">में पूरा साल</span>
+                  <span className="text-[10px] text-amber-200 font-extrabold">में संपूर्ण बैच</span>
                 </div>
               </div>
 
@@ -324,7 +489,7 @@ export function HeroCarouselBanner({ onOpenVip, onExploreCourses, onSelectSubjec
 
                 {/* Book Bottom Badge & Teacher */}
                 <div className="pl-2 pt-1 border-t border-amber-500/30 flex items-center justify-between">
-                  <span className="text-[8px] text-stone-300 font-bold">BSEB 2027</span>
+                  <span className="text-[8px] text-stone-300 font-bold">BSEB बोर्ड परीक्षा</span>
                   <span className="text-[9px] font-black text-amber-300 bg-black/60 px-1.5 py-0.5 rounded border border-amber-500/40">
                     RAJ SIR
                   </span>
@@ -398,7 +563,7 @@ export function HeroCarouselBanner({ onOpenVip, onExploreCourses, onSelectSubjec
                   className="px-3.5 py-2 bg-black/60 hover:bg-stone-900 text-amber-300 font-extrabold text-xs rounded-xl border border-amber-400/50 shadow-sm transition-all flex items-center gap-1 cursor-pointer"
                 >
                   <Crown className="w-3.5 h-3.5 text-amber-400" />
-                  <span>VIP पूरा कोर्स अनलॉक (₹99 / ₹600)</span>
+                  <span>VIP क्रैश कोर्स अनलॉक (₹299 मात्र)</span>
                 </button>
               </div>
             </div>
@@ -517,7 +682,7 @@ export function HeroCarouselBanner({ onOpenVip, onExploreCourses, onSelectSubjec
                   className="px-3.5 py-2 bg-black/60 hover:bg-stone-900 text-amber-300 font-extrabold text-xs rounded-xl border border-amber-400/50 shadow-sm transition-all flex items-center gap-1 cursor-pointer"
                 >
                   <Crown className="w-3.5 h-3.5 text-amber-400" />
-                  <span>VIP पूरा कोर्स अनलॉक (₹99 / ₹600)</span>
+                  <span>VIP क्रैश कोर्स अनलॉक (₹299 मात्र)</span>
                 </button>
               </div>
             </div>
@@ -550,9 +715,10 @@ export function HeroCarouselBanner({ onOpenVip, onExploreCourses, onSelectSubjec
 
       {/* Bottom Interactive Slide Indicators & Titles */}
       <div className="bg-stone-950/95 py-2 px-3 flex flex-wrap items-center justify-between gap-2 border-t border-stone-800 z-20 relative">
-        <div className="flex items-center gap-1.5">
+        <div className="flex items-center gap-1.5 flex-wrap">
           {[
-            { label: 'ALL IN ONE (₹99/₹600)', color: 'bg-amber-400' },
+            { label: '⚡ क्रैश कोर्स (₹299)', color: 'bg-yellow-400' },
+            { label: 'ALL IN ONE (₹299)', color: 'bg-amber-400' },
             { label: 'संस्कृत बुक (RAJ SIR)', color: 'bg-red-500' },
             { label: 'हिंदी बुक (RAJ SIR)', color: 'bg-orange-500' }
           ].map((item, idx) => (
@@ -574,10 +740,10 @@ export function HeroCarouselBanner({ onOpenVip, onExploreCourses, onSelectSubjec
           ))}
         </div>
 
-        <div className="text-[10px] text-stone-400 font-bold flex items-center gap-1">
+        <div className="text-[10px] text-stone-400 font-bold flex items-center gap-1 shrink-0">
           <span className="text-amber-400 font-black">{currentSlide + 1}</span>
           <span>/</span>
-          <span>3</span>
+          <span>4</span>
           <span className="text-[9px] text-emerald-400 ml-1 flex items-center gap-1 font-semibold">
             <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
             ऑटो-स्लाइडिंग

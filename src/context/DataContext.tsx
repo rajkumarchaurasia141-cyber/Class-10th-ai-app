@@ -10,6 +10,26 @@ import { Subject, PaidPdfNote, LiveClass, DailyQuizItem, LeaderboardEntry, Routi
 
 export const defaultBanners: BannerItem[] = [
   {
+    id: 'banner_crash',
+    tag: '⚡ स्पेशल बोर्ड परीक्षा क्रैश कोर्स',
+    title: 'बिहार बोर्ड 10वीं टॉपर क्रैश कोर्स',
+    subtitle: 'कम समय में 450+ अंक लाने का पक्का फॉर्मूला (Full Syllabus)',
+    features: [
+      'सभी 6 विषयों का सम्पूर्ण फास्ट-ट्रैक रिवीजन',
+      'चैप्टर-वाइज VVI गैस प्रश्नोत्तर एवं हस्तलिखित नोट्स',
+      'पिछले 10 वर्षों के बोर्ड मॉडल पेपर्स एवं लाइव सॉल्यूशन',
+      'फुल लेंथ 50 MCQ टेस्ट सीरीज व डाउट समाधान'
+    ],
+    subjects: ['गणित', 'विज्ञान', 'सामाजिक विज्ञान', 'संस्कृत', 'हिंदी', 'अंग्रेजी'],
+    oldPrice: '₹999',
+    newPrice: '₹299 मात्र',
+    priceLabel: 'Crash Course Fee',
+    actionText: 'क्रैश कोर्स ज्वाइन करें',
+    actionSub: 'मात्र ₹299 में अनलॉक करें',
+    bgGradient: 'from-amber-600 via-red-700 to-stone-950',
+    badgeColor: 'bg-yellow-400 text-stone-950'
+  },
+  {
     id: 'banner_1',
     tag: 'बिहार बोर्ड परीक्षा फुल सिलेबस',
     title: 'टॉपर बैच - फुल सिलेबस',
@@ -22,7 +42,7 @@ export const defaultBanners: BannerItem[] = [
     ],
     subjects: ['गणित', 'विज्ञान', 'सामाजिक विज्ञान', 'संस्कृत', 'हिंदी'],
     oldPrice: '₹1800',
-    newPrice: '₹99 / ₹600',
+    newPrice: '₹299 मात्र',
     priceLabel: 'Course Fee',
     actionText: 'ज्वाइन करें',
     actionSub: 'VIP अनलॉक',
@@ -72,17 +92,17 @@ export const defaultBanners: BannerItem[] = [
 ];
 
 export const defaultAppConfig: AppConfig = {
-  helplineNumber: '9507464117',
-  whatsappNumber: '9507464117',
+  helplineNumber: '9241511070',
+  whatsappNumber: '9241511070',
   upiId: '9708868515',
   qrCodeDataUrl: '',
   appLogoUrl: '/app_logo.svg',
   youtubeUrl: 'https://www.youtube.com/@Vidyaagent2.0',
   instagramUrl: 'https://www.instagram.com/unbroken_raj_01?stkn=dmJwNzNhNDl0cXhz',
-  whatsappGroupUrl: 'https://wa.me/919507464117?text=' + encodeURIComponent('नमस्ते सर, मुझे 10th BSEB फुल सिलेबस WhatsApp ग्रुप में जोड़ें।'),
+  whatsappGroupUrl: 'https://wa.me/919241511070?text=' + encodeURIComponent('नमस्ते सर, मुझे 10th BSEB फुल सिलेबस WhatsApp ग्रुप में जोड़ें।'),
   telegramUrl: 'https://t.me',
   price1Month: 99,
-  price1Year: 600,
+  price1Year: 299,
   banners: defaultBanners,
   apkUrl: 'https://ais-dev-k35g6pjdntzyqazh4vjcv2-479527350739.asia-east1.run.app',
   aabUrl: 'https://ais-dev-k35g6pjdntzyqazh4vjcv2-479527350739.asia-east1.run.app'
@@ -162,9 +182,18 @@ export const defaultQuotes: MotivationalQuote[] = [
 
 export const defaultNotifications: NotificationItem[] = [
   {
+    id: 'notif-crash',
+    title: '🔥 बोर्ड परीक्षा 10वीं टॉपर क्रैश कोर्स शुरू!',
+    description: 'मात्र ₹299 में सभी 6 विषयों का सम्पूर्ण क्रैश कोर्स अनलॉक करें! हस्तलिखित नोट्स, VVI गैस प्रश्नोत्तर और OMR टेस्ट उपलब्ध। सहायता के लिए WhatsApp: 9241511070',
+    timeLabel: 'अभी-अभी',
+    isNew: true,
+    actionType: 'vip',
+    createdAt: new Date().toISOString()
+  },
+  {
     id: 'notif-1',
-    title: '🎉 टॉपर बैच फुल सिलेबस स्पेशल ऑफर!',
-    description: 'बिहार बोर्ड 10वीं के सभी 6 विषयों का सम्पूर्ण कोर्स अब मात्र ₹99 (1 माह) या ₹600 (पूरे 1 वर्ष) में उपलब्ध है। अभी VIP बैच अनलॉक करें।',
+    title: '🎉 टॉपर बैच क्रैश कोर्स स्पेशल ऑफर!',
+    description: 'बिहार बोर्ड 10वीं के सभी 6 विषयों का सम्पूर्ण क्रैश कोर्स अब मात्र ₹299 में उपलब्ध है। अभी VIP क्रैश कोर्स अनलॉक करें।',
     timeLabel: '10 मिनट पहले',
     isNew: true,
     actionType: 'vip',
@@ -893,7 +922,19 @@ export const DataProvider = ({ children }: any) => {
       const cached = localStorage.getItem('bseb_app_config_cache');
       if (cached) {
         const parsed = JSON.parse(cached);
-        if (parsed && typeof parsed === 'object') return { ...defaultAppConfig, ...parsed };
+        if (parsed && typeof parsed === 'object') {
+          if (parsed.whatsappNumber === '9507464117' || !parsed.whatsappNumber) parsed.whatsappNumber = '9241511070';
+          if (parsed.helplineNumber === '9507464117' || !parsed.helplineNumber) parsed.helplineNumber = '9241511070';
+          if (parsed.whatsappGroupUrl && parsed.whatsappGroupUrl.includes('9507464117')) {
+            parsed.whatsappGroupUrl = parsed.whatsappGroupUrl.replace('9507464117', '9241511070');
+          }
+          parsed.price1Year = 299;
+          // Ensure crash course banner is present
+          if (Array.isArray(parsed.banners) && !parsed.banners.some((b: any) => b.id === 'banner_crash')) {
+            parsed.banners = defaultBanners;
+          }
+          return { ...defaultAppConfig, ...parsed, price1Year: 299, whatsappNumber: parsed.whatsappNumber || '9241511070' };
+        }
       }
     } catch {}
     return defaultAppConfig;
@@ -907,15 +948,23 @@ export const DataProvider = ({ children }: any) => {
         if (snap.exists()) {
           const data = snap.data();
           setAppConfig((prev) => {
+            const rawWa = data.whatsappNumber;
+            const finalWa = (rawWa === '9507464117' || !rawWa) ? '9241511070' : rawWa;
+            const rawPrice = Number(data.price || data.price1Year);
+            const finalPrice = (rawPrice === 600 || !rawPrice) ? 299 : rawPrice;
+            if (rawPrice === 600) {
+              try {
+                safeSetDoc(paymentRef, { price: 299, price1Year: 299 }, { merge: true }, 3000, true).catch(() => {});
+              } catch {}
+            }
             const updated = {
               ...prev,
               ...(data.upiId ? { upiId: data.upiId } : {}),
-              ...(data.whatsappNumber ? { whatsappNumber: data.whatsappNumber } : {}),
+              whatsappNumber: finalWa,
               ...(data.qrCodeUrl !== undefined ? { qrCodeDataUrl: data.qrCodeUrl } : {}),
               ...(data.appLogoUrl ? { appLogoUrl: data.appLogoUrl } : {}),
-              ...(data.price ? { price1Year: Number(data.price) } : {}),
-              ...(data.price1Year ? { price1Year: Number(data.price1Year) } : {}),
-              ...(data.helplineNumber ? { helplineNumber: data.helplineNumber } : {})
+              price1Year: finalPrice,
+              ...(data.helplineNumber ? { helplineNumber: data.helplineNumber === '9507464117' ? '9241511070' : data.helplineNumber } : { helplineNumber: '9241511070' })
             };
             try {
               localStorage.setItem('bseb_app_config_cache', JSON.stringify(updated));
@@ -943,12 +992,12 @@ export const DataProvider = ({ children }: any) => {
     try {
       await safeSetDoc(doc(db, 'app_settings', 'payment_config'), {
         upiId: newConfig.upiId,
-        whatsappNumber: newConfig.whatsappNumber || '9507464117',
+        whatsappNumber: newConfig.whatsappNumber || '9241511070',
         qrCodeUrl: newConfig.qrCodeDataUrl,
         appLogoUrl: newConfig.appLogoUrl,
-        price: newConfig.price1Year,
-        price1Year: newConfig.price1Year,
-        helplineNumber: newConfig.helplineNumber
+        price: newConfig.price1Year || 299,
+        price1Year: newConfig.price1Year || 299,
+        helplineNumber: newConfig.helplineNumber || '9241511070'
       }, { merge: true }, 5000, true);
     } catch (e: any) {
       console.warn("Firestore payment_config update notice:", e?.message);

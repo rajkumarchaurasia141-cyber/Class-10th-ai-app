@@ -26,10 +26,11 @@ export function SocialMediaModal({ onClose }: SocialMediaModalProps) {
 
   const YOUTUBE_URL = appConfig.youtubeUrl;
   const INSTAGRAM_URL = appConfig.instagramUrl;
-  const HELPLINE_NUMBER = appConfig.helplineNumber;
-  const HELPLINE_TEL = '+91' + appConfig.helplineNumber;
-  const WHATSAPP_HELPLINE_URL = `https://wa.me/91${appConfig.helplineNumber}?text=${encodeURIComponent('नमस्ते सर, मुझे पढ़ेगा बिहार 10वीं टॉपर बैच और नोट्स के बारे में जानकारी चाहिए।')}`;
-  const WHATSAPP_GROUP_URL = appConfig.whatsappGroupUrl || `https://wa.me/91${appConfig.helplineNumber}?text=${encodeURIComponent('नमस्ते सर, मुझे 10th BSEB फुल सिलेबस WhatsApp ग्रुप में जोड़ें।')}`;
+  const HELPLINE_NUMBER = (appConfig.whatsappNumber === '9507464117' ? '9241511070' : appConfig.whatsappNumber) || 
+    (appConfig.helplineNumber === '9507464117' ? '9241511070' : appConfig.helplineNumber) || '9241511070';
+  const HELPLINE_TEL = '+91' + HELPLINE_NUMBER;
+  const WHATSAPP_HELPLINE_URL = `https://wa.me/91${HELPLINE_NUMBER}?text=${encodeURIComponent('नमस्ते सर, मुझे BSEB GURU 10वीं टॉपर क्रैश कोर्स और नोट्स के बारे में जानकारी चाहिए।')}`;
+  const WHATSAPP_GROUP_URL = appConfig.whatsappGroupUrl || `https://wa.me/91${HELPLINE_NUMBER}?text=${encodeURIComponent('नमस्ते सर, मुझे 10th BSEB फुल सिलेबस WhatsApp ग्रुप में जोड़ें।')}`;
   const TELEGRAM_URL = appConfig.telegramUrl || 'https://t.me';
 
   const handleCopy = (text: string, id: string) => {

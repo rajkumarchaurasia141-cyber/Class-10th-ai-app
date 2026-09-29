@@ -14,7 +14,8 @@ import {
   AlertCircle,
   FileText,
   Mail,
-  Smartphone
+  Smartphone,
+  MessageCircle
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { db } from '../lib/firebase';
@@ -26,10 +27,12 @@ export function PaywallModal({ onClose }: { onClose: () => void }) {
   // Dynamic UPI and Price Config with standard default values
   const [config, setConfig] = useState({
     upiId: "9708868515",
-    whatsappNumber: "9507464117",
+    whatsappNumber: "9241511070",
     price: 299,
     qrCodeUrl: ""
   });
+
+  const activePrice = (config.price === 600 || !config.price) ? 299 : config.price;
 
   const [copiedUpi, setCopiedUpi] = useState(false);
   const [studentEmailInput, setStudentEmailInput] = useState(user?.email || '');
@@ -50,12 +53,25 @@ export function PaywallModal({ onClose }: { onClose: () => void }) {
     const unsub = onSnapshot(docRef, (snap) => {
       if (snap.exists()) {
         const data = snap.data();
+        const rawWa = data.whatsappNumber;
+        const finalWa = (rawWa === '9507464117' || !rawWa) ? '9241511070' : rawWa;
+        const rawPrice = Number(data.price);
+        const finalPrice = (rawPrice === 600 || !rawPrice) ? 299 : rawPrice;
+        if (rawPrice === 600 || data.price1Year === 600 || !data.price) {
+          try {
+            setDoc(docRef, { price: 299, price1Year: 299, whatsappNumber: finalWa }, { merge: true }).catch(() => {});
+          } catch {}
+        }
         setConfig({
           upiId: data.upiId || "9708868515",
-          whatsappNumber: data.whatsappNumber || "9507464117",
-          price: Number(data.price) || 299,
+          whatsappNumber: finalWa,
+          price: finalPrice,
           qrCodeUrl: data.qrCodeUrl || ""
         });
+      } else {
+        try {
+          setDoc(docRef, { price: 299, price1Year: 299, upiId: "9708868515", whatsappNumber: "9241511070" }, { merge: true }).catch(() => {});
+        } catch {}
       }
     }, (err) => {
       console.warn("Could not load remote payment configuration:", err);
@@ -181,7 +197,7 @@ export function PaywallModal({ onClose }: { onClose: () => void }) {
         userEmail: emailForPayload,
         userName: finalStudentName,
         courseName: "Crash Course",
-        amount: config.price,
+        amount: activePrice,
         upiRef: utrNumber.trim() || "N/A",
         screenshotBase64: screenshotBase64,
         status: "pending",
@@ -200,7 +216,7 @@ export function PaywallModal({ onClose }: { onClose: () => void }) {
           body: JSON.stringify({
             studentName: finalStudentName,
             studentEmail: emailForPayload,
-            amount: config.price,
+            amount: activePrice,
             screenshotUrl: screenshotBase64,
             requestId: requestId
           })
@@ -256,7 +272,7 @@ export function PaywallModal({ onClose }: { onClose: () => void }) {
           {/* Main Hero Header */}
           <div className="text-center bg-stone-50 rounded-2xl p-4 border border-stone-100 relative">
             <h2 className="text-lg sm:text-xl font-black text-stone-900">
-              क्रैश कोर्स अनलॉक करें - मात्र ₹{config.price}
+              क्रैश कोर्स अनलॉक करें - मात्र ₹{activePrice}
             </h2>
             <p className="text-[11px] text-stone-600 mt-1 font-semibold leading-relaxed">
               सभी विषयों के चैप्टर 2 और उसके बाद के सभी नोट्स, VVI टॉपर टिप्स, और प्रश्नोत्तरी तुरंत अनलॉक करें।
@@ -297,7 +313,7 @@ export function PaywallModal({ onClose }: { onClose: () => void }) {
             <div className="space-y-1.5">
               <label className="text-[11px] font-black text-stone-700 flex items-center gap-1">
                 <span className="w-4 h-4 rounded-full bg-red-600 text-white flex items-center justify-center text-[9px] font-black">1</span>
-                QR कोड स्कैन करके या UPI ID पर ₹{config.price} भेजें:
+                QR कोड स्कैन करके या UPI ID पर ₹{activePrice} भेजें:
               </label>
 
               <div className="bg-stone-50 border border-stone-200 rounded-xl p-2.5 flex items-center justify-between gap-2 shadow-xs">
@@ -333,13 +349,43 @@ export function PaywallModal({ onClose }: { onClose: () => void }) {
               </div>
             </div>
 
-            {/* STEP 2: Screenshot uploader */}
-            <div className="space-y-2">
+            {/* STEP 2: Screenshot uploader & Direct WhatsApp Sending */}
+            <div className="space-y-2.5">
               <label className="text-[11px] font-black text-stone-700 flex items-center gap-1">
                 <span className="w-4 h-4 rounded-full bg-red-600 text-white flex items-center justify-center text-[9px] font-black">2</span>
-                पेमेंट का स्क्रीनशॉट यहाँ अपलोड करें:
+                पेमेंट का स्क्रीनशॉट यहाँ अपलोड करें या सीधे WhatsApp पर भेजें:
               </label>
 
+              {/* Direct WhatsApp Clickable Link (Right at screenshot upload) */}
+              <div className="bg-gradient-to-r from-emerald-600 to-green-600 rounded-2xl p-3 text-white shadow-md border border-emerald-400">
+                <div className="flex items-center justify-between gap-2 mb-2">
+                  <div className="flex items-center gap-1.5">
+                    <span className="w-2 h-2 rounded-full bg-white animate-ping" />
+                    <span className="text-[11px] font-black uppercase tracking-wider text-emerald-100">
+                      ⚡ डायरेक्ट व्हाट्सएप लिंक
+                    </span>
+                  </div>
+                  <span className="bg-white/20 backdrop-blur-xs text-white font-mono text-[10px] font-black px-2 py-0.5 rounded-full border border-white/30">
+                    {config.whatsappNumber || '9241511070'}
+                  </span>
+                </div>
+
+                <a
+                  href={`https://wa.me/91${config.whatsappNumber || '9241511070'}?text=${encodeURIComponent(`नमस्ते राज सर, मैंने ₹${activePrice} का क्रैश कोर्स पेमेंट कर दिया है। यह रहा मेरा पेमेंट स्क्रीनशॉट। कृपया मेरा क्रैश कोर्स तुरंत अनलॉक कर दीजिए। (Gmail: ${studentEmailInput || user?.email || ''})`)}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="w-full bg-white hover:bg-emerald-50 active:scale-95 text-emerald-800 font-black py-2.5 px-3 rounded-xl flex items-center justify-center gap-2 text-xs shadow-sm transition-all cursor-pointer border border-emerald-200"
+                >
+                  <MessageCircle className="w-4 h-4 text-emerald-600 fill-emerald-600 shrink-0" />
+                  <span>यहाँ क्लिक करें ➜ सीधे मेरे WhatsApp पर भेजें ({config.whatsappNumber || '9241511070'})</span>
+                </a>
+                
+                <p className="text-[10px] text-emerald-100 text-center font-bold mt-1.5 leading-tight">
+                  (यहाँ क्लिक करते ही सीधे राज सर का WhatsApp खुल जाएगा और स्क्रीनशॉट भेजकर तुरंत एक्टिवेट करवा सकते हैं)
+                </p>
+              </div>
+
+              {/* In-app file picker */}
               <input 
                 type="file" 
                 ref={fileInputRef}
@@ -351,14 +397,14 @@ export function PaywallModal({ onClose }: { onClose: () => void }) {
               {!screenshotBase64 ? (
                 <div 
                   onClick={() => fileInputRef.current?.click()}
-                  className="border-2 border-dashed border-stone-300 hover:border-red-600 hover:bg-stone-50 rounded-2xl p-4 text-center cursor-pointer transition-all"
+                  className="border-2 border-dashed border-stone-300 hover:border-red-600 hover:bg-stone-50 rounded-2xl p-3.5 text-center cursor-pointer transition-all"
                 >
-                  <Upload className="w-6 h-6 text-stone-400 mx-auto mb-1.5" />
+                  <Upload className="w-5 h-5 text-stone-400 mx-auto mb-1" />
                   <span className="text-xs font-black text-stone-800 block">
-                    स्क्रीनशॉट फोटो चुनें (JPEG/PNG)
+                    या ऐप में स्क्रीनशॉट फोटो चुनें (JPEG/PNG)
                   </span>
                   <span className="text-[10px] text-stone-500 block mt-0.5 font-semibold">
-                    (भेजने से पहले ऐप इसे 70 KB से छोटा कर देगा)
+                    (फोटो चुनकर नीचे 'सबमिट करें' बटन दबाएं)
                   </span>
                 </div>
               ) : (
@@ -472,7 +518,7 @@ export function PaywallModal({ onClose }: { onClose: () => void }) {
 
             {/* Direct WhatsApp Option */}
             <a
-              href={`https://wa.me/91${config.whatsappNumber}?text=${encodeURIComponent(`नमस्ते सर, मैंने ₹${config.price} का कोर्स पेमेंट किया है। कृपया मेरा कोर्स अनलॉक करें। मेरी जीमेल: ${studentEmailInput || user?.email || ''}`)}`}
+              href={`https://wa.me/91${config.whatsappNumber}?text=${encodeURIComponent(`नमस्ते सर, मैंने ₹${activePrice} का क्रैश कोर्स पेमेंट किया है। कृपया मेरा कोर्स अनलॉक करें। मेरी जीमेल: ${studentEmailInput || user?.email || ''}`)}`}
               target="_blank"
               rel="noopener noreferrer"
               className="w-full bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 font-bold py-2 px-4 rounded-xl flex items-center justify-center gap-2 text-xs transition-all cursor-pointer text-center"

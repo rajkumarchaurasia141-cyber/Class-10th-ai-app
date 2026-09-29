@@ -292,7 +292,7 @@ export function AppDrawer({ isOpen, onClose, onNavigate, onOpenVip, onOpenGmailA
                 <Crown className="w-4 h-4" />
               </div>
               <div>
-                <div className="leading-tight">टॉपर VIP प्लान (₹99 / ₹600)</div>
+                <div className="leading-tight">टॉपर VIP क्रैश कोर्स (मात्र ₹299)</div>
                 <div className="text-[11px] text-amber-700 font-normal">पूरा कोर्स, PDF नोट्स व टेस्ट</div>
               </div>
             </button>
@@ -330,7 +330,7 @@ export function AppDrawer({ isOpen, onClose, onNavigate, onOpenVip, onOpenGmailA
             className="flex items-center gap-1.5 hover:text-red-700 font-semibold cursor-pointer"
           >
             <PhoneCall className="w-3.5 h-3.5 text-red-600" />
-            <span>हेल्पलाइन: {appConfig.whatsappNumber || appConfig.helplineNumber || '9507464117'}</span>
+            <span>हेल्पलाइन: {appConfig.whatsappNumber || appConfig.helplineNumber || '9241511070'}</span>
           </button>
           {user?.email ? (
             <button 
