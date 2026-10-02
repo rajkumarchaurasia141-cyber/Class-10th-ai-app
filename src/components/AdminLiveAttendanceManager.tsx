@@ -53,9 +53,9 @@ export function AdminLiveAttendanceManager() {
     if (search.trim()) {
       const q = search.toLowerCase();
       list = list.filter(r => 
-        r.studentName.toLowerCase().includes(q) || 
-        r.studentEmail.toLowerCase().includes(q) ||
-        r.classTitle.toLowerCase().includes(q)
+        (r.studentName || '').toLowerCase().includes(q) || 
+        (r.studentEmail || '').toLowerCase().includes(q) ||
+        (r.classTitle || '').toLowerCase().includes(q)
       );
     }
     return list;
@@ -84,7 +84,7 @@ export function AdminLiveAttendanceManager() {
       if (filterVipOnly && !s.isPaid) return false;
       if (search.trim()) {
         const q = search.toLowerCase();
-        const matchesSearch = s.name.toLowerCase().includes(q) || s.email.toLowerCase().includes(q);
+        const matchesSearch = (s.name || '').toLowerCase().includes(q) || (s.email || '').toLowerCase().includes(q);
         if (!matchesSearch) return false;
       }
       return !matchEmail && !matchId;

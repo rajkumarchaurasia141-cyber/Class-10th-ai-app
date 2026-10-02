@@ -19,7 +19,7 @@ export function BottomNavBar({ activeTab, onTabChange }: BottomNavBarProps) {
   ];
 
   return (
-    <nav className="sticky bottom-0 z-30 bg-white/95 backdrop-blur-md border-t border-slate-200 px-1 py-1 flex items-center justify-between shadow-lg overflow-x-auto scrollbar-none">
+    <nav className="fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-md border-t border-slate-200 px-1.5 py-1.5 flex items-center justify-between shadow-2xl overflow-x-auto scrollbar-none">
       {navItems.map((item) => {
         const Icon = item.icon;
         const isActive = activeTab === item.id;
