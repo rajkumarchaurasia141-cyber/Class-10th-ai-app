@@ -23,15 +23,15 @@ export const AuthProvider = ({ children }: any) => {
     }
     return null;
   });
-  const [isVIP, setIsVIP] = useState(true);
+  const [isVIP, setIsVIP] = useState<boolean>(false);
   const [isPaid, setIsPaid] = useState<boolean>(false);
   const [vipDetails, setVipDetails] = useState<any>({
-    isVip: true,
-    plan: 'free_unlocked',
-    planDurationText: 'मुफ़्त शिक्षा अभियान (सभी अनलॉक)',
-    isExpired: false,
-    daysRemaining: 9999,
-    formattedExpiry: 'असीमित (मुफ़्त एक्सेस)'
+    isVip: false,
+    plan: 'free',
+    planDurationText: 'मुफ़्त सदस्य',
+    isExpired: true,
+    daysRemaining: 0,
+    formattedExpiry: 'अनलॉक करें'
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -245,14 +245,15 @@ export const AuthProvider = ({ children }: any) => {
   const logout = () => {
     localStorage.removeItem('bseb_user');
     setUser(null);
-    setIsVIP(true);
+    setIsVIP(false);
+    setIsPaid(false);
     setVipDetails({
-      isVip: true,
-      plan: 'free_unlocked',
-      planDurationText: 'मुफ़्त शिक्षा अभियान (सभी अनलॉक)',
-      isExpired: false,
-      daysRemaining: 9999,
-      formattedExpiry: 'असीमित (मुफ़्त एक्सेस)'
+      isVip: false,
+      plan: 'free',
+      planDurationText: 'मुफ़्त सदस्य',
+      isExpired: true,
+      daysRemaining: 0,
+      formattedExpiry: 'अनलॉक करें'
     });
     setError(null);
   };

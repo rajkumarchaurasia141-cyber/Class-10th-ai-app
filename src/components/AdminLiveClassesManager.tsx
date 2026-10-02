@@ -270,7 +270,16 @@ export function AdminLiveClassesManager() {
                         RECORDED
                       </span>
                     )}
-                    <span className="bg-stone-800 text-amber-300 text-[10px] font-bold px-2 py-0.5 rounded-full">
+                    {cls.isVip ? (
+                      <span className="bg-amber-500/20 text-amber-300 border border-amber-500/40 text-[10px] font-black px-2 py-0.5 rounded-full flex items-center gap-1">
+                        <Lock className="w-2.5 h-2.5" /> केवल पेड छात्र (VIP)
+                      </span>
+                    ) : (
+                      <span className="bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 text-[10px] font-black px-2 py-0.5 rounded-full flex items-center gap-1">
+                        <Gift className="w-2.5 h-2.5" /> फ्री डेमो (सभी बच्चे)
+                      </span>
+                    )}
+                    <span className="bg-stone-800 text-stone-300 text-[10px] font-bold px-2 py-0.5 rounded-full">
                       {cls.subjectName}
                     </span>
                     <span className="text-[11px] text-stone-400 flex items-center gap-1">
@@ -292,7 +301,21 @@ export function AdminLiveClassesManager() {
                   )}
                 </div>
 
-                <div className="flex items-center gap-2 self-end sm:self-center shrink-0">
+                <div className="flex items-center gap-2 self-end sm:self-center shrink-0 flex-wrap">
+                  <button
+                    type="button"
+                    onClick={() => handleToggleVip(cls.id, !!cls.isVip)}
+                    className={`text-xs font-bold px-3 py-1.5 rounded-xl border flex items-center gap-1.5 transition-colors cursor-pointer ${
+                      cls.isVip
+                        ? 'bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border-amber-500/40'
+                        : 'bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border-emerald-500/40'
+                    }`}
+                    title="क्लिक करके स्थिति बदलें (VIP या फ्री)"
+                  >
+                    {cls.isVip ? <Lock className="w-3.5 h-3.5" /> : <Unlock className="w-3.5 h-3.5" />}
+                    <span>{cls.isVip ? 'VIP लॉक है' : 'फ्री डेमो है'}</span>
+                  </button>
+
                   <a
                     href={cls.youtubeUrl}
                     target="_blank"

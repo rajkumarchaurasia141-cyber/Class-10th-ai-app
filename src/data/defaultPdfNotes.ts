@@ -829,6 +829,72 @@ export const defaultPaidPdfNotes: PaidPdfNote[] = [
     fileSize: '3.0 MB',
     isPaid: true,
     uploadedAt: '2026-09-23'
+  },
+  // ================== स्पेशल गेस पेपर (VIP SPECIAL GUESS PAPERS - LOCKED) ==================
+  {
+    id: 'guess-paper-sanskrit-2026-vvi',
+    subjectId: 'sanskrit',
+    subjectName: 'संस्कृत (पीयूषम्)',
+    title: '🔥 स्पेशल गेस पेपर: संस्कृत 100 VVI वस्तुनिष्ठ एवं विषयनिष्ठ 100% गारंटी प्रश्नोत्तर',
+    description: 'बोर्ड परीक्षा स्पेशल: उपनिषद्, पाटलिपुत्र, अलसकथा, नीतिश्लोकाः, मन्दाकिनीवर्णनम् व व्याघ्रपथिककथा से शत-प्रतिशत आने वाले प्रश्न एवं पत्र-लेखन/अनुच्छेद हल सहित।',
+    pdfUrl: 'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf',
+    totalPages: 24,
+    fileSize: '4.5 MB',
+    isPaid: true,
+    isGuessPaper: true,
+    uploadedAt: '2026-09-29'
+  },
+  {
+    id: 'guess-paper-science-2026-vvi',
+    subjectId: 'science',
+    subjectName: 'विज्ञान (भौतिकी, रसायन, जीव)',
+    title: '🔥 स्पेशल गेस पेपर: विज्ञान महा-गेस वायरल पेपर (Physics + Chemistry + Biology)',
+    description: 'प्रकाश का परावर्तन/अपवर्तन, मानव नेत्र, ओम का नियम, अम्ल-क्षार, कार्बनिक यौगिक, प्रकाश संश्लेषण, नेफ्रॉन व मानव मस्तिष्क चित्र सहित सम्पूर्ण हल।',
+    pdfUrl: 'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf',
+    totalPages: 32,
+    fileSize: '5.8 MB',
+    isPaid: true,
+    isGuessPaper: true,
+    uploadedAt: '2026-09-29'
+  },
+  {
+    id: 'guess-paper-math-2026-vvi',
+    subjectId: 'math',
+    subjectName: 'गणित (Mathematics)',
+    title: '🔥 स्पेशल गेस पेपर: गणित टॉप 80 VVI लघु एवं दीर्घ उत्तरीय सिद्ध करने वाले प्रश्न',
+    description: 'यूक्लिड विभाजन, √5 एक अपरिमेय संख्या है, द्विघात समीकरण, त्रिकोणमिति सर्वसमिकाएं, ऊँचाई और दूरी, थेल्स प्रमेय, वृत्त की स्पर्श रेखा एवं सांख्यिकी/माध्य-माध्यिका।',
+    pdfUrl: 'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf',
+    totalPages: 28,
+    fileSize: '5.2 MB',
+    isPaid: true,
+    isGuessPaper: true,
+    uploadedAt: '2026-09-29'
+  },
+  {
+    id: 'guess-paper-social-2026-vvi',
+    subjectId: 'social_science',
+    subjectName: 'सामाजिक विज्ञान (Social Science)',
+    title: '🔥 स्पेशल गेस पेपर: सामाजिक विज्ञान (इतिहास + भूगोल + राजनीति + अर्थशास्त्र)',
+    description: 'यूरोप व भारत में राष्ट्रवाद, आपदा प्रबंधन, भारतीय कृषि, संसाधन, लोकतंत्र में सत्ता की साझेदारी एवं भारतीय अर्थव्यवस्था के तीनों क्षेत्रों का सम्पूर्ण विश्लेषण।',
+    pdfUrl: 'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf',
+    totalPages: 30,
+    fileSize: '5.5 MB',
+    isPaid: true,
+    isGuessPaper: true,
+    uploadedAt: '2026-09-29'
+  },
+  {
+    id: 'guess-paper-hindi-2026-vvi',
+    subjectId: 'hindi',
+    subjectName: 'हिन्दी (गोधूलि & वर्णिका)',
+    title: '🔥 स्पेशल गेस पेपर: हिन्दी सम्पूर्ण गद्य, पद्य एवं व्याकरण VVI वायरल प्रश्न',
+    description: 'श्रम विभाजन, विष के दाँत, भारत से हम क्या सीखें, मंगम्मा, ढहते विश्वास, माँ व नगर के मुख्य प्रश्न, व्याख्या एवं सटीक निबंध लेखन।',
+    pdfUrl: 'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf',
+    totalPages: 26,
+    fileSize: '4.8 MB',
+    isPaid: true,
+    isGuessPaper: true,
+    uploadedAt: '2026-09-29'
   }
 ];
 

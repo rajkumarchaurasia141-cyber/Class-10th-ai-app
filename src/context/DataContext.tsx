@@ -213,26 +213,26 @@ export const defaultNotifications: NotificationItem[] = [
 export const defaultLiveClasses: LiveClass[] = [
   {
     id: 'live_default_1',
-    title: 'संस्कृत - मङ्गलम् संपूर्ण व्याख्या एवं VVI ऑब्जेक्टिव प्रश्न (Live Class)',
+    title: 'संस्कृत - मङ्गलम् संपूर्ण व्याख्या एवं VVI ऑब्जेक्टिव प्रश्न (फ्री डेमो क्लास)',
     youtubeUrl: 'https://www.youtube.com/watch?v=5qap5aO4i9A',
     subjectName: 'संस्कृत',
     teacherName: 'राज सर',
     scheduledAt: 'आज शाम 6:00 बजे',
     isLive: true,
-    isVip: true,
-    description: 'बिहार बोर्ड फुल सिलेबस परीक्षा के लिए संस्कृत प्रथम अध्याय मङ्गलम् का लाइव महामौरथन।',
+    isVip: false,
+    description: 'बिहार बोर्ड फुल सिलेबस परीक्षा के लिए संस्कृत प्रथम अध्याय मङ्गलम् का लाइव महामौरथन (सभी छात्रों के लिए फ्री डेमो)।',
     createdAt: new Date().toISOString()
   },
   {
     id: 'live_default_2',
-    title: 'विज्ञान - रासायनिक समीकरण एवं अभिक्रियाएँ (Recorded Class)',
+    title: 'विज्ञान - रासायनिक समीकरण एवं अभिक्रियाएँ (VIP स्पेशल क्लास)',
     youtubeUrl: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
     subjectName: 'विज्ञान',
     teacherName: 'प्रिया मैम',
     scheduledAt: 'कल अपलोड किया गया',
     isLive: false,
     isVip: true,
-    description: 'कक्षा 10वीं रसायन विज्ञान चैप्टर 1 के सभी महत्वपूर्ण प्रश्न उत्तर।',
+    description: 'कक्षा 10वीं रसायन विज्ञान चैप्टर 1 के सभी महत्वपूर्ण प्रश्न उत्तर (केवल पेड छात्रों के लिए)।',
     createdAt: new Date().toISOString()
   }
 ];

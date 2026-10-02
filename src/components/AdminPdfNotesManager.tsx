@@ -41,6 +41,7 @@ export function AdminPdfNotesManager() {
   const [uploadMode, setUploadMode] = useState<'file' | 'link'>('file');
   const [pdfUrl, setPdfUrl] = useState('');
   const [fileName, setFileName] = useState('');
+  const [isGuessPaper, setIsGuessPaper] = useState(false);
 
   // Status State
   const [loading, setLoading] = useState(false);
@@ -111,15 +112,17 @@ export function AdminPdfNotesManager() {
         pdfUrl: pdfUrl.trim(),
         totalPages: Number(totalPages) || 10,
         fileSize: fileSize || '2.0 MB',
-        isPaid: true
+        isPaid: true,
+        isGuessPaper: isGuessPaper
       });
 
-      setSuccessMsg(`"${title}" को सफलतापूर्वक पेड नोट्स लाइब्रेरी में जोड़ दिया गया है!`);
+      setSuccessMsg(`"${title}" को सफलतापूर्वक ${isGuessPaper ? 'स्पेशल गेस पेपर' : 'पेड नोट्स लाइब्रेरी'} में जोड़ दिया गया है!`);
       // Reset form fields
       setTitle('');
       setDescription('');
       setPdfUrl('');
       setFileName('');
+      setIsGuessPaper(false);
     } catch (err: any) {
       setErrorMsg(err?.message || 'नोट्स सेव करने में त्रुटि हुई।');
     } finally {
@@ -270,6 +273,26 @@ export function AdminPdfNotesManager() {
                 required
               />
             </div>
+          </div>
+
+          {/* Special Guess Paper Checkbox Toggle */}
+          <div className="p-3 bg-amber-500/10 border border-amber-500/30 rounded-xl flex items-center justify-between">
+            <div className="space-y-0.5">
+              <label htmlFor="guessPaperToggle" className="text-xs font-bold text-amber-300 flex items-center gap-1.5 cursor-pointer">
+                <span>🔥 क्या यह "स्पेशल गेस पेपर" है?</span>
+                <span className="text-[10px] bg-red-600 text-white font-black px-1.5 py-0.2 rounded">VVI LOCK</span>
+              </label>
+              <p className="text-[11px] text-stone-400">
+                इसे चेक करने पर यह सीधे "स्पेशल गेस पेपर" सेक्शन में लॉक होकर दिखेगा (केवल पेड छात्रों का लॉक खुलेगा)।
+              </p>
+            </div>
+            <input
+              id="guessPaperToggle"
+              type="checkbox"
+              checked={isGuessPaper}
+              onChange={(e) => setIsGuessPaper(e.target.checked)}
+              className="w-5 h-5 accent-amber-500 rounded cursor-pointer"
+            />
           </div>
 
           {/* Description */}

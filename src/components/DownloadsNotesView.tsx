@@ -19,23 +19,31 @@ import { PdfViewerModal } from './PdfViewerModal';
 interface DownloadsNotesViewProps {
   onOpenSubject: (subjectId: string) => void;
   onOpenVip: () => void;
+  initialFilter?: string;
 }
 
-export function DownloadsNotesView({ onOpenSubject, onOpenVip }: DownloadsNotesViewProps) {
+export function DownloadsNotesView({ onOpenSubject, onOpenVip, initialFilter = 'all' }: DownloadsNotesViewProps) {
   const { paidNotes, subjects } = useData();
   const { isVIP } = useAuth();
-  const [selectedSubjectFilter, setSelectedSubjectFilter] = useState<string>('all');
+  const [selectedSubjectFilter, setSelectedSubjectFilter] = useState<string>(initialFilter);
   const [searchQuery, setSearchQuery] = useState('');
   const [activePdfNote, setActivePdfNote] = useState<PaidPdfNote | null>(null);
 
+  const guessPapersCount = paidNotes.filter(n => n.isGuessPaper).length;
+
   const filteredNotes = paidNotes.filter((note) => {
-    const matchesSubject = selectedSubjectFilter === 'all' || note.subjectId === selectedSubjectFilter;
+    let matchesCategory = true;
+    if (selectedSubjectFilter === 'guess_paper') {
+      matchesCategory = note.isGuessPaper === true;
+    } else if (selectedSubjectFilter !== 'all') {
+      matchesCategory = note.subjectId === selectedSubjectFilter;
+    }
     const query = searchQuery.toLowerCase().trim();
     const matchesQuery = !query || 
       note.title.toLowerCase().includes(query) ||
       note.subjectName.toLowerCase().includes(query) ||
       (note.chapterName && note.chapterName.toLowerCase().includes(query));
-    return matchesSubject && matchesQuery;
+    return matchesCategory && matchesQuery;
   });
 
   const handleOpenPdf = (note: PaidPdfNote) => {
@@ -127,6 +135,20 @@ export function DownloadsNotesView({ onOpenSubject, onOpenVip }: DownloadsNotesV
 
         <div className="flex gap-1.5 overflow-x-auto pb-1 scrollbar-none text-xs">
           <button
+            onClick={() => setSelectedSubjectFilter('guess_paper')}
+            className={`px-3 py-1.5 rounded-xl font-bold whitespace-nowrap transition-all cursor-pointer flex items-center gap-1.5 ${
+              selectedSubjectFilter === 'guess_paper'
+                ? 'bg-amber-500 text-stone-950 font-black shadow-md ring-2 ring-amber-400'
+                : 'bg-amber-50 border border-amber-300 text-amber-900 hover:bg-amber-100 font-extrabold'
+            }`}
+          >
+            <span>🔥 स्पेशल गेस पेपर</span>
+            <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-stone-900 text-amber-300 font-black">
+              {guessPapersCount}
+            </span>
+            {!isVIP && <Lock className="w-3 h-3 text-amber-700" />}
+          </button>
+          <button
             onClick={() => setSelectedSubjectFilter('all')}
             className={`px-3 py-1.5 rounded-xl font-bold whitespace-nowrap transition-colors cursor-pointer ${
               selectedSubjectFilter === 'all'
@@ -213,22 +235,40 @@ export function DownloadsNotesView({ onOpenSubject, onOpenVip }: DownloadsNotesV
               <div
                 key={note.id}
                 onClick={() => handleOpenPdf(note)}
-                className="bg-white hover:bg-slate-50 border border-slate-200/90 rounded-2xl p-4 transition-all shadow-xs hover:shadow-md cursor-pointer flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 group relative overflow-hidden"
+                className={`bg-white hover:bg-slate-50 border rounded-2xl p-4 transition-all shadow-xs hover:shadow-md cursor-pointer flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 group relative overflow-hidden ${
+                  note.isGuessPaper 
+                    ? 'border-amber-300 ring-1 ring-amber-400/40 bg-gradient-to-r from-amber-500/5 via-white to-white' 
+                    : 'border-slate-200/90'
+                }`}
               >
-                {!isVIP && note.id === 'sanskrit-ch1-mangalam-pdf' && (
+                {note.isGuessPaper && (
+                  <span className="absolute -top-1 -right-1 bg-gradient-to-r from-amber-500 to-amber-600 text-stone-950 text-[9px] font-black px-2.5 py-0.5 rounded-bl-lg shadow-xs flex items-center gap-1">
+                    <span>🔥 स्पेशल गेस पेपर</span>
+                    {!isUnlocked && <Lock className="w-2.5 h-2.5" />}
+                  </span>
+                )}
+                {!note.isGuessPaper && !isVIP && note.id === 'sanskrit-ch1-mangalam-pdf' && (
                   <span className="absolute -top-1 -right-1 bg-emerald-600 text-white text-[9px] font-black px-2.5 py-0.5 rounded-bl-lg">
                     फ्री सैंपल
                   </span>
                 )}
 
                 <div className="flex items-start gap-3 w-full sm:w-auto">
-                  <div className="w-12 h-12 rounded-2xl bg-red-50 text-red-700 border border-red-100 flex items-center justify-center font-bold shrink-0 group-hover:scale-105 transition-transform mt-0.5">
-                    <FileText className="w-6 h-6" />
+                  <div className={`w-12 h-12 rounded-2xl border flex items-center justify-center font-bold shrink-0 group-hover:scale-105 transition-transform mt-0.5 ${
+                    note.isGuessPaper 
+                      ? 'bg-amber-100 text-amber-900 border-amber-300 shadow-xs' 
+                      : 'bg-red-50 text-red-700 border-red-100'
+                  }`}>
+                    {note.isGuessPaper ? <Sparkles className="w-6 h-6 text-amber-700" /> : <FileText className="w-6 h-6" />}
                   </div>
 
                   <div className="space-y-1 overflow-hidden flex-1">
                     <div className="flex items-center gap-1.5 flex-wrap">
-                      <span className="bg-red-50 text-red-700 text-[10px] font-extrabold px-2 py-0.5 rounded-md border border-red-100">
+                      <span className={`text-[10px] font-extrabold px-2 py-0.5 rounded-md border ${
+                        note.isGuessPaper 
+                          ? 'bg-amber-500 text-stone-950 border-amber-500 font-black' 
+                          : 'bg-red-50 text-red-700 border-red-100'
+                      }`}>
                         {note.subjectName}
                       </span>
                       {note.chapterNo && (
@@ -271,9 +311,9 @@ export function DownloadsNotesView({ onOpenSubject, onOpenVip }: DownloadsNotesV
                       </span>
                     </>
                   ) : (
-                    <span className="bg-amber-500/15 border border-amber-500/30 text-amber-900 px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5">
-                      <Lock className="w-3.5 h-3.5 text-amber-600" />
-                      <span>अनलॉक करें</span>
+                    <span className="bg-amber-500/20 border border-amber-500/40 text-amber-950 px-3 py-1.5 rounded-xl text-xs font-black flex items-center gap-1.5 shadow-xs">
+                      <Lock className="w-3.5 h-3.5 text-amber-700" />
+                      <span>{note.isGuessPaper ? '🔒 गेस पेपर लॉक खोलें' : '🔒 अनलॉक करें'}</span>
                     </span>
                   )}
                 </div>

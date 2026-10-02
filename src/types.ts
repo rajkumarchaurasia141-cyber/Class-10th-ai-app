@@ -52,6 +52,7 @@ export interface PaidPdfNote {
   fileSize?: string;
   isPaid?: boolean;
   uploadedAt?: string;
+  isGuessPaper?: boolean;
 }
 
 export interface LiveClass {
