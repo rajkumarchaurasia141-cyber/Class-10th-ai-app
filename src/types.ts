@@ -69,6 +69,7 @@ export interface LiveClass {
   publishType?: 'instant' | 'scheduled';
   scheduledDateTime?: string; // ISO string e.g. "2026-10-02T19:00:00"
   isUploaded?: boolean;
+  language?: string;
 }
 
 export interface DailyQuizItem {
@@ -156,6 +157,31 @@ export interface AppConfig {
   apkUrl?: string;
   aabUrl?: string;
   appLogoUrl?: string;
+}
+
+export interface LiveWatchRecord {
+  id: string; // `${classId}_${studentId}`
+  classId: string;
+  classTitle: string;
+  isLive: boolean;
+  studentId: string;
+  studentName: string;
+  studentEmail: string;
+  studentPhone?: string;
+  isPaid: boolean;
+  joinedAt: string; // ISO string
+  lastHeartbeat: number; // timestamp in ms
+  watchSeconds: number; // total watch time in seconds
+  isOnline: boolean; // whether active right now
+}
+
+export interface BatchStudent {
+  id: string;
+  name: string;
+  email: string;
+  phone?: string;
+  isPaid: boolean;
+  registeredAt?: string;
 }
 
 

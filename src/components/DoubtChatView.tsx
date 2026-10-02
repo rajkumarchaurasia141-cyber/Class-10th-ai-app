@@ -250,7 +250,7 @@ export function DoubtChatView({ onOpenVip }: { onOpenVip: () => void }) {
   };
 
   return (
-    <div className="flex flex-col h-[calc(100vh-120px)] max-w-lg mx-auto bg-slate-50 border-x border-slate-200">
+    <div className="flex flex-col h-full max-w-lg mx-auto bg-slate-50">
       {/* Top Bar */}
       <div className="bg-white border-b border-slate-200 p-3.5 flex items-center justify-between shadow-xs">
         <div className="flex items-center gap-2.5">

@@ -233,7 +233,7 @@ export function DailyQuizView({ onOpenVip, onSelectSubject, onOpenSubject }: Dai
   };
 
   return (
-    <div className="p-3 sm:p-4 w-full max-w-2xl mx-auto space-y-4 pb-24 animate-fade-in">
+    <div className="p-2.5 sm:p-3 w-full max-w-2xl mx-auto space-y-3 pb-8 animate-fade-in">
       {/* Header Banner */}
       <div className="bg-gradient-to-r from-indigo-950 via-blue-900 to-indigo-900 text-white rounded-3xl p-5 shadow-xl border border-blue-500/30 relative overflow-hidden">
         <div className="absolute -right-6 -bottom-6 w-32 h-32 bg-blue-500/10 rounded-full blur-2xl"></div>

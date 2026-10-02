@@ -61,6 +61,29 @@ function MainApp() {
   const [adminPasswordInput, setAdminPasswordInput] = useState('');
   const [adminPasswordError, setAdminPasswordError] = useState('');
 
+  const mainScrollRef = React.useRef<HTMLElement>(null);
+
+  // Auto-scroll to top when active tab or subject changes so user NEVER has to scroll up!
+  React.useEffect(() => {
+    if (mainScrollRef.current) {
+      mainScrollRef.current.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+    }
+    window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+  }, [activeTab, selectedSubject]);
+
+  const handleTabChange = (tab: string) => {
+    if (tab === activeTab) {
+      // If clicking current active tab, smoothly scroll back to top of screen
+      mainScrollRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    } else {
+      setSelectedSubject(null);
+      setActiveTab(tab);
+      mainScrollRef.current?.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+      window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+    }
+  };
+
   const handleAdminClick = () => {
     setActiveTab('admin');
   };
@@ -77,24 +100,19 @@ function MainApp() {
   const handleDrawerNavigate = (view: string, extra?: any) => {
     switch (view) {
       case 'home':
-        setActiveTab('home');
-        setSelectedSubject(null);
+        handleTabChange('home');
         break;
       case 'course':
-        setActiveTab('my_courses');
-        setSelectedSubject(null);
+        handleTabChange('my_courses');
         break;
       case 'live':
-        setActiveTab('live');
-        setSelectedSubject(null);
+        handleTabChange('live');
         break;
       case 'leaderboard':
-        setActiveTab('leaderboard');
-        setSelectedSubject(null);
+        handleTabChange('leaderboard');
         break;
       case 'chat':
-        setActiveTab('chat');
-        setSelectedSubject(null);
+        handleTabChange('chat');
         break;
       case 'routine':
         setShowRoutine(true);
@@ -115,7 +133,7 @@ function MainApp() {
 
   return (
     <div className="min-h-screen w-full bg-slate-50 flex flex-col selection:bg-red-500/30 overflow-x-hidden">
-      {/* Edge-to-Edge Native Android Full-Width App Container */}
+      {/* Edge-to-Edge Full-Width Responsive App Container */}
       <div className="w-full bg-slate-50 min-h-screen flex flex-col relative overflow-x-hidden">
         {/* Top Header Bar with Hamburger Menu & Notifications */}
         <MobileTopBar
@@ -124,6 +142,7 @@ function MainApp() {
           onOpenVip={() => setShowVipModal(true)}
           onOpenAdmin={handleAdminClick}
           onOpenGmailAuth={() => setShowGmailAuth(true)}
+          onGoHome={() => handleTabChange('home')}
           unreadCount={2}
         />
 
@@ -137,7 +156,7 @@ function MainApp() {
         />
 
         {/* Main Content Area */}
-        <main className="flex-1 overflow-y-auto overflow-x-hidden">
+        <main ref={mainScrollRef} className="flex-1 overflow-y-auto overflow-x-hidden overscroll-contain">
           {activeTab === 'home' && (
             <HomeScreen 
               onSelect={(id: string) => { 
@@ -318,18 +337,10 @@ function MainApp() {
 
         {/* Bottom Navigation Bar (Sticky Native App Footer) */}
         {activeTab !== 'admin' && (
-          <div className="flex flex-col">
-            <BottomNavBar
-              activeTab={activeTab === 'explorer' ? 'my_courses' : activeTab}
-              onTabChange={(tab) => {
-                setSelectedSubject(null);
-                setActiveTab(tab);
-              }}
-            />
-            <div className="text-[10px] text-stone-400 text-center pb-2 bg-slate-50">
-              Data Version: {new Date().toLocaleTimeString()}
-            </div>
-          </div>
+          <BottomNavBar
+            activeTab={activeTab === 'explorer' ? 'my_courses' : activeTab}
+            onTabChange={handleTabChange}
+          />
         )}
 
         {/* Global Modals */}

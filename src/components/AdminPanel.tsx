@@ -40,7 +40,8 @@ import { AdminAdminsManager } from './AdminAdminsManager';
 import { AdminApkManager } from './AdminApkManager';
 import { AdminMasterContentManager } from './AdminMasterContentManager';
 import { AdminCoursesManager } from './AdminCoursesManager';
-import { Radio, Calendar, Bell, Layout, Smartphone } from 'lucide-react';
+import { AdminLiveAttendanceManager } from './AdminLiveAttendanceManager';
+import { Radio, Calendar, Bell, Layout, Smartphone, Eye } from 'lucide-react';
 import { calculateVipExpiry } from '../utils/vipHelper';
 
 const PRESET_SUBJECTS = [
@@ -53,7 +54,7 @@ const PRESET_SUBJECTS = [
 
 export function AdminPanel({ onBack }: any) {
   const { refreshData } = useData();
-  const [activeTab, setActiveTab] = useState<'requests' | 'students' | 'vip' | 'content' | 'pdf_notes' | 'live_classes' | 'routine' | 'quotes' | 'notifications' | 'settings' | 'banners' | 'admins' | 'apk' | 'sync' | 'master' | 'courses'>('requests');
+  const [activeTab, setActiveTab] = useState<'requests' | 'students' | 'vip' | 'content' | 'pdf_notes' | 'live_classes' | 'live_attendance' | 'routine' | 'quotes' | 'notifications' | 'settings' | 'banners' | 'admins' | 'apk' | 'sync' | 'master' | 'courses'>('requests');
   const [pendingRequestsCount, setPendingRequestsCount] = useState<number>(0);
 
   useEffect(() => {
@@ -510,6 +511,14 @@ export function AdminPanel({ onBack }: any) {
             <Radio className="w-4 h-4 text-red-500 animate-pulse" /> 🔴 YouTube लाइव क्लास
           </button>
           <button 
+            onClick={() => setActiveTab('live_attendance')} 
+            className={`pb-3 px-4 font-bold text-sm flex items-center gap-2 transition-colors cursor-pointer whitespace-nowrap ${
+              activeTab === 'live_attendance' ? 'border-b-2 border-amber-500 text-amber-500' : 'text-stone-400 hover:text-stone-200'
+            }`}
+          >
+            <Eye className="w-4 h-4 text-emerald-400" /> 👥 लाइव अटेंडेंस & वॉच-टाइम
+          </button>
+          <button 
             onClick={() => setActiveTab('daily_quizzes')} 
             className={`pb-3 px-4 font-bold text-sm flex items-center gap-2 transition-colors cursor-pointer whitespace-nowrap ${
               activeTab === 'daily_quizzes' ? 'border-b-2 border-amber-500 text-amber-500' : 'text-stone-400 hover:text-stone-200'
@@ -629,6 +638,13 @@ export function AdminPanel({ onBack }: any) {
         {activeTab === 'live_classes' && (
           <div className="relative z-10">
             <AdminLiveClassesManager />
+          </div>
+        )}
+
+        {/* Live Attendance & Watch Time Tab */}
+        {activeTab === 'live_attendance' && (
+          <div className="relative z-10">
+            <AdminLiveAttendanceManager />
           </div>
         )}
 

@@ -93,7 +93,7 @@ export function ProfileView({
   };
 
   return (
-    <div className="max-w-lg mx-auto p-4 space-y-4 pb-20">
+    <div className="max-w-lg mx-auto p-2.5 sm:p-3 space-y-3 pb-8">
       {/* Hidden File Input for DP */}
       <input 
         type="file" 

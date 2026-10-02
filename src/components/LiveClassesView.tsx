@@ -19,11 +19,24 @@ import {
   Minimize,
   Clock,
   Zap,
-  CheckCircle2
+  CheckCircle2,
+  Languages,
+  Globe,
+  Settings,
+  Users,
+  Eye
 } from 'lucide-react';
 import { useData } from '../context/DataContext';
 import { useAuth } from '../context/AuthContext';
-import { LiveClass } from '../types';
+import { LiveClass, LiveWatchRecord } from '../types';
+import { ClassAttendanceModal } from './ClassAttendanceModal';
+import { 
+  syncWatchHeartbeat, 
+  subscribeClassAttendance, 
+  getAttendanceDocId, 
+  formatWatchDuration, 
+  DEFAULT_BATCH_STUDENTS 
+} from '../services/attendanceTracker';
 
 interface LiveClassesViewProps {
   onOpenVip: () => void;
@@ -31,10 +44,15 @@ interface LiveClassesViewProps {
 
 export function LiveClassesView({ onOpenVip }: LiveClassesViewProps) {
   const { liveClasses, appConfig, updateLiveClass } = useData();
-  const { isVIP, isAdmin } = useAuth();
+  const { isVIP, isAdmin, user, isPaid } = useAuth();
   const [selectedClass, setSelectedClass] = useState<LiveClass | null>(null);
   const [lockedClassPrompt, setLockedClassPrompt] = useState<LiveClass | null>(null);
   const [activeFilter, setActiveFilter] = useState<'all' | 'free' | 'vip'>('all');
+
+  // Attendance & Watch-Time State
+  const [activeAttendanceRecords, setActiveAttendanceRecords] = useState<LiveWatchRecord[]>([]);
+  const [showAttendanceModal, setShowAttendanceModal] = useState<boolean>(false);
+  const [myWatchSeconds, setMyWatchSeconds] = useState<number>(0);
 
   // Real-time clock for scheduled countdowns
   const [currentTime, setCurrentTime] = useState<number>(Date.now());
@@ -72,11 +90,14 @@ export function LiveClassesView({ onOpenVip }: LiveClassesViewProps) {
   const [playbackSpeed, setPlaybackSpeed] = useState<number>(1);
   const [speedToast, setSpeedToast] = useState<string>('');
 
+  // Video Settings / Language & Voice Translation Modal
+  const [showSettingsModal, setShowSettingsModal] = useState<boolean>(false);
+
   // Fullscreen Mode (YouTube style)
   const [isFullscreen, setIsFullscreen] = useState<boolean>(false);
   const [showControls, setShowControls] = useState<boolean>(true);
 
-  const SPEED_OPTIONS = [0.75, 1, 1.25, 1.5, 1.75, 2, 2.5, 3, 4];
+  const SPEED_OPTIONS = [0.75, 1, 1.25, 1.5, 1.75, 2];
 
   // Auto-detect physical phone orientation: when phone is turned landscape, automatically adapt full screen
   useEffect(() => {
@@ -101,12 +122,70 @@ export function LiveClassesView({ onOpenVip }: LiveClassesViewProps) {
     };
   }, [selectedClass]);
 
+  // Real-time Class Attendance & Watch Time Tracking (Safe & Throttled)
+  useEffect(() => {
+    if (!selectedClass) {
+      setMyWatchSeconds(0);
+      return;
+    }
+
+    const studentKey = user?.email || (user as any)?.uid || 'student_' + (Math.random().toString(36).substring(2, 8));
+    const studentName = user?.name || (user?.email ? user.email.split('@')[0] : 'विद्यार्थी');
+    const docId = getAttendanceDocId(selectedClass.id, studentKey);
+
+    const record: LiveWatchRecord = {
+      id: docId,
+      classId: selectedClass.id,
+      classTitle: selectedClass.title,
+      isLive: selectedClass.isLive,
+      studentId: studentKey,
+      studentName,
+      studentEmail: user?.email || '',
+      isPaid: Boolean(isVIP || isPaid),
+      joinedAt: new Date().toISOString(),
+      lastHeartbeat: Date.now(),
+      watchSeconds: 0,
+      isOnline: true
+    };
+
+    // Initial safe sync
+    syncWatchHeartbeat(record, false);
+
+    // Watch timer: increments local seconds every 1 sec without Firestore network overhead
+    let currentSeconds = 0;
+    const secondTimer = setInterval(() => {
+      currentSeconds += 1;
+      setMyWatchSeconds(currentSeconds);
+      record.watchSeconds = currentSeconds;
+    }, 1000);
+
+    // Periodic throttled sync to Firestore (every 60s) - SAFE & ZERO quota impact
+    const syncTimer = setInterval(() => {
+      syncWatchHeartbeat(record, false);
+    }, 60000);
+
+    // Subscribe to attendance list for this class
+    const unsubAttendance = subscribeClassAttendance(selectedClass.id, (records) => {
+      setActiveAttendanceRecords(records);
+    });
+
+    return () => {
+      clearInterval(secondTimer);
+      clearInterval(syncTimer);
+      unsubAttendance();
+      // Safe exit heartbeat
+      record.watchSeconds = currentSeconds;
+      syncWatchHeartbeat(record, true);
+    };
+  }, [selectedClass, user, isVIP, isPaid]);
+
   const userCanAccess = (cls: LiveClass) => {
     if (!cls.isVip) return true;
     return isVIP || isAdmin;
   };
 
-  // Convert URL to Privacy-Enhanced & Distraction-Free embed URL with Fullscreen enabled (fs=1)
+  // Convert URL to standard YouTube Embed URL with controls and fullscreen enabled
+  // controls=1 & fs=1 ensures YouTube's native bottom bar with the ⚙️ Settings icon (Audio Track, Voice Translation, Quality, Subtitles), CC, and Fullscreen are fully enabled and visible!
   const getEmbedUrl = (url: string) => {
     try {
       if (!url) return '';
@@ -121,8 +200,7 @@ export function LiveClassesView({ onOpenVip }: LiveClassesViewProps) {
         videoId = url;
       }
       if (videoId) {
-        // enablejsapi=1, fs=1 (allow fullscreen), modestbranding=1, rel=0 (no external videos)
-        return `https://www.youtube-nocookie.com/embed/${videoId}?enablejsapi=1&autoplay=1&modestbranding=1&rel=0&iv_load_policy=3&playsinline=1&controls=1&fs=0&playsinline=1&color=white`;
+        return `https://www.youtube.com/embed/${videoId}?autoplay=1&controls=1&rel=0&playsinline=1&enablejsapi=1&fs=1`;
       }
     } catch {}
     return url;
@@ -264,7 +342,7 @@ export function LiveClassesView({ onOpenVip }: LiveClassesViewProps) {
   const whatsappNumber = appConfig.whatsappNumber || '9241511070';
 
   return (
-    <div className="p-4 max-w-2xl mx-auto space-y-4 pb-24">
+    <div className="p-2.5 sm:p-3 w-full max-w-2xl mx-auto space-y-3 pb-8">
       {/* Header Banner */}
       <div className="relative overflow-hidden bg-gradient-to-br from-red-700 via-red-900 to-stone-950 rounded-3xl p-5 text-white shadow-lg border border-red-500/30 space-y-2">
         <div className="absolute -right-6 -top-6 w-32 h-32 bg-red-500/20 rounded-full blur-2xl" />
@@ -446,6 +524,11 @@ export function LiveClassesView({ onOpenVip }: LiveClassesViewProps) {
 
                       <span className="bg-amber-50 text-amber-800 text-[10px] font-bold px-2 py-0.5 rounded-md border border-amber-100">
                         {cls.subjectName}
+                      </span>
+
+                      <span className="bg-stone-100 text-stone-700 text-[10px] font-bold px-2 py-0.5 rounded-md flex items-center gap-1">
+                        <Languages className="w-3 h-3 text-stone-500" />
+                        <span>{cls.language === 'english' ? '🇬🇧 English' : '🇮🇳 हिंदी'}</span>
                       </span>
 
                       <span className="text-[11px] text-stone-400 flex items-center gap-1">
@@ -635,8 +718,39 @@ export function LiveClassesView({ onOpenVip }: LiveClassesViewProps) {
                   </h3>
                 </div>
 
-                {/* Header Action Buttons (Only standard icons like YouTube, no text labels) */}
+                {/* Header Action Buttons */}
                 <div className="flex items-center gap-1.5 shrink-0">
+                  {/* Live Viewers & Attendance Button (👥 कितने लोग जुड़े हैं और कितने नहीं जुड़े हैं) */}
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setShowAttendanceModal(true);
+                    }}
+                    className="px-2.5 py-1.5 rounded-xl bg-stone-800/90 hover:bg-stone-750 text-emerald-400 hover:text-emerald-300 border border-emerald-500/40 flex items-center gap-1.5 text-xs font-bold transition-all cursor-pointer shadow-sm active:scale-95"
+                    title="लाइव छात्र उपस्थिति & वॉच-टाइम देखें (कौन जुड़े/नहीं जुड़े)"
+                  >
+                    <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                    <Users className="w-3.5 h-3.5 text-emerald-400" />
+                    <span className="text-[11px] font-black">
+                      {activeAttendanceRecords.filter(r => r.isOnline).length || 1} देख रहे हैं
+                    </span>
+                  </button>
+
+                  {/* Video Settings Button (⚙️ सेटिंग्स / ऑडियो व भाषा अनुवाद) */}
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setShowSettingsModal(true);
+                    }}
+                    className="px-2.5 py-1.5 rounded-xl bg-stone-800 hover:bg-stone-700 text-amber-300 hover:text-amber-200 border border-stone-700/80 flex items-center gap-1.5 text-xs font-bold transition-all cursor-pointer shadow-sm active:scale-95"
+                    title="वीडियो सेटिंग्स: ऑडियो ट्रैक, भाषा व वॉइस ट्रांसलेट"
+                  >
+                    <Settings className="w-3.5 h-3.5 text-amber-400" />
+                    <span className="text-[11px] font-bold">⚙️ सेटिंग्स</span>
+                  </button>
+
                   {/* YouTube style Fullscreen toggle icon */}
                   <button
                     type="button"
@@ -780,65 +894,24 @@ export function LiveClassesView({ onOpenVip }: LiveClassesViewProps) {
                 );
               })()
             ) : (
-              /* Realistic In-App Player - ZERO YouTube Distractions & Fully Masked */
+              /* High-Quality YouTube Player - Fully Unblocked so ⚙️ Settings, Voice Audio Track & Captions Work */
               <div className={`relative w-full bg-black overflow-hidden flex items-center justify-center select-none ${
                 isFullscreen ? 'flex-1 h-full w-full' : 'aspect-video'
               }`}>
-                {/* 1. Sandboxed iframe without allow-popups prevents opening youtube.com */}
                 <iframe
                   ref={iframeRef}
+                  key={selectedClass.youtubeUrl}
                   src={getEmbedUrl(selectedClass.youtubeUrl)}
                   title={selectedClass.title}
                   className="w-full h-full border-0 absolute inset-0"
-                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                  sandbox="allow-scripts allow-same-origin allow-presentation allow-forms"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
                   allowFullScreen
                   onLoad={handleIframeLoad}
                 />
 
-                {/* 2. Top Shield Bar: Masks YouTube Title, Channel Avatar & "Watch on YouTube" button completely */}
-                <div className="absolute top-0 left-0 right-0 h-11 bg-gradient-to-b from-stone-950 via-stone-950/95 to-transparent z-20 px-3 py-1.5 flex items-center justify-between pointer-events-auto select-none border-b border-white/5 backdrop-blur-[1px]">
-                  <div className="flex items-center gap-2 min-w-0">
-                    <span className="bg-red-600 text-white text-[9px] font-black px-2 py-0.5 rounded shadow-xs flex items-center gap-1 shrink-0">
-                      <span className="w-1.5 h-1.5 rounded-full bg-white animate-ping" />
-                      {selectedClass.isLive ? 'LIVE' : 'CLASS'}
-                    </span>
-                    <span className="text-white text-xs font-bold truncate max-w-[200px] sm:max-w-md drop-shadow-sm">
-                      {selectedClass.subjectName} • {selectedClass.title}
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-1 text-[10px] text-amber-300 font-extrabold bg-stone-900/90 px-2 py-0.5 rounded-md border border-amber-500/30 shrink-0">
-                    <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
-                    <span>विद्या एजेंट प्लेयर</span>
-                  </div>
-                </div>
-
-                {/* 3. Bottom-Right Corner Shield: Masks YouTube Logo Watermark completely with Fullscreen & BSEB Badge */}
-                <div className="absolute bottom-2.5 right-2.5 z-30 flex items-center gap-1.5 pointer-events-auto">
-                  <div className="bg-stone-950/95 text-stone-200 border border-stone-700/80 px-2 py-1 rounded-lg text-[10px] font-black flex items-center gap-1 shadow-lg backdrop-blur-md">
-                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                    <span>BSEB 10वीं</span>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      toggleFullscreen();
-                    }}
-                    className="w-9 h-9 rounded-lg bg-stone-900/95 hover:bg-stone-800 text-white hover:text-amber-300 flex items-center justify-center transition-all backdrop-blur-md border border-stone-700/80 shadow-xl active:scale-90 cursor-pointer"
-                    title={isFullscreen ? "Exit Full Screen" : "Full Screen"}
-                  >
-                    {isFullscreen ? (
-                      <Minimize className="w-5 h-5 stroke-[2.2]" />
-                    ) : (
-                      <Maximize className="w-5 h-5 stroke-[2.2]" />
-                    )}
-                  </button>
-                </div>
-
                 {/* Speed Floating Toast Notification */}
                 {speedToast && (
-                  <div className="absolute top-16 left-1/2 -translate-x-1/2 z-40 bg-black/90 text-yellow-300 border border-yellow-400/80 font-black text-xs px-3.5 py-1.5 rounded-full shadow-2xl backdrop-blur-md flex items-center gap-1.5 animate-in fade-in zoom-in duration-100 pointer-events-none text-center">
+                  <div className="absolute top-4 left-1/2 -translate-x-1/2 z-40 bg-black/90 text-yellow-300 border border-yellow-400/80 font-black text-xs px-3.5 py-1.5 rounded-full shadow-2xl backdrop-blur-md flex items-center gap-1.5 animate-in fade-in zoom-in duration-100 pointer-events-none text-center">
                     <Gauge className="w-3.5 h-3.5 text-yellow-400" />
                     <span>{speedToast}</span>
                   </div>
@@ -846,25 +919,66 @@ export function LiveClassesView({ onOpenVip }: LiveClassesViewProps) {
               </div>
             )}
 
-            {/* Video Speed Controller Toolbar (Up to 4x Speed) */}
+            {/* Video Speed Controller Toolbar with Settings / Voice Audio Option */}
             {(!isFullscreen || showControls) && (
               <div className={`transition-all z-30 ${
                 isFullscreen 
-                  ? 'absolute bottom-0 left-0 right-14 p-3 bg-gradient-to-t from-black/95 via-black/85 to-transparent backdrop-blur-xs space-y-1.5' 
-                  : 'bg-stone-900 border-t border-stone-800 p-3 space-y-1.5'
+                  ? 'absolute bottom-0 left-0 right-14 p-3 bg-gradient-to-t from-black/95 via-black/85 to-transparent backdrop-blur-xs space-y-2' 
+                  : 'bg-stone-900 border-t border-stone-800 p-3 space-y-2'
               }`}>
-                <div className="flex items-center justify-between text-xs text-stone-300">
-                  <div className="flex items-center gap-1.5 font-extrabold text-amber-400">
-                    <Gauge className="w-3.5 h-3.5" />
-                    <span>स्पीड कंट्रोलर (4x तक):</span>
+                <div className="flex items-center justify-between text-xs text-stone-300 flex-wrap gap-2">
+                  <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-1.5 font-extrabold text-amber-400">
+                      <Gauge className="w-3.5 h-3.5" />
+                      <span>स्पीड:</span>
+                    </div>
+                    <span className="text-[10px] sm:text-[11px] font-black text-yellow-300 bg-black/70 px-2 py-0.5 rounded-md border border-amber-500/40">
+                      {playbackSpeed}x
+                    </span>
                   </div>
 
-                  <span className="text-[10px] sm:text-[11px] font-black text-yellow-300 bg-black/70 px-2 py-0.5 rounded-md border border-amber-500/40">
-                    {playbackSpeed}x
-                  </span>
+                  {/* Settings & Voice Translation Button */}
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setShowSettingsModal(true);
+                    }}
+                    className="flex items-center gap-1.5 bg-black/80 hover:bg-stone-800 text-amber-300 hover:text-amber-200 px-2.5 py-1 rounded-lg border border-amber-500/40 text-[11px] font-bold transition-all cursor-pointer shadow-xs active:scale-95"
+                    title="यूट्यूब सेटिंग्स: ऑडियो ट्रैक, आवाज व भाषा अनुवाद"
+                  >
+                    <Settings className="w-3.5 h-3.5 text-amber-400" />
+                    <span>⚙️ सेटिंग्स (ऑडियो व भाषा अनुवाद)</span>
+                  </button>
                 </div>
 
-                {/* Speed Buttons Bar (0.75x to 4x) */}
+                {/* Live Attendance & Watch Time Quick Strip */}
+                <div className="flex items-center justify-between text-xs px-2.5 py-1.5 bg-stone-950/90 rounded-xl border border-stone-800 text-stone-300 flex-wrap gap-2">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                    <span className="text-white font-extrabold text-xs flex items-center gap-1">
+                      <Users className="w-3.5 h-3.5 text-emerald-400" />
+                      <span>{activeAttendanceRecords.filter(r => r.isOnline).length || 1} छात्र जुड़े हैं</span>
+                    </span>
+                    <span className="text-stone-400 text-[11px]">
+                      • आपका वॉच-टाइम: <strong className="text-amber-300">{formatWatchDuration(myWatchSeconds)}</strong>
+                    </span>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setShowAttendanceModal(true);
+                    }}
+                    className="text-[11px] font-extrabold text-emerald-400 hover:text-emerald-300 bg-emerald-500/10 hover:bg-emerald-500/20 px-2.5 py-1 rounded-lg border border-emerald-500/30 transition-all flex items-center gap-1 cursor-pointer active:scale-95 ml-auto"
+                  >
+                    <Eye className="w-3.5 h-3.5" />
+                    <span>अटेंडेंस सूची (कौन जुड़े/नहीं जुड़े)</span>
+                  </button>
+                </div>
+
+                {/* Speed Buttons Bar (0.75x to 2x) */}
                 <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none">
                   {SPEED_OPTIONS.map((speed) => (
                     <button
@@ -904,6 +1018,112 @@ export function LiveClassesView({ onOpenVip }: LiveClassesViewProps) {
 
           </div>
         </div>
+      )}
+
+      {/* Video Settings / Language & Voice Translation Modal */}
+      {showSettingsModal && (
+        <div 
+          onClick={() => setShowSettingsModal(false)}
+          className="fixed inset-0 z-60 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-150"
+        >
+          <div 
+            onClick={(e) => e.stopPropagation()}
+            className="bg-stone-900 border border-stone-700 rounded-3xl max-w-md w-full p-5 text-white shadow-2xl space-y-4 animate-in zoom-in-95 duration-200"
+          >
+            <div className="flex items-center justify-between border-b border-stone-800 pb-3">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-xl bg-amber-500/20 border border-amber-500/30 flex items-center justify-center text-amber-400">
+                  <Settings className="w-4 h-4" />
+                </div>
+                <div>
+                  <h4 className="font-black text-sm text-white">यूट्यूब वीडियो सेटिंग्स & भाषा (Voice Translate)</h4>
+                  <p className="text-[11px] text-stone-400">ऑडियो, भाषा और वीडियो सेटिंग्स</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowSettingsModal(false)}
+                className="w-7 h-7 rounded-full bg-stone-800 hover:bg-stone-700 text-stone-400 hover:text-white flex items-center justify-center transition-colors cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Voice Translation & Audio Track Guide */}
+            <div className="bg-gradient-to-br from-amber-500/10 via-stone-850 to-stone-900 border border-amber-500/30 rounded-2xl p-3.5 space-y-2.5">
+              <div className="flex items-center gap-2 text-amber-300 font-extrabold text-xs">
+                <Languages className="w-4 h-4 text-amber-400" />
+                <span>यूट्यूब पर आवाज (Voice) या भाषा कैसे बदलें?</span>
+              </div>
+              <ul className="text-xs text-stone-300 space-y-2 list-none pl-0 leading-relaxed">
+                <li className="flex items-start gap-2">
+                  <span className="bg-amber-400 text-stone-950 font-black text-[10px] w-4 h-4 rounded-full flex items-center justify-center shrink-0 mt-0.5">1</span>
+                  <span>वीडियो प्लेयर में <b>⚙️ (Settings)</b> आइकन पर टैप करें।</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="bg-amber-400 text-stone-950 font-black text-[10px] w-4 h-4 rounded-full flex items-center justify-center shrink-0 mt-0.5">2</span>
+                  <span><b>"Audio track" (ऑडियो ट्रैक)</b> पर क्लिक करके <b>Hindi</b> या <b>English</b> भाषा चुनें।</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="bg-amber-400 text-stone-950 font-black text-[10px] w-4 h-4 rounded-full flex items-center justify-center shrink-0 mt-0.5">3</span>
+                  <span><b>"Captions / सबटाइटल"</b> में जाकर <b>Auto-translate (अनुवाद)</b> ऑन करके स्क्रीन पर अनुवाद भी देख सकते हैं।</span>
+                </li>
+              </ul>
+              <div className="pt-1 text-[10.5px] text-emerald-400 font-semibold flex items-center gap-1.5">
+                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+                <span>सभी नए व पुराने यूट्यूब वीडियो में ⚙️ सेटिंग आइकन अब सक्रिय व उपलब्ध है।</span>
+              </div>
+            </div>
+
+            {/* Quick Speed Selector inside Settings */}
+            <div className="space-y-2">
+              <div className="flex items-center justify-between text-xs font-bold text-stone-300">
+                <span className="flex items-center gap-1 text-amber-400">
+                  <Gauge className="w-3.5 h-3.5" /> प्लेबैक स्पीड चुनें:
+                </span>
+                <span className="text-yellow-300">{playbackSpeed}x एक्टिव</span>
+              </div>
+              <div className="grid grid-cols-6 gap-1.5">
+                {SPEED_OPTIONS.map((spd) => (
+                  <button
+                    key={spd}
+                    type="button"
+                    onClick={() => handleSetSpeed(spd)}
+                    className={`py-1.5 rounded-xl text-xs font-black transition-all cursor-pointer ${
+                      playbackSpeed === spd
+                        ? 'bg-amber-500 text-stone-950 font-black shadow-md scale-102'
+                        : 'bg-stone-800 text-stone-300 hover:bg-stone-700'
+                    }`}
+                  >
+                    {spd}x
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => setShowSettingsModal(false)}
+              className="w-full bg-gradient-to-r from-red-600 to-amber-600 hover:from-red-500 hover:to-amber-500 text-white font-black py-2.5 rounded-xl text-xs shadow-lg cursor-pointer transition-all active:scale-98"
+            >
+              समझ गया / वीडियो चालू रखें (Got it)
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Class Attendance & Live Watch Time Modal */}
+      {selectedClass && (
+        <ClassAttendanceModal
+          isOpen={showAttendanceModal}
+          onClose={() => setShowAttendanceModal(false)}
+          classTitle={selectedClass.title}
+          isLive={selectedClass.isLive}
+          activeRecords={activeAttendanceRecords}
+          allBatchStudents={DEFAULT_BATCH_STUDENTS}
+          currentStudentId={user?.email || (user as any)?.uid || 'student'}
+          isAdmin={isAdmin}
+        />
       )}
     </div>
   );

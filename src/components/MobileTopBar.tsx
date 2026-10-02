@@ -9,6 +9,7 @@ interface MobileTopBarProps {
   onOpenVip: () => void;
   onOpenAdmin: () => void;
   onOpenGmailAuth?: () => void;
+  onGoHome?: () => void;
   unreadCount?: number;
 }
 
@@ -18,13 +19,14 @@ export function MobileTopBar({
   onOpenVip,
   onOpenAdmin,
   onOpenGmailAuth,
+  onGoHome,
   unreadCount = 2
 }: MobileTopBarProps) {
   const { isVIP, isAdmin, vipDetails, user } = useAuth();
   const daysLeft = vipDetails?.daysRemaining;
 
   return (
-    <header className="sticky top-0 z-30 bg-white/95 backdrop-blur-md border-b border-slate-200/90 px-3 sm:px-4 py-2.5 flex items-center justify-between shadow-xs">
+    <header className="sticky top-0 z-30 bg-white/95 backdrop-blur-md border-b border-slate-200/90 px-3 sm:px-4 py-2.5 flex items-center justify-between shadow-xs shrink-0">
       {/* Left: Hamburger Menu Button & Brand */}
       <div className="flex items-center gap-2 min-w-0">
         <button
@@ -36,8 +38,12 @@ export function MobileTopBar({
         </button>
 
         {/* Brand / Logo */}
-        <div className="flex items-center gap-2 min-w-0">
-          <AppLogo className="w-9 h-9 ring-2 ring-amber-400 shadow-sm shrink-0 cursor-pointer rounded-xl" onClick={onOpenDrawer} />
+        <div 
+          className="flex items-center gap-2 min-w-0 cursor-pointer group" 
+          onClick={onGoHome}
+          title="होम पर जाएँ"
+        >
+          <AppLogo className="w-9 h-9 ring-2 ring-amber-400 shadow-sm shrink-0 rounded-xl group-hover:scale-105 transition-transform" />
           <div className="leading-tight min-w-0">
             <span className="text-xs sm:text-sm font-black text-stone-900 tracking-tight block truncate flex items-center gap-1">
               <span>BSEB</span> <span className="text-amber-600 font-black">GURU</span>

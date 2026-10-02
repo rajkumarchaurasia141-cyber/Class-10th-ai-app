@@ -17,7 +17,7 @@ import {
 
 export function SubjectsExplorer({ subjectId, onBack }: any) {
   const { subjects } = useData();
-  const { isPaid } = useAuth();
+  const { isPaid, isVIP } = useAuth();
   const [selectedCh, setSelectedCh] = useState(1);
   const [showPaywall, setShowPaywall] = useState(false);
   const [showPaidTest, setShowPaidTest] = useState(false);
@@ -46,7 +46,7 @@ export function SubjectsExplorer({ subjectId, onBack }: any) {
   };
 
   return (
-    <div className="max-w-lg mx-auto pb-24 p-3 sm:p-4 selection:bg-red-500/30">
+    <div className="max-w-lg mx-auto pb-8 p-2.5 sm:p-3 selection:bg-red-500/30">
       <button 
         onClick={onBack} 
         className="text-stone-700 bg-white border border-slate-200 hover:bg-slate-50 mb-4 px-3 py-1.5 rounded-xl flex items-center gap-1.5 text-xs font-bold shadow-xs transition-colors cursor-pointer"

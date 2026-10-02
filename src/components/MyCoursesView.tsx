@@ -77,7 +77,7 @@ export function MyCoursesView({ onSelectSubject, onOpenVip }: MyCoursesViewProps
   };
 
   return (
-    <div className="p-4 max-w-2xl mx-auto space-y-4 pb-24">
+    <div className="p-2.5 sm:p-3 max-w-2xl mx-auto space-y-3 pb-8">
       {/* Topper Batch फुल सिलेबस Hero Card */}
       <div className="relative overflow-hidden bg-gradient-to-br from-red-700 via-red-800 to-stone-900 rounded-3xl p-5 text-white shadow-lg border border-red-500/30">
         {/* Background glow effects */}

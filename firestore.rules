@@ -80,6 +80,11 @@ service cloud.firestore {
     match /users/{userId} {
       allow read, write: if true;
     }
+
+    // Allow read/write to class_attendance (live attendance & watch time tracking)
+    match /class_attendance/{recordId} {
+      allow read, write: if true;
+    }
   }
 }
 

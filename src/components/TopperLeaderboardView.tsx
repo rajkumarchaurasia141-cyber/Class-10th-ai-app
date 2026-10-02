@@ -113,7 +113,7 @@ export function TopperLeaderboardView({ onOpenVip }: TopperLeaderboardViewProps)
   };
 
   return (
-    <div className="p-4 max-w-2xl mx-auto space-y-5 pb-24">
+    <div className="p-2.5 sm:p-3 max-w-2xl mx-auto space-y-3 pb-8">
       {/* Header Banner */}
       <div className="relative overflow-hidden bg-gradient-to-br from-amber-600 via-amber-800 to-stone-950 rounded-3xl p-5 text-white shadow-lg border border-amber-400/30 space-y-3">
         <div className="absolute -right-6 -top-6 w-32 h-32 bg-amber-400/20 rounded-full blur-2xl" />

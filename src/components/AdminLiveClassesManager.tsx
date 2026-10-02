@@ -17,9 +17,16 @@ import {
   Gift,
   Clock,
   Sparkles,
-  Zap
+  Zap,
+  Languages,
+  Globe,
+  Users,
+  Eye
 } from 'lucide-react';
 import { useData } from '../context/DataContext';
+import { LiveClass, LiveWatchRecord } from '../types';
+import { ClassAttendanceModal } from './ClassAttendanceModal';
+import { subscribeClassAttendance, DEFAULT_BATCH_STUDENTS } from '../services/attendanceTracker';
 
 export function AdminLiveClassesManager() {
   const { liveClasses, addLiveClass, updateLiveClass, deleteLiveClass } = useData();
@@ -39,6 +46,21 @@ export function AdminLiveClassesManager() {
   const [loading, setLoading] = useState(false);
   const [successMsg, setSuccessMsg] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
+
+  // Attendance Modal state for this class
+  const [attendanceModalClass, setAttendanceModalClass] = useState<LiveClass | null>(null);
+  const [activeRecords, setActiveRecords] = useState<LiveWatchRecord[]>([]);
+
+  useEffect(() => {
+    if (!attendanceModalClass) {
+      setActiveRecords([]);
+      return;
+    }
+    const unsub = subscribeClassAttendance(attendanceModalClass.id, (records) => {
+      setActiveRecords(records);
+    });
+    return () => unsub();
+  }, [attendanceModalClass]);
 
   // Auto-generate human readable scheduledAt label when date/time changes
   const handleScheduleChange = (dateVal: string, timeVal: string) => {
@@ -436,6 +458,9 @@ export function AdminLiveClassesManager() {
                     <span className="bg-stone-800 text-stone-300 text-[10px] font-bold px-2 py-0.5 rounded-full">
                       {cls.subjectName}
                     </span>
+                    <span className="bg-stone-850 text-stone-300 border border-stone-700 text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1">
+                      {cls.language === 'english' ? '🇬🇧 English' : '🇮🇳 हिंदी'}
+                    </span>
                     <span className="text-[11px] text-stone-400 flex items-center gap-1">
                       <User className="w-3 h-3" /> {cls.teacherName}
                     </span>
@@ -482,6 +507,16 @@ export function AdminLiveClassesManager() {
                     <span>{cls.isVip ? 'VIP लॉक है' : 'फ्री डेमो है'}</span>
                   </button>
 
+                  <button
+                    type="button"
+                    onClick={() => setAttendanceModalClass(cls)}
+                    className="bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-300 text-xs font-bold px-3 py-1.5 rounded-xl border border-emerald-500/40 flex items-center gap-1.5 transition-colors cursor-pointer"
+                    title="इस क्लास में जुड़े छात्र और वॉच-टाइम देखें"
+                  >
+                    <Users className="w-3.5 h-3.5 text-emerald-400" />
+                    <span>अटेंडेंस देखें</span>
+                  </button>
+
                   <a
                     href={cls.youtubeUrl}
                     target="_blank"
@@ -504,6 +539,19 @@ export function AdminLiveClassesManager() {
           )}
         </div>
       </div>
+
+      {/* Class Attendance Modal */}
+      {attendanceModalClass && (
+        <ClassAttendanceModal
+          isOpen={!!attendanceModalClass}
+          onClose={() => setAttendanceModalClass(null)}
+          classTitle={attendanceModalClass.title}
+          isLive={attendanceModalClass.isLive}
+          activeRecords={activeRecords}
+          allBatchStudents={DEFAULT_BATCH_STUDENTS}
+          isAdmin={true}
+        />
+      )}
     </div>
   );
 }
