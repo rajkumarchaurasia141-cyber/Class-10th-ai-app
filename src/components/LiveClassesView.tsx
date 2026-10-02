@@ -16,7 +16,10 @@ import {
   Gauge,
   ShieldCheck,
   Maximize,
-  Minimize
+  Minimize,
+  Clock,
+  Zap,
+  CheckCircle2
 } from 'lucide-react';
 import { useData } from '../context/DataContext';
 import { useAuth } from '../context/AuthContext';
@@ -27,11 +30,39 @@ interface LiveClassesViewProps {
 }
 
 export function LiveClassesView({ onOpenVip }: LiveClassesViewProps) {
-  const { liveClasses, appConfig } = useData();
+  const { liveClasses, appConfig, updateLiveClass } = useData();
   const { isVIP, isAdmin } = useAuth();
   const [selectedClass, setSelectedClass] = useState<LiveClass | null>(null);
   const [lockedClassPrompt, setLockedClassPrompt] = useState<LiveClass | null>(null);
   const [activeFilter, setActiveFilter] = useState<'all' | 'free' | 'vip'>('all');
+
+  // Real-time clock for scheduled countdowns
+  const [currentTime, setCurrentTime] = useState<number>(Date.now());
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentTime(Date.now());
+    }, 1000);
+    return () => clearInterval(timer);
+  }, []);
+
+  const isClassScheduledFuture = (cls: LiveClass) => {
+    if (cls.publishType === 'scheduled' && cls.scheduledDateTime) {
+      const target = new Date(cls.scheduledDateTime).getTime();
+      return !isNaN(target) && target > currentTime;
+    }
+    return false;
+  };
+
+  const getRemainingTime = (scheduledDateTime?: string) => {
+    if (!scheduledDateTime) return null;
+    const diff = new Date(scheduledDateTime).getTime() - currentTime;
+    if (diff <= 0) return null;
+    const hours = Math.floor(diff / (1000 * 60 * 60));
+    const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+    const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+    return { hours, minutes, seconds, diff };
+  };
 
   // Video Player Controls & Speed (up to 4x)
   const iframeRef = useRef<HTMLIFrameElement>(null);
@@ -91,7 +122,7 @@ export function LiveClassesView({ onOpenVip }: LiveClassesViewProps) {
       }
       if (videoId) {
         // enablejsapi=1, fs=1 (allow fullscreen), modestbranding=1, rel=0 (no external videos)
-        return `https://www.youtube-nocookie.com/embed/${videoId}?enablejsapi=1&autoplay=1&modestbranding=1&rel=0&iv_load_policy=3&playsinline=1&controls=1&fs=1&color=white`;
+        return `https://www.youtube-nocookie.com/embed/${videoId}?enablejsapi=1&autoplay=1&modestbranding=1&rel=0&iv_load_policy=3&playsinline=1&controls=1&fs=0&playsinline=1&color=white`;
       }
     } catch {}
     return url;
@@ -399,7 +430,11 @@ export function LiveClassesView({ onOpenVip }: LiveClassesViewProps) {
 
                   <div className="space-y-1 overflow-hidden flex-1">
                     <div className="flex items-center gap-1.5 flex-wrap">
-                      {cls.isLive ? (
+                      {isClassScheduledFuture(cls) ? (
+                        <span className="bg-amber-100 text-amber-900 border border-amber-300 text-[10px] font-black px-2.5 py-0.5 rounded-md flex items-center gap-1 animate-pulse">
+                          <Clock className="w-3 h-3 text-amber-700" /> ⏳ शेड्यूल्ड (${cls.scheduledAt})
+                        </span>
+                      ) : cls.isLive ? (
                         <span className="bg-red-100 text-red-700 text-[10px] font-extrabold px-2 py-0.5 rounded-md flex items-center gap-1">
                           <span className="w-1.5 h-1.5 rounded-full bg-red-600 animate-ping" /> लाइव क्लास
                         </span>
@@ -445,10 +480,17 @@ export function LiveClassesView({ onOpenVip }: LiveClassesViewProps) {
                 {/* Action Button */}
                 <div className="flex items-center gap-2 self-end sm:self-center shrink-0 w-full sm:w-auto justify-end pt-2 sm:pt-0 border-t sm:border-t-0 border-slate-100">
                   {hasAccess ? (
-                    <span className="bg-red-700 hover:bg-red-800 text-white px-4 py-2 rounded-xl text-xs font-black flex items-center gap-1.5 shadow-xs transition-colors">
-                      <Play className="w-3.5 h-3.5 fill-white" />
-                      <span>{cls.isLive ? 'लाइव देखें' : 'क्लास देखें'}</span>
-                    </span>
+                    isClassScheduledFuture(cls) ? (
+                      <span className="bg-amber-500 hover:bg-amber-600 text-stone-950 font-black px-4 py-2 rounded-xl text-xs flex items-center gap-1.5 shadow-xs transition-colors">
+                        <Clock className="w-3.5 h-3.5 text-stone-950" />
+                        <span>शेड्यूल देखें</span>
+                      </span>
+                    ) : (
+                      <span className="bg-red-700 hover:bg-red-800 text-white px-4 py-2 rounded-xl text-xs font-black flex items-center gap-1.5 shadow-xs transition-colors">
+                        <Play className="w-3.5 h-3.5 fill-white" />
+                        <span>{cls.isLive ? 'लाइव देखें' : 'क्लास देखें'}</span>
+                      </span>
+                    )
                   ) : (
                     <button
                       type="button"
@@ -649,37 +691,150 @@ export function LiveClassesView({ onOpenVip }: LiveClassesViewProps) {
                   अभी VIP कोर्स अनलॉक करें (₹299)
                 </button>
               </div>
+            ) : isClassScheduledFuture(selectedClass) && getRemainingTime(selectedClass.scheduledDateTime) ? (
+              /* Scheduled Class Waiting & Live Countdown Screen (Automatic Start when Time Arrives) */
+              (() => {
+                const rem = getRemainingTime(selectedClass.scheduledDateTime)!;
+                return (
+                  <div className={`relative w-full bg-gradient-to-b from-stone-950 via-stone-900 to-stone-950 overflow-hidden flex flex-col items-center justify-center p-6 text-center space-y-4 select-none ${
+                    isFullscreen ? 'flex-1 h-full w-full' : 'aspect-video'
+                  }`}>
+                    <div className="relative flex items-center justify-center">
+                      <div className="w-20 h-20 rounded-full bg-red-600/15 animate-ping absolute" />
+                      <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-amber-500/20 to-red-600/20 border-2 border-amber-500/50 flex items-center justify-center relative shadow-xl">
+                        <Clock className="w-7 h-7 text-amber-400 animate-pulse" />
+                      </div>
+                    </div>
+
+                    <div className="space-y-1 max-w-md mx-auto">
+                      <div className="inline-flex items-center gap-1.5 bg-amber-500/20 text-amber-300 border border-amber-400/40 text-[10px] font-black px-3 py-1 rounded-full uppercase tracking-wider">
+                        <span className="w-2 h-2 rounded-full bg-amber-400 animate-ping" />
+                        लाइव स्ट्रीम शेड्यूल्ड है (Standby)
+                      </div>
+                      <h3 className="text-sm sm:text-base font-black text-white line-clamp-2">
+                        {selectedClass.title}
+                      </h3>
+                      <p className="text-[11px] text-stone-400">
+                        विषय: <strong className="text-amber-300">{selectedClass.subjectName}</strong> • शिक्षक: <strong className="text-white">{selectedClass.teacherName}</strong>
+                      </p>
+                    </div>
+
+                    {/* Live Real-time Countdown Box */}
+                    <div className="bg-stone-950/90 border border-stone-800 rounded-2xl p-3.5 shadow-2xl w-full max-w-xs mx-auto space-y-2">
+                      <div className="text-[10px] font-extrabold text-stone-400 flex items-center justify-center gap-1.5">
+                        <Clock className="w-3 h-3 text-amber-400" />
+                        <span>क्लास शुरू होने में बाकी समय:</span>
+                      </div>
+
+                      <div className="grid grid-cols-3 gap-2 text-center">
+                        <div className="bg-stone-900/90 p-2 rounded-xl border border-stone-800">
+                          <span className="block text-lg sm:text-xl font-black text-amber-400">
+                            {String(rem.hours).padStart(2, '0')}
+                          </span>
+                          <span className="text-[9px] font-bold text-stone-400">घंटे</span>
+                        </div>
+                        <div className="bg-stone-900/90 p-2 rounded-xl border border-stone-800">
+                          <span className="block text-lg sm:text-xl font-black text-amber-400">
+                            {String(rem.minutes).padStart(2, '0')}
+                          </span>
+                          <span className="text-[9px] font-bold text-stone-400">मिनट</span>
+                        </div>
+                        <div className="bg-stone-900/90 p-2 rounded-xl border border-stone-800">
+                          <span className="block text-lg sm:text-xl font-black text-amber-400">
+                            {String(rem.seconds).padStart(2, '0')}
+                          </span>
+                          <span className="text-[9px] font-bold text-stone-400">सेकंड</span>
+                        </div>
+                      </div>
+
+                      <div className="pt-1 text-[10px] text-stone-400">
+                        🔔 निर्धारित समय: <b>{selectedClass.scheduledAt}</b>
+                        <br />
+                        <span className="text-emerald-400 font-semibold text-[9.5px]">
+                          ✓ समय होते ही यह क्लास अपने आप इसी स्क्रीन पर शुरू हो जाएगी।
+                        </span>
+                      </div>
+
+                      {isAdmin && (
+                        <div className="pt-2 border-t border-stone-800">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              updateLiveClass(selectedClass.id, {
+                                publishType: 'instant',
+                                isLive: true,
+                                scheduledDateTime: new Date().toISOString()
+                              });
+                              setSpeedToast('क्लास को तुरंत लाइव कर दिया गया है!');
+                              setTimeout(() => setSpeedToast(''), 3000);
+                            }}
+                            className="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-black py-1.5 rounded-xl text-xs flex items-center justify-center gap-1.5 shadow-md cursor-pointer active:scale-95"
+                          >
+                            <Zap className="w-3.5 h-3.5 fill-white" />
+                            <span>एडमिन: अभी तुरंत लाइव शुरू करें</span>
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                );
+              })()
             ) : (
-              /* Embedded Player - 100% Fullscreen in Fullscreen mode */
-              <div className={`relative w-full bg-black overflow-hidden flex items-center justify-center ${
+              /* Realistic In-App Player - ZERO YouTube Distractions & Fully Masked */
+              <div className={`relative w-full bg-black overflow-hidden flex items-center justify-center select-none ${
                 isFullscreen ? 'flex-1 h-full w-full' : 'aspect-video'
               }`}>
+                {/* 1. Sandboxed iframe without allow-popups prevents opening youtube.com */}
                 <iframe
                   ref={iframeRef}
                   src={getEmbedUrl(selectedClass.youtubeUrl)}
                   title={selectedClass.title}
                   className="w-full h-full border-0 absolute inset-0"
-                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                  sandbox="allow-scripts allow-same-origin allow-presentation allow-forms"
                   allowFullScreen
                   onLoad={handleIframeLoad}
                 />
 
-                {/* YouTube-style Fullscreen Icon Button (Bottom Right Corner of Player) */}
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    toggleFullscreen();
-                  }}
-                  className="absolute bottom-3 right-3 z-30 w-9 h-9 rounded-lg bg-black/75 hover:bg-black text-white hover:text-amber-300 flex items-center justify-center transition-all backdrop-blur-xs border border-white/20 shadow-xl active:scale-90 cursor-pointer"
-                  title={isFullscreen ? "Exit Full Screen" : "Full Screen"}
-                >
-                  {isFullscreen ? (
-                    <Minimize className="w-5 h-5 stroke-[2.2]" />
-                  ) : (
-                    <Maximize className="w-5 h-5 stroke-[2.2]" />
-                  )}
-                </button>
+                {/* 2. Top Shield Bar: Masks YouTube Title, Channel Avatar & "Watch on YouTube" button completely */}
+                <div className="absolute top-0 left-0 right-0 h-11 bg-gradient-to-b from-stone-950 via-stone-950/95 to-transparent z-20 px-3 py-1.5 flex items-center justify-between pointer-events-auto select-none border-b border-white/5 backdrop-blur-[1px]">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <span className="bg-red-600 text-white text-[9px] font-black px-2 py-0.5 rounded shadow-xs flex items-center gap-1 shrink-0">
+                      <span className="w-1.5 h-1.5 rounded-full bg-white animate-ping" />
+                      {selectedClass.isLive ? 'LIVE' : 'CLASS'}
+                    </span>
+                    <span className="text-white text-xs font-bold truncate max-w-[200px] sm:max-w-md drop-shadow-sm">
+                      {selectedClass.subjectName} • {selectedClass.title}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-1 text-[10px] text-amber-300 font-extrabold bg-stone-900/90 px-2 py-0.5 rounded-md border border-amber-500/30 shrink-0">
+                    <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
+                    <span>विद्या एजेंट प्लेयर</span>
+                  </div>
+                </div>
+
+                {/* 3. Bottom-Right Corner Shield: Masks YouTube Logo Watermark completely with Fullscreen & BSEB Badge */}
+                <div className="absolute bottom-2.5 right-2.5 z-30 flex items-center gap-1.5 pointer-events-auto">
+                  <div className="bg-stone-950/95 text-stone-200 border border-stone-700/80 px-2 py-1 rounded-lg text-[10px] font-black flex items-center gap-1 shadow-lg backdrop-blur-md">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                    <span>BSEB 10वीं</span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      toggleFullscreen();
+                    }}
+                    className="w-9 h-9 rounded-lg bg-stone-900/95 hover:bg-stone-800 text-white hover:text-amber-300 flex items-center justify-center transition-all backdrop-blur-md border border-stone-700/80 shadow-xl active:scale-90 cursor-pointer"
+                    title={isFullscreen ? "Exit Full Screen" : "Full Screen"}
+                  >
+                    {isFullscreen ? (
+                      <Minimize className="w-5 h-5 stroke-[2.2]" />
+                    ) : (
+                      <Maximize className="w-5 h-5 stroke-[2.2]" />
+                    )}
+                  </button>
+                </div>
 
                 {/* Speed Floating Toast Notification */}
                 {speedToast && (

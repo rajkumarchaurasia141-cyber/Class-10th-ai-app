@@ -221,7 +221,8 @@ export const defaultLiveClasses: LiveClass[] = [
     isLive: true,
     isVip: false,
     description: 'बिहार बोर्ड फुल सिलेबस परीक्षा के लिए संस्कृत प्रथम अध्याय मङ्गलम् का लाइव महामौरथन (सभी छात्रों के लिए फ्री डेमो)।',
-    createdAt: new Date().toISOString()
+    createdAt: new Date().toISOString(),
+    publishType: 'instant'
   },
   {
     id: 'live_default_2',
@@ -233,7 +234,8 @@ export const defaultLiveClasses: LiveClass[] = [
     isLive: false,
     isVip: true,
     description: 'कक्षा 10वीं रसायन विज्ञान चैप्टर 1 के सभी महत्वपूर्ण प्रश्न उत्तर (केवल पेड छात्रों के लिए)।',
-    createdAt: new Date().toISOString()
+    createdAt: new Date().toISOString(),
+    publishType: 'instant'
   }
 ];
 

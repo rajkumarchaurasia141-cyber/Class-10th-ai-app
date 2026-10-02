@@ -66,6 +66,9 @@ export interface LiveClass {
   isVip?: boolean;
   description?: string;
   createdAt: string;
+  publishType?: 'instant' | 'scheduled';
+  scheduledDateTime?: string; // ISO string e.g. "2026-10-02T19:00:00"
+  isUploaded?: boolean;
 }
 
 export interface DailyQuizItem {
