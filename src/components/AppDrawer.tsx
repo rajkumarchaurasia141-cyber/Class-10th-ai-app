@@ -237,6 +237,22 @@ export function AppDrawer({ isOpen, onClose, onNavigate, onOpenVip, onOpenGmailA
             </button>
 
             <button
+              onClick={() => { onNavigate('ai_studio'); onClose(); }}
+              className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-stone-700 hover:bg-purple-50 hover:text-purple-700 font-bold transition-colors cursor-pointer text-left"
+            >
+              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-purple-700 to-indigo-600 text-white flex items-center justify-center shadow-xs">
+                <Sparkles className="w-4 h-4" />
+              </div>
+              <div className="flex-1">
+                <div className="leading-tight flex items-center gap-1.5">
+                  <span>🤖 AI Teacher Video Studio</span>
+                  <span className="text-[9px] bg-purple-100 text-purple-700 px-1.5 py-0.2 rounded-full font-black">NEW</span>
+                </div>
+                <p className="text-[10px] text-stone-500 font-normal">Generate AI video & voice lecture</p>
+              </div>
+            </button>
+
+            <button
               onClick={() => { onNavigate('chat'); onClose(); }}
               className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-stone-700 hover:bg-red-50 hover:text-red-700 font-bold transition-colors cursor-pointer text-left"
             >

@@ -41,6 +41,7 @@ import { AdminApkManager } from './AdminApkManager';
 import { AdminMasterContentManager } from './AdminMasterContentManager';
 import { AdminCoursesManager } from './AdminCoursesManager';
 import { AdminLiveAttendanceManager } from './AdminLiveAttendanceManager';
+import { AiTeacherStudioView } from './AiTeacherStudioView';
 import { Radio, Calendar, Bell, Layout, Smartphone, Eye } from 'lucide-react';
 import { calculateVipExpiry } from '../utils/vipHelper';
 
@@ -54,7 +55,7 @@ const PRESET_SUBJECTS = [
 
 export function AdminPanel({ onBack }: any) {
   const { refreshData } = useData();
-  const [activeTab, setActiveTab] = useState<'requests' | 'students' | 'vip' | 'content' | 'pdf_notes' | 'live_classes' | 'live_attendance' | 'routine' | 'quotes' | 'notifications' | 'settings' | 'banners' | 'admins' | 'apk' | 'sync' | 'master' | 'courses'>('requests');
+  const [activeTab, setActiveTab] = useState<'requests' | 'students' | 'vip' | 'content' | 'pdf_notes' | 'live_classes' | 'live_attendance' | 'routine' | 'quotes' | 'notifications' | 'settings' | 'banners' | 'admins' | 'apk' | 'sync' | 'master' | 'courses' | 'ai_studio'>('requests');
   const [pendingRequestsCount, setPendingRequestsCount] = useState<number>(0);
 
   useEffect(() => {
@@ -447,6 +448,7 @@ export function AdminPanel({ onBack }: any) {
             <option value="pdf_notes">📄 Paid PDF नोट्स</option>
             <option value="courses">🎓 कोर्स प्रबंधक (Add Course)</option>
             <option value="live_classes">🔴 YouTube लाइव क्लास</option>
+            <option value="ai_studio">🤖 AI Teacher Video Studio</option>
             <option value="daily_quizzes">🏆 डेली क्विज़ & टेस्ट</option>
             <option value="routine">📅 क्लास रूटीन</option>
             <option value="quotes">💡 सुविचार / कोट्स</option>
@@ -509,6 +511,14 @@ export function AdminPanel({ onBack }: any) {
             }`}
           >
             <Radio className="w-4 h-4 text-red-500 animate-pulse" /> 🔴 YouTube लाइव क्लास
+          </button>
+          <button 
+            onClick={() => setActiveTab('ai_studio')} 
+            className={`pb-3 px-4 font-bold text-sm flex items-center gap-2 transition-colors cursor-pointer whitespace-nowrap ${
+              activeTab === 'ai_studio' ? 'border-b-2 border-amber-500 text-amber-500' : 'text-stone-400 hover:text-stone-200'
+            }`}
+          >
+            <Sparkles className="w-4 h-4 text-purple-400" /> 🤖 AI Teacher Studio
           </button>
           <button 
             onClick={() => setActiveTab('live_attendance')} 
@@ -1176,6 +1186,12 @@ export function AdminPanel({ onBack }: any) {
                 <p className="font-medium text-sm">{syncMsg}</p>
               </div>
             )}
+          </div>
+        )}
+
+        {activeTab === 'ai_studio' && (
+          <div className="relative z-10">
+            <AiTeacherStudioView onBack={() => {}} />
           </div>
         )}
       </div>

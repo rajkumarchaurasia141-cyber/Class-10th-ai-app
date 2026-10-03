@@ -27,6 +27,7 @@ import { AboutView } from './components/AboutView';
 import { ContactView } from './components/ContactView';
 import { PrivacyPolicyView } from './components/PrivacyPolicyView';
 import { Footer } from './components/Footer';
+import { AiTeacherStudioView } from './components/AiTeacherStudioView';
 
 // Password check logic function as requested
 function checkAdminSecret(enteredPass: string): boolean {
@@ -200,6 +201,10 @@ function MainApp() {
             <LiveClassesView 
               onOpenVip={() => setShowVipModal(true)}
             />
+          )}
+
+          {activeTab === 'ai_studio' && (
+            <AiTeacherStudioView onBack={() => setActiveTab('home')} />
           )}
 
           {activeTab === 'daily_quiz' && (

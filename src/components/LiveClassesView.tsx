@@ -30,6 +30,7 @@ import { useData } from '../context/DataContext';
 import { useAuth } from '../context/AuthContext';
 import { LiveClass, LiveWatchRecord } from '../types';
 import { ClassAttendanceModal } from './ClassAttendanceModal';
+import { SmartAiBoardPlayer } from './SmartAiBoardPlayer';
 import { 
   syncWatchHeartbeat, 
   subscribeClassAttendance, 
@@ -895,6 +896,10 @@ export function LiveClassesView({ onOpenVip }: LiveClassesViewProps) {
                   </div>
                 );
               })()
+            ) : (selectedClass.youtubeUrl === 'ai_studio_lecture' || selectedClass.youtubeUrl?.includes('ai_studio')) ? (
+              <div className="w-full h-full p-2 bg-black flex items-center justify-center">
+                <SmartAiBoardPlayer classItem={selectedClass} />
+              </div>
             ) : (
               /* High-Quality YouTube Player - Fully Unblocked so ⚙️ Settings, Voice Audio Track & Captions Work */
               <div className={`relative w-full bg-black overflow-hidden flex items-center justify-center select-none ${
