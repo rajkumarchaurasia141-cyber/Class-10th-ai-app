@@ -23,6 +23,10 @@ import { TopperLeaderboardView } from './components/TopperLeaderboardView';
 import { DownloadPage } from './components/DownloadPage';
 import { InstallAppBanner } from './components/InstallAppBanner';
 import { ErrorBoundary } from './components/ErrorBoundary';
+import { AboutView } from './components/AboutView';
+import { ContactView } from './components/ContactView';
+import { PrivacyPolicyView } from './components/PrivacyPolicyView';
+import { Footer } from './components/Footer';
 
 // Password check logic function as requested
 function checkAdminSecret(enteredPass: string): boolean {
@@ -43,8 +47,19 @@ function MainApp() {
     (window.location.search.includes('download=apk') || window.location.pathname.includes('/download'));
   const isAdminQuery = typeof window !== 'undefined' && 
     (window.location.pathname === '/admin' || window.location.pathname.endsWith('/admin') || window.location.search.includes('tab=admin'));
+  const isAboutQuery = typeof window !== 'undefined' && window.location.pathname.includes('/about');
+  const isContactQuery = typeof window !== 'undefined' && window.location.pathname.includes('/contact');
+  const isPrivacyQuery = typeof window !== 'undefined' && window.location.pathname.includes('/privacy');
 
-  const [activeTab, setActiveTab] = useState(isAdminQuery ? 'admin' : 'home');
+  const getInitialTab = () => {
+    if (isAboutQuery) return 'about';
+    if (isContactQuery) return 'contact';
+    if (isPrivacyQuery) return 'privacy';
+    if (isAdminQuery) return 'admin';
+    return 'home';
+  };
+
+  const [activeTab, setActiveTab] = useState(getInitialTab());
   const [selectedSubject, setSelectedSubject] = useState<string | null>(null);
   const [forceDownloadMode, setForceDownloadMode] = useState(isDownloadQuery);
 
@@ -79,6 +94,10 @@ function MainApp() {
     } else {
       setSelectedSubject(null);
       setActiveTab(tab);
+      try {
+        const path = tab === 'about' ? '/about' : tab === 'contact' ? '/contact' : tab === 'privacy' ? '/privacy-policy' : tab === 'admin' ? '/admin' : '/';
+        window.history.pushState({}, '', path);
+      } catch (e) {}
       mainScrollRef.current?.scrollTo({ top: 0, left: 0, behavior: 'instant' });
       window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
     }
@@ -308,6 +327,18 @@ function MainApp() {
             </div>
           )}
 
+          {activeTab === 'about' && (
+            <AboutView onBack={() => setActiveTab('home')} />
+          )}
+
+          {activeTab === 'contact' && (
+            <ContactView onBack={() => setActiveTab('home')} />
+          )}
+
+          {activeTab === 'privacy' && (
+            <PrivacyPolicyView onBack={() => setActiveTab('home')} />
+          )}
+
           {activeTab === 'admin' && !isAdmin && (
             <div className="p-8 text-center max-w-md mx-auto my-12 bg-white rounded-3xl border border-stone-200 shadow-xl space-y-5">
               <div className="w-16 h-16 bg-rose-50 text-rose-600 rounded-2xl flex items-center justify-center mx-auto text-2xl font-bold">
@@ -333,6 +364,9 @@ function MainApp() {
               </button>
             </div>
           )}
+
+          {/* App Footer with AdSense Pages Links */}
+          <Footer onNavigate={handleTabChange} />
         </main>
 
         {/* Bottom Navigation Bar (Sticky Native App Footer) */}

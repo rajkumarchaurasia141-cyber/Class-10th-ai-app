@@ -496,7 +496,7 @@ export function PaidTestModal({
                     <button
                       onClick={() => {
                         setShowConfirmSubmit(false);
-                        setSubmitted(true);
+                        showAdOnTestEnd();
                       }}
                       className="px-5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-sm cursor-pointer"
                     >
