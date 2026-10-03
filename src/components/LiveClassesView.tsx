@@ -92,6 +92,7 @@ export function LiveClassesView({ onOpenVip }: LiveClassesViewProps) {
 
   // Video Settings / Language & Voice Translation Modal
   const [showSettingsModal, setShowSettingsModal] = useState<boolean>(false);
+  const [dataSaverMode, setDataSaverMode] = useState<boolean>(true); // Default true for ultra-fast loading on weak networks
 
   // Fullscreen Mode (YouTube style)
   const [isFullscreen, setIsFullscreen] = useState<boolean>(false);
@@ -200,7 +201,8 @@ export function LiveClassesView({ onOpenVip }: LiveClassesViewProps) {
         videoId = url;
       }
       if (videoId) {
-        return `https://www.youtube.com/embed/${videoId}?autoplay=1&controls=1&rel=0&playsinline=1&enablejsapi=1&fs=1`;
+        const qualityParam = dataSaverMode ? '&vq=small' : '&vq=medium';
+        return `https://www.youtube.com/embed/${videoId}?autoplay=1&controls=1&rel=0&playsinline=1&enablejsapi=1&fs=1&hl=hi${qualityParam}`;
       }
     } catch {}
     return url;
@@ -1073,6 +1075,30 @@ export function LiveClassesView({ onOpenVip }: LiveClassesViewProps) {
                 <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
                 <span>सभी नए व पुराने यूट्यूब वीडियो में ⚙️ सेटिंग आइकन अब सक्रिय व उपलब्ध है।</span>
               </div>
+            </div>
+
+            {/* Data Saver / Low Network Mode Toggle */}
+            <div className="bg-stone-950 border border-stone-800 rounded-2xl p-3 flex items-center justify-between gap-3">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-xl bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center text-emerald-400 font-bold">
+                  ⚡
+                </div>
+                <div>
+                  <h5 className="font-black text-xs text-white">डेटा सेवर / लो-नेटवर्क मोड</h5>
+                  <p className="text-[10px] text-stone-400">कम डेटा व कमजोर नेटवर्क में बिना बफरिंग के स्मूथ चलेगा</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setDataSaverMode(!dataSaverMode)}
+                className={`px-3 py-1.5 rounded-xl text-xs font-black transition-all cursor-pointer ${
+                  dataSaverMode 
+                    ? 'bg-emerald-600 text-white shadow-md' 
+                    : 'bg-stone-800 text-stone-300 hover:bg-stone-700'
+                }`}
+              >
+                {dataSaverMode ? '✓ ऑन (Active)' : 'ऑफ (Off)'}
+              </button>
             </div>
 
             {/* Quick Speed Selector inside Settings */}
