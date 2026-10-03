@@ -896,7 +896,7 @@ export function LiveClassesView({ onOpenVip }: LiveClassesViewProps) {
                   </div>
                 );
               })()
-            ) : (selectedClass.youtubeUrl === 'ai_studio_lecture' || selectedClass.youtubeUrl?.includes('ai_studio')) ? (
+            ) : (selectedClass.youtubeUrl === 'ai_studio_lecture' || selectedClass.youtubeUrl?.includes('ai_studio') || selectedClass.youtubeUrl === 'dQw4w9WgXcQ' || selectedClass.description?.includes('【') || (selectedClass.description && selectedClass.description.length > 10 && !selectedClass.youtubeUrl?.includes('youtube.com') && !selectedClass.youtubeUrl?.includes('youtu.be'))) ? (
               <div className="w-full h-full p-2 bg-black flex items-center justify-center">
                 <SmartAiBoardPlayer classItem={selectedClass} />
               </div>
