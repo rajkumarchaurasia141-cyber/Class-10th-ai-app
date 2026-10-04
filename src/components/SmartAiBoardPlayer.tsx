@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Play, Pause, Volume2, Sparkles, Maximize, Bot } from 'lucide-react';
+import { Play, Pause, Volume2, Sparkles, Maximize, Bot, FastForward, RotateCcw } from 'lucide-react';
 import { LiveClass } from '../types';
 
 interface SmartAiBoardPlayerProps {
@@ -20,8 +20,8 @@ export function SmartAiBoardPlayer({ classItem }: SmartAiBoardPlayerProps) {
     ? 'https://cdn-icons-png.flaticon.com/512/2922/2922510.png' 
     : 'https://cdn-icons-png.flaticon.com/512/1995/1995574.png';
 
-  // Accurate Hindi speech speed: ~12 characters per second
-  const totalEstimatedTime = Math.max(15, Math.ceil(scriptText.length / 12));
+  // Accurate speed: ~10 characters per second for natural reading
+  const totalEstimatedTime = Math.max(20, Math.ceil(scriptText.length / 10));
 
   // Timer & Perfectly Synchronized Typing animation while playing
   useEffect(() => {
@@ -40,23 +40,20 @@ export function SmartAiBoardPlayer({ classItem }: SmartAiBoardPlayerProps) {
     return () => clearInterval(interval);
   }, [isPlaying, totalEstimatedTime]);
 
-  const handlePlaySpeech = () => {
+  const speakFromTime = (startSec: number) => {
     if (!('speechSynthesis' in window)) return;
+    window.speechSynthesis.cancel();
 
-    if (isPlaying) {
-      window.speechSynthesis.cancel();
+    // Calculate starting character index based on time scrubber
+    const charIndex = Math.floor((startSec / totalEstimatedTime) * scriptText.length);
+    const textToSpeak = scriptText.substring(charIndex);
+
+    if (!textToSpeak.trim()) {
       setIsPlaying(false);
-      setShowCenterIcon(true);
-      setTimeout(() => setShowCenterIcon(false), 800);
       return;
     }
 
-    window.speechSynthesis.cancel();
-    if (duration >= totalEstimatedTime) {
-      setDuration(0);
-    }
-
-    const utterance = new SpeechSynthesisUtterance(scriptText);
+    const utterance = new SpeechSynthesisUtterance(textToSpeak);
     utterance.lang = 'hi-IN';
     utterance.rate = 0.95;
 
@@ -83,6 +80,23 @@ export function SmartAiBoardPlayer({ classItem }: SmartAiBoardPlayerProps) {
     speechRef.current = utterance;
     window.speechSynthesis.speak(utterance);
     setIsPlaying(true);
+  };
+
+  const handlePlaySpeech = () => {
+    if (isPlaying) {
+      window.speechSynthesis.cancel();
+      setIsPlaying(false);
+      setShowCenterIcon(true);
+      setTimeout(() => setShowCenterIcon(false), 800);
+      return;
+    }
+
+    if (duration >= totalEstimatedTime) {
+      setDuration(0);
+      speakFromTime(0);
+    } else {
+      speakFromTime(duration);
+    }
     setShowCenterIcon(true);
     setTimeout(() => setShowCenterIcon(false), 800);
   };
@@ -90,8 +104,8 @@ export function SmartAiBoardPlayer({ classItem }: SmartAiBoardPlayerProps) {
   // Auto-play on mount immediately
   useEffect(() => {
     const timer = setTimeout(() => {
-      handlePlaySpeech();
-    }, 200);
+      speakFromTime(0);
+    }, 300);
     return () => {
       clearTimeout(timer);
       if ('speechSynthesis' in window) {
@@ -104,13 +118,38 @@ export function SmartAiBoardPlayer({ classItem }: SmartAiBoardPlayerProps) {
     handlePlaySpeech();
   };
 
+  // Interactive timeline scrubber (आगे-पीछे भगाने वाला सिस्टम)
+  const handleSeek = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newTime = Number(e.target.value);
+    setDuration(newTime);
+    if (isPlaying) {
+      speakFromTime(newTime);
+    }
+  };
+
+  // Skip forward 10 seconds
+  const handleSkipForward = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    const newTime = Math.min(totalEstimatedTime, duration + 10);
+    setDuration(newTime);
+    speakFromTime(newTime);
+  };
+
+  // Skip backward 10 seconds
+  const handleSkipBackward = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    const newTime = Math.max(0, duration - 10);
+    setDuration(newTime);
+    speakFromTime(newTime);
+  };
+
   const formatTime = (sec: number) => {
     const mins = Math.floor(sec / 60);
     const secs = sec % 60;
     return `${mins}:${secs < 10 ? '0' : ''}${secs}`;
   };
 
-  // Calculate typed length proportionally and perfectly synchronized with duration / speech
+  // Perfect real-time synchronization between speech voice and text typing
   const currentTypedLength = Math.min(
     scriptText.length,
     Math.floor((duration / totalEstimatedTime) * scriptText.length)
@@ -130,7 +169,7 @@ export function SmartAiBoardPlayer({ classItem }: SmartAiBoardPlayerProps) {
     <div 
       ref={containerRef}
       onClick={togglePlayPause}
-      className="w-full aspect-video min-h-[360px] sm:min-h-[420px] bg-[#fbfaf5] rounded-2xl overflow-hidden text-stone-900 border border-stone-300 shadow-2xl flex flex-col justify-between relative select-none cursor-pointer group"
+      className="w-full aspect-video min-h-[360px] sm:min-h-[440px] bg-[#fbfaf5] rounded-2xl overflow-hidden text-stone-900 border border-stone-300 shadow-2xl flex flex-col justify-between relative select-none cursor-pointer group"
     >
       
       {/* Top Whiteboard Title Banner */}
@@ -142,7 +181,7 @@ export function SmartAiBoardPlayer({ classItem }: SmartAiBoardPlayerProps) {
         </div>
       </div>
 
-      {/* Center Whiteboard Teaching Area with Perfectly Synchronized Live Text */}
+      {/* Center Whiteboard Teaching Area with 100% Synchronized Live Typing Text */}
       <div className="flex-1 flex flex-col items-center justify-center p-4 sm:p-6 text-center relative z-10">
         <div className="max-w-xl mx-auto space-y-2">
           <div className="text-xs sm:text-sm md:text-base font-semibold text-stone-800 leading-relaxed font-sans px-2">
@@ -183,22 +222,26 @@ export function SmartAiBoardPlayer({ classItem }: SmartAiBoardPlayerProps) {
         </div>
       </div>
 
-      {/* YouTube Style Bottom Control Bar */}
+      {/* YouTube Style Interactive Bottom Control Bar with Forward/Backward Seekbar */}
       <div 
         onClick={(e) => e.stopPropagation()}
-        className="absolute bottom-0 left-0 right-0 z-30 bg-gradient-to-t from-black/95 via-black/75 to-transparent px-3 py-2 space-y-1 text-white"
+        className="absolute bottom-0 left-0 right-0 z-30 bg-gradient-to-t from-black/95 via-black/75 to-transparent px-3 py-2 space-y-1.5 text-white"
       >
-        {/* Progress Scrubber */}
-        <div className="w-full bg-stone-600/80 h-1.5 rounded-full overflow-hidden cursor-pointer relative">
-          <div 
-            className="bg-red-600 h-full transition-all duration-300 relative"
-            style={{ width: `${(duration / totalEstimatedTime) * 100}%` }}
+        {/* Interactive Scrubber Timeline (आगे-पीछे भगाने वाला सिस्टम) */}
+        <div className="relative w-full flex items-center">
+          <input
+            type="range"
+            min={0}
+            max={totalEstimatedTime}
+            value={duration}
+            onChange={handleSeek}
+            className="w-full h-2 bg-stone-600/80 rounded-lg appearance-none cursor-pointer accent-red-600 focus:outline-none relative z-10"
           />
         </div>
 
         {/* Control Buttons Row */}
         <div className="flex items-center justify-between text-xs pt-0.5">
-          <div className="flex items-center gap-2.5">
+          <div className="flex items-center gap-2">
             <button
               onClick={togglePlayPause}
               className="w-7 h-7 rounded-full bg-red-600 hover:bg-red-700 text-white flex items-center justify-center transition-all cursor-pointer shadow-md"
@@ -207,7 +250,25 @@ export function SmartAiBoardPlayer({ classItem }: SmartAiBoardPlayerProps) {
               {isPlaying ? <Pause className="w-3.5 h-3.5 fill-white" /> : <Play className="w-3.5 h-3.5 fill-white ml-0.5" />}
             </button>
 
-            <div className="flex items-center gap-1 font-mono text-[11px] text-stone-200">
+            {/* Skip Backward 10s */}
+            <button
+              onClick={handleSkipBackward}
+              className="p-1 hover:bg-white/25 rounded-md text-stone-200 transition-colors cursor-pointer text-[10px] font-bold"
+              title="10 सेकंड पीछे करें"
+            >
+              ⏪ 10s
+            </button>
+
+            {/* Skip Forward 10s */}
+            <button
+              onClick={handleSkipForward}
+              className="p-1 hover:bg-white/25 rounded-md text-stone-200 transition-colors cursor-pointer text-[10px] font-bold"
+              title="10 सेकंड आगे करें"
+            >
+              10s ⏩
+            </button>
+
+            <div className="flex items-center gap-1 font-mono text-[11px] text-stone-200 ml-1">
               <span className="font-bold">{formatTime(duration)}</span>
               <span>/</span>
               <span>{formatTime(totalEstimatedTime)}</span>
@@ -220,7 +281,7 @@ export function SmartAiBoardPlayer({ classItem }: SmartAiBoardPlayerProps) {
             </span>
             <button
               onClick={toggleFullscreen}
-              className="p-1.5 hover:bg-white/20 rounded-lg text-white transition-colors cursor-pointer"
+              className="p-1.5 hover:bg-white/25 rounded-lg text-white transition-colors cursor-pointer"
               title="Fullscreen"
             >
               <Maximize className="w-4 h-4" />
