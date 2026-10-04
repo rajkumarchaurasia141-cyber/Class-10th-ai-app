@@ -21,44 +21,15 @@ export function SmartAiBoardPlayer({ classItem }: SmartAiBoardPlayerProps) {
     ? 'https://cdn-icons-png.flaticon.com/512/2922/2922510.png' 
     : 'https://cdn-icons-png.flaticon.com/512/1995/1995574.png';
 
-  // Accurate speed: ~11 characters per second for natural Hindi speech
-  const totalEstimatedTime = Math.max(15, Math.ceil(scriptText.length / 11));
+  // Average reading speed: ~10 characters per second for natural Hindi speech
+  const totalEstimatedTime = Math.max(15, Math.ceil(scriptText.length / 10));
 
-  // Timer & Real-time speech synchronization while playing
-  useEffect(() => {
-    let interval: any;
-    if (isPlaying) {
-      interval = setInterval(() => {
-        setDuration(prev => {
-          if (prev >= totalEstimatedTime) {
-            setIsPlaying(false);
-            return totalEstimatedTime;
-          }
-          const next = prev + 1;
-          // Sync spoken character index with elapsed duration
-          const computedCharIndex = Math.min(scriptText.length, Math.floor((next / totalEstimatedTime) * scriptText.length));
-          setSpokenCharIndex(computedCharIndex);
-          return next;
-        });
-      }, 1000);
-    }
-    return () => clearInterval(interval);
-  }, [isPlaying, totalEstimatedTime, scriptText.length]);
-
-  const speakFromTime = (startSec: number) => {
+  // Start speaking the full script from beginning
+  const startSpeech = () => {
     if (!('speechSynthesis' in window)) return;
     window.speechSynthesis.cancel();
 
-    const charIndex = Math.min(scriptText.length, Math.max(0, Math.floor((startSec / totalEstimatedTime) * scriptText.length)));
-    setSpokenCharIndex(charIndex);
-    const textToSpeak = scriptText.substring(charIndex);
-
-    if (!textToSpeak.trim()) {
-      setIsPlaying(false);
-      return;
-    }
-
-    const utterance = new SpeechSynthesisUtterance(textToSpeak);
+    const utterance = new SpeechSynthesisUtterance(scriptText);
     utterance.lang = 'hi-IN';
     utterance.rate = 0.95;
 
@@ -78,21 +49,47 @@ export function SmartAiBoardPlayer({ classItem }: SmartAiBoardPlayerProps) {
       utterance.pitch = isFemale ? 1.3 : 0.85;
     }
 
-    // Precise boundary tracking for 100% speech-text sync
+    // Real-time boundary tracking: as speech speaks each character/word, update typed text and duration perfectly
     utterance.onboundary = (event) => {
       if (event.charIndex !== undefined) {
-        setSpokenCharIndex(charIndex + event.charIndex);
+        setSpokenCharIndex(event.charIndex);
+        const progressSec = Math.floor((event.charIndex / scriptText.length) * totalEstimatedTime);
+        setDuration(progressSec);
       }
     };
 
     utterance.onstart = () => setIsPlaying(true);
-    utterance.onend = () => setIsPlaying(false);
+    utterance.onend = () => {
+      setIsPlaying(false);
+      setSpokenCharIndex(scriptText.length);
+      setDuration(totalEstimatedTime);
+    };
     utterance.onerror = () => setIsPlaying(false);
 
     speechRef.current = utterance;
     window.speechSynthesis.speak(utterance);
     setIsPlaying(true);
   };
+
+  // Fallback timer when boundaries don't fire frequently on some devices
+  useEffect(() => {
+    let interval: any;
+    if (isPlaying) {
+      interval = setInterval(() => {
+        setDuration(prev => {
+          if (prev >= totalEstimatedTime) {
+            setIsPlaying(false);
+            return totalEstimatedTime;
+          }
+          const next = prev + 1;
+          const charIdx = Math.min(scriptText.length, Math.floor((next / totalEstimatedTime) * scriptText.length));
+          setSpokenCharIndex(prevIdx => Math.max(prevIdx, charIdx));
+          return next;
+        });
+      }, 1000);
+    }
+    return () => clearInterval(interval);
+  }, [isPlaying, totalEstimatedTime, scriptText.length]);
 
   const handlePlaySpeech = () => {
     if (isPlaying) {
@@ -105,10 +102,9 @@ export function SmartAiBoardPlayer({ classItem }: SmartAiBoardPlayerProps) {
 
     if (duration >= totalEstimatedTime) {
       setDuration(0);
-      speakFromTime(0);
-    } else {
-      speakFromTime(duration);
+      setSpokenCharIndex(0);
     }
+    startSpeech();
     setShowCenterIcon(true);
     setTimeout(() => setShowCenterIcon(false), 800);
   };
@@ -116,8 +112,8 @@ export function SmartAiBoardPlayer({ classItem }: SmartAiBoardPlayerProps) {
   // Auto-play on mount instantly
   useEffect(() => {
     const timer = setTimeout(() => {
-      speakFromTime(0);
-    }, 250);
+      startSpeech();
+    }, 300);
     return () => {
       clearTimeout(timer);
       if ('speechSynthesis' in window) {
@@ -137,24 +133,24 @@ export function SmartAiBoardPlayer({ classItem }: SmartAiBoardPlayerProps) {
     const charIdx = Math.min(scriptText.length, Math.floor((newTime / totalEstimatedTime) * scriptText.length));
     setSpokenCharIndex(charIdx);
     if (isPlaying) {
-      speakFromTime(newTime);
+      startSpeech();
     }
   };
 
-  // Skip forward 10 seconds
   const handleSkipForward = (e: React.MouseEvent) => {
     e.stopPropagation();
     const newTime = Math.min(totalEstimatedTime, duration + 10);
     setDuration(newTime);
-    speakFromTime(newTime);
+    const charIdx = Math.min(scriptText.length, Math.floor((newTime / totalEstimatedTime) * scriptText.length));
+    setSpokenCharIndex(charIdx);
   };
 
-  // Skip backward 10 seconds
   const handleSkipBackward = (e: React.MouseEvent) => {
     e.stopPropagation();
     const newTime = Math.max(0, duration - 10);
     setDuration(newTime);
-    speakFromTime(newTime);
+    const charIdx = Math.min(scriptText.length, Math.floor((newTime / totalEstimatedTime) * scriptText.length));
+    setSpokenCharIndex(charIdx);
   };
 
   const formatTime = (sec: number) => {
@@ -163,8 +159,7 @@ export function SmartAiBoardPlayer({ classItem }: SmartAiBoardPlayerProps) {
     return `${mins}:${secs < 10 ? '0' : ''}${secs}`;
   };
 
-  // Active text displayed as teacher speaks
-  const activeText = scriptText.substring(0, Math.max(spokenCharIndex, duration === 0 ? 0 : Math.floor((duration / totalEstimatedTime) * scriptText.length)));
+  const activeText = scriptText.substring(0, Math.max(spokenCharIndex, Math.floor((duration / totalEstimatedTime) * scriptText.length)));
 
   const toggleFullscreen = () => {
     if (!containerRef.current) return;
@@ -191,7 +186,7 @@ export function SmartAiBoardPlayer({ classItem }: SmartAiBoardPlayerProps) {
         </div>
       </div>
 
-      {/* Center Whiteboard Teaching Area with 100% Real-Time Speech-Text Sync */}
+      {/* Center Whiteboard Teaching Area */}
       <div className="flex-1 flex flex-col items-center justify-center p-4 sm:p-6 text-center relative z-10">
         <div className="max-w-xl mx-auto space-y-2">
           <div className="text-xs sm:text-sm md:text-base font-semibold text-stone-800 leading-relaxed font-sans px-2">
