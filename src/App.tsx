@@ -43,6 +43,36 @@ function MainApp() {
       localStorage.removeItem('bseb_firestore_quota_exhausted');
     } catch (e) {}
   }, []);
+
+  // Screen Wake Lock API to prevent screen from turning off while app is open
+  React.useEffect(() => {
+    let wakeLock: any = null;
+    const requestWakeLock = async () => {
+      try {
+        if ('wakeLock' in navigator && (navigator as any).wakeLock) {
+          wakeLock = await (navigator as any).wakeLock.request('screen');
+        }
+      } catch (err) {
+        console.warn('Wake Lock request error:', err);
+      }
+    };
+
+    requestWakeLock();
+
+    const handleVisibilityChange = () => {
+      if (wakeLock !== null && document.visibilityState === 'visible') {
+        requestWakeLock();
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      if (wakeLock) {
+        wakeLock.release().catch(() => {});
+      }
+    };
+  }, []);
   
   const isDownloadQuery = typeof window !== 'undefined' && 
     (window.location.search.includes('download=apk') || window.location.pathname.includes('/download'));
