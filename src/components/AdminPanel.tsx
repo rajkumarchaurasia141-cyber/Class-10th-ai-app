@@ -42,7 +42,11 @@ import { AdminMasterContentManager } from './AdminMasterContentManager';
 import { AdminCoursesManager } from './AdminCoursesManager';
 import { AdminLiveAttendanceManager } from './AdminLiveAttendanceManager';
 import { AiTeacherStudioView } from './AiTeacherStudioView';
-import { Radio, Calendar, Bell, Layout, Smartphone, Eye } from 'lucide-react';
+import { CartoonStudioView } from './CartoonStudioView';
+import { AdminPyqManager } from './AdminPyqManager';
+import { AdminCrashCourseManager } from './AdminCrashCourseManager';
+import { AdminNewCrashCourseRecords } from './AdminNewCrashCourseRecords';
+import { Radio, Calendar, Bell, Layout, Smartphone, Eye, Zap } from 'lucide-react';
 import { calculateVipExpiry } from '../utils/vipHelper';
 
 const PRESET_SUBJECTS = [
@@ -55,8 +59,43 @@ const PRESET_SUBJECTS = [
 
 export function AdminPanel({ onBack }: any) {
   const { refreshData } = useData();
-  const [activeTab, setActiveTab] = useState<'requests' | 'students' | 'vip' | 'content' | 'pdf_notes' | 'live_classes' | 'live_attendance' | 'routine' | 'quotes' | 'notifications' | 'settings' | 'banners' | 'admins' | 'apk' | 'sync' | 'master' | 'courses' | 'ai_studio'>('requests');
+  const [activeTab, setActiveTab] = useState<'requests' | 'crash_course_records' | 'students' | 'vip' | 'content' | 'pdf_notes' | 'live_classes' | 'live_attendance' | 'routine' | 'quotes' | 'notifications' | 'settings' | 'banners' | 'admins' | 'apk' | 'sync' | 'master' | 'courses' | 'ai_studio' | 'cartoon_studio' | 'pyq_manager' | 'crash_course'>('requests');
   const [pendingRequestsCount, setPendingRequestsCount] = useState<number>(0);
+  const [pendingCrashCourseCount, setPendingCrashCourseCount] = useState<number>(0);
+
+  // Listener for crash course requests count
+  useEffect(() => {
+    const updateCcCount = (remoteDocs: any[]) => {
+      let count = 0;
+      const remoteIds = new Set<string>();
+      remoteDocs.forEach((d) => {
+        remoteIds.add(d.id);
+        if (d.data()?.status === 'pending') count++;
+      });
+
+      try {
+        const localItems = JSON.parse(localStorage.getItem('bseb_crash_course_requests') || '[]');
+        for (const loc of localItems) {
+          if (!remoteIds.has(loc.id) && loc.status === 'pending') {
+            count++;
+          }
+        }
+      } catch {}
+
+      setPendingCrashCourseCount(count);
+    };
+
+    try {
+      const unsub = onSnapshot(collection(db, 'crash_course_requests'), (snapshot) => {
+        updateCcCount(snapshot.docs);
+      }, () => {
+        updateCcCount([]);
+      });
+      return () => unsub();
+    } catch {
+      updateCcCount([]);
+    }
+  }, []);
 
   useEffect(() => {
     const updateCount = (remoteDocs: any[]) => {
@@ -443,12 +482,16 @@ export function AdminPanel({ onBack }: any) {
             onChange={(e) => setActiveTab(e.target.value as any)}
             className="w-full bg-stone-950 border border-stone-800 rounded-2xl px-4 py-4 text-white text-sm font-black focus:border-amber-500 focus:outline-none shadow-xl cursor-pointer"
           >
-            <option value="requests">📥 पेमेंट रिक्वेस्ट {pendingRequestsCount > 0 ? `(${pendingRequestsCount})` : ''}</option>
+            <option value="requests">📥 पेमेंट रिक्वेस्ट (फुल कोर्स) {pendingRequestsCount > 0 ? `(${pendingRequestsCount})` : ''}</option>
+            <option value="crash_course_records">⚡ न्यू क्रैश कोर्स रिकॉर्ड {pendingCrashCourseCount > 0 ? `(${pendingCrashCourseCount})` : ''}</option>
             <option value="students">👥 पंजीकृत छात्र</option>
             <option value="pdf_notes">📄 Paid PDF नोट्स</option>
             <option value="courses">🎓 कोर्स प्रबंधक (Add Course)</option>
             <option value="live_classes">🔴 YouTube लाइव क्लास</option>
             <option value="ai_studio">🤖 AI Teacher Video Studio</option>
+            <option value="cartoon_studio">🎨 Cartoon 2D Class Studio</option>
+            <option value="crash_course">🚀 क्रैश कोर्स प्रबंधक (Crash Course)</option>
+            <option value="pyq_manager">📄 PYQ प्रश्न पत्र (Add PDF)</option>
             <option value="daily_quizzes">🏆 डेली क्विज़ & टेस्ट</option>
             <option value="routine">📅 क्लास रूटीन</option>
             <option value="quotes">💡 सुविचार / कोट्स</option>
@@ -477,6 +520,20 @@ export function AdminPanel({ onBack }: any) {
             {pendingRequestsCount > 0 && (
               <span className="bg-red-600 text-white text-[10px] font-black px-1.5 py-0.2 rounded-full animate-pulse">
                 {pendingRequestsCount}
+              </span>
+            )}
+          </button>
+          <button 
+            onClick={() => setActiveTab('crash_course_records')} 
+            className={`pb-3 px-4 font-bold text-sm flex items-center gap-2 transition-colors cursor-pointer whitespace-nowrap relative ${
+              activeTab === 'crash_course_records' ? 'border-b-2 border-amber-500 text-amber-500' : 'text-stone-400 hover:text-stone-200'
+            }`}
+          >
+            <Zap className="w-4 h-4 text-yellow-400 fill-current" /> 
+            <span>न्यू क्रैश कोर्स रिकॉर्ड</span>
+            {pendingCrashCourseCount > 0 && (
+              <span className="bg-red-600 text-white text-[10px] font-black px-1.5 py-0.2 rounded-full animate-pulse">
+                {pendingCrashCourseCount}
               </span>
             )}
           </button>
@@ -519,6 +576,30 @@ export function AdminPanel({ onBack }: any) {
             }`}
           >
             <Sparkles className="w-4 h-4 text-purple-400" /> 🤖 AI Teacher Studio
+          </button>
+          <button 
+            onClick={() => setActiveTab('cartoon_studio')} 
+            className={`pb-3 px-4 font-bold text-sm flex items-center gap-2 transition-colors cursor-pointer whitespace-nowrap ${
+              activeTab === 'cartoon_studio' ? 'border-b-2 border-amber-500 text-amber-500' : 'text-stone-400 hover:text-stone-200'
+            }`}
+          >
+            <Sparkles className="w-4 h-4 text-orange-400" /> 🎨 Cartoon 2D Class
+          </button>
+          <button 
+            onClick={() => setActiveTab('crash_course')} 
+            className={`pb-3 px-4 font-bold text-sm flex items-center gap-2 transition-colors cursor-pointer whitespace-nowrap ${
+              activeTab === 'crash_course' ? 'border-b-2 border-amber-500 text-amber-500' : 'text-stone-400 hover:text-stone-200'
+            }`}
+          >
+            <Sparkles className="w-4 h-4 text-amber-400" /> 🚀 क्रैश कोर्स
+          </button>
+          <button 
+            onClick={() => setActiveTab('pyq_manager')} 
+            className={`pb-3 px-4 font-bold text-sm flex items-center gap-2 transition-colors cursor-pointer whitespace-nowrap ${
+              activeTab === 'pyq_manager' ? 'border-b-2 border-amber-500 text-amber-500' : 'text-stone-400 hover:text-stone-200'
+            }`}
+          >
+            <FileText className="w-4 h-4 text-red-400" /> 📄 PYQ प्रश्न पत्र
           </button>
           <button 
             onClick={() => setActiveTab('live_attendance')} 
@@ -636,6 +717,13 @@ export function AdminPanel({ onBack }: any) {
 
         {/* Payment Requests (Screenshots) Tab */}
         {activeTab === 'requests' && <AdminPaymentRequests />}
+
+        {/* New Crash Course Records Tab */}
+        {activeTab === 'crash_course_records' && (
+          <div className="relative z-10">
+            <AdminNewCrashCourseRecords />
+          </div>
+        )}
 
         {/* Paid PDF Notes Tab */}
         {activeTab === 'pdf_notes' && (
@@ -1192,6 +1280,24 @@ export function AdminPanel({ onBack }: any) {
         {activeTab === 'ai_studio' && (
           <div className="relative z-10">
             <AiTeacherStudioView onBack={() => {}} />
+          </div>
+        )}
+
+        {activeTab === 'cartoon_studio' && (
+          <div className="relative z-10">
+            <CartoonStudioView onBack={() => {}} />
+          </div>
+        )}
+
+        {activeTab === 'crash_course' && (
+          <div className="relative z-10">
+            <AdminCrashCourseManager />
+          </div>
+        )}
+
+        {activeTab === 'pyq_manager' && (
+          <div className="relative z-10">
+            <AdminPyqManager />
           </div>
         )}
       </div>

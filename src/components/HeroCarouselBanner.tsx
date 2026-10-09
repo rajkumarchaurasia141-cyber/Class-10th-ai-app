@@ -204,7 +204,7 @@ export function HeroCarouselBanner({ onOpenVip, onExploreCourses, onSelectSubjec
 
             <div className="bg-black/50 border border-amber-400/60 rounded-xl p-1.5 sm:p-2 text-right shrink-0">
               <div className="text-[8px] text-amber-400 font-bold">ALL SUBJECTS</div>
-              <div className="text-base sm:text-2xl font-black text-yellow-300 leading-none mt-0.5">₹299</div>
+              <div className="text-base sm:text-2xl font-black text-yellow-300 leading-none mt-0.5">₹499</div>
             </div>
           </div>
 
@@ -330,7 +330,7 @@ export function HeroCarouselBanner({ onOpenVip, onExploreCourses, onSelectSubjec
                 className="px-2 py-1 sm:px-3 sm:py-1.5 bg-black/70 hover:bg-stone-900 text-amber-300 font-black text-[9px] sm:text-xs rounded-lg border border-amber-400/50 shadow-sm transition-all flex items-center gap-1 cursor-pointer shrink-0"
               >
                 <Crown className="w-3 h-3 text-amber-400" />
-                <span>VIP अनलॉक (₹299)</span>
+                <span>VIP अनलॉक (₹499)</span>
               </button>
             </div>
           </div>
@@ -432,7 +432,7 @@ export function HeroCarouselBanner({ onOpenVip, onExploreCourses, onSelectSubjec
                 className="px-2 py-1 sm:px-3 sm:py-1.5 bg-black/70 hover:bg-stone-900 text-amber-300 font-black text-[9px] sm:text-xs rounded-lg border border-amber-400/50 shadow-sm transition-all flex items-center gap-1 cursor-pointer shrink-0"
               >
                 <Crown className="w-3 h-3 text-amber-400" />
-                <span>VIP अनलॉक (₹299)</span>
+                <span>VIP अनलॉक (₹499)</span>
               </button>
             </div>
           </div>

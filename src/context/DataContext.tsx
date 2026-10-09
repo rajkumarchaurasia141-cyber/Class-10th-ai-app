@@ -6,7 +6,7 @@ import { useAuth } from './AuthContext';
 import { getStaticCollection, getStaticData } from '../lib/staticData';
 import { defaultSubjectsData } from '../data/defaultCurriculum';
 import { defaultPaidPdfNotes } from '../data/defaultPdfNotes';
-import { Subject, PaidPdfNote, LiveClass, DailyQuizItem, LeaderboardEntry, RoutineItem, MotivationalQuote, NotificationItem, AppConfig, BannerItem } from '../types';
+import { Subject, PaidPdfNote, LiveClass, DailyQuizItem, LeaderboardEntry, RoutineItem, MotivationalQuote, NotificationItem, AppConfig, BannerItem, PyqItem, CrashCoursePdf } from '../types';
 
 export const defaultBanners: BannerItem[] = [
   {
@@ -23,292 +23,133 @@ export const defaultBanners: BannerItem[] = [
     subjects: ['गणित', 'विज्ञान', 'सामाजिक विज्ञान', 'संस्कृत', 'हिंदी', 'अंग्रेजी'],
     oldPrice: '₹999',
     newPrice: '₹299 मात्र',
-    priceLabel: 'Crash Course Fee',
-    actionText: 'क्रैश कोर्स ज्वाइन करें',
-    actionSub: 'मात्र ₹299 में अनलॉक करें',
-    bgGradient: 'from-amber-600 via-red-700 to-stone-950',
-    badgeColor: 'bg-yellow-400 text-stone-950'
+    buttonText: 'अभी VIP ज्वॉइन करें 👑',
+    gradient: 'from-amber-600 via-red-600 to-stone-950',
+    badgeText: '99% छात्र सफल'
   },
   {
-    id: 'banner_1',
-    tag: 'बिहार बोर्ड परीक्षा फुल सिलेबस',
-    title: 'टॉपर बैच - फुल सिलेबस',
-    subtitle: '10th All Subjects (NCERT)',
+    id: 'banner_pyq',
+    tag: '📄 2018 - 2026 PYQ बैंक',
+    title: 'बिहार बोर्ड पिछले वर्षों के प्रश्न पत्र',
+    subtitle: 'सभी विषयों के प्रथम एवं द्वितीय पाली के ओरिजिनल प्रश्न पत्र व उत्तर',
     features: [
-      'लाइव & रिकॉर्डेड क्लासेस',
-      'हस्तलिखित चैप्टर नोट्स (PDF)',
-      'डाउट समाधान & गाइडेंस',
-      'चैप्टर वाइज 50 MCQ टेस्ट'
+      'वर्ष 2018 से 2026 तक के सभी प्रश्न पत्र',
+      'प्रत्येक प्रश्न का सटीक वस्तुनिष्ठ व सब्जेक्टिव हल',
+      'बिहार बोर्ड परीक्षा पैटर्न पर आधारित मॉडल पेपर'
     ],
-    subjects: ['गणित', 'विज्ञान', 'सामाजिक विज्ञान', 'संस्कृत', 'हिंदी'],
-    oldPrice: '₹1800',
-    newPrice: '₹299 मात्र',
-    priceLabel: 'Course Fee',
-    actionText: 'ज्वाइन करें',
-    actionSub: 'VIP अनलॉक',
-    bgGradient: 'from-red-900 via-stone-900 to-red-950',
-    badgeColor: 'bg-amber-400 text-stone-950'
-  },
-  {
-    id: 'banner_2',
-    tag: 'स्पेशल स्टडी मटेरियल',
-    title: 'टॉपर हैंडराइटिंग नोट्स',
-    subtitle: 'संपूर्ण 10वीं सिलेबस कवरेज',
-    features: [
-      'VVI महत्वपूर्ण प्रश्नोत्तर',
-      'संस्कृत पीयूषम् सम्पूर्ण श्लोकार्थ',
-      'गणित सूत्र एवं ट्रिक्स',
-      'बोर्ड परीक्षा मॉडल पेपर्स'
-    ],
-    subjects: ['NCERT आधारित', 'PYQ संग्रह', '100% स्कोरिंग'],
-    oldPrice: '₹999',
-    newPrice: '₹99 मात्र',
-    priceLabel: '1 Month Fee',
-    actionText: 'नोट्स देखें',
-    actionSub: 'डाउनलोड करें',
-    bgGradient: 'from-amber-900 via-stone-900 to-stone-950',
-    badgeColor: 'bg-emerald-400 text-stone-950'
-  },
-  {
-    id: 'banner_3',
-    tag: '50 Objective MCQ Series',
-    title: 'महा-टेस्ट सीरीज फुल सिलेबस',
-    subtitle: 'प्रत्येक अध्याय के 50 चुनिंदा प्रश्न',
-    features: [
-      'तुरंत रिजल्ट व स्कोर कार्ड',
-      'सटीक व्याख्या व सही उत्तर',
-      'टाइम लिमिट अभ्यास',
-      'रैंक व प्रोग्रेस रिपोर्ट'
-    ],
-    subjects: ['संस्कृत', 'विज्ञान', 'गणित', 'सामाजिक विज्ञान'],
-    oldPrice: '₹500',
-    newPrice: 'फ्री + VIP',
-    priceLabel: 'All Tests',
-    actionText: 'टेस्ट दें',
-    actionSub: 'प्रैक्टिस शुरू करें',
-    bgGradient: 'from-blue-950 via-stone-900 to-indigo-950',
-    badgeColor: 'bg-amber-400 text-stone-950'
-  }
-];
-
-export const defaultAppConfig: AppConfig = {
-  helplineNumber: '9241511070',
-  whatsappNumber: '9241511070',
-  upiId: '9708868515',
-  qrCodeDataUrl: '',
-  appLogoUrl: '/app_logo.svg',
-  youtubeUrl: 'https://www.youtube.com/@Vidyaagent2.0',
-  instagramUrl: 'https://www.instagram.com/unbroken_raj_01?stkn=dmJwNzNhNDl0cXhz',
-  whatsappGroupUrl: 'https://wa.me/919241511070?text=' + encodeURIComponent('नमस्ते सर, मुझे 10th BSEB फुल सिलेबस WhatsApp ग्रुप में जोड़ें।'),
-  telegramUrl: 'https://t.me',
-  price1Month: 99,
-  price1Year: 299,
-  banners: defaultBanners,
-  apkUrl: 'https://ais-dev-k35g6pjdntzyqazh4vjcv2-479527350739.asia-east1.run.app',
-  aabUrl: 'https://ais-dev-k35g6pjdntzyqazh4vjcv2-479527350739.asia-east1.run.app'
-};
-
-export const defaultRoutine: RoutineItem[] = [
-  {
-    id: 'rout_1',
-    time: '06:30 AM - 07:30 AM',
-    subject: 'संस्कृत (पीयूषम्)',
-    topic: 'श्लोक वाचन, शब्दार्थ & व्याकरण',
-    instructor: 'संस्कृत विशेषज्ञ',
-    days: 'सोमवार, बुधवार, शुक्रवार',
-    color: 'border-l-amber-500 bg-amber-50/50'
-  },
-  {
-    id: 'rout_2',
-    time: '07:30 AM - 08:30 AM',
-    subject: 'विज्ञान (Science)',
-    topic: 'भौतिकी / रसायन / जीवविज्ञान थ्योरी',
-    instructor: 'साइंस टीम',
-    days: 'प्रतिदिन (Mon - Sat)',
-    color: 'border-l-blue-500 bg-blue-50/50'
-  },
-  {
-    id: 'rout_3',
-    time: '04:30 PM - 05:30 PM',
-    subject: 'गणित (Mathematics)',
-    topic: 'NCERT प्रश्नावली & उदाहरण अभ्यास',
-    instructor: 'मैथ्स गुरु',
-    days: 'प्रतिदिन (Mon - Sat)',
-    color: 'border-l-red-500 bg-red-50/50'
-  },
-  {
-    id: 'rout_4',
-    time: '06:00 PM - 07:00 PM',
-    subject: 'सामाजिक विज्ञान (SST)',
-    topic: 'इतिहास, भूगोल, अर्थशास्त्र, आपदा प्रबंधन',
-    instructor: 'SST एक्सपर्ट',
-    days: 'मंगलवार, गुरुवार, शनिवार',
-    color: 'border-l-emerald-500 bg-emerald-50/50'
-  },
-  {
-    id: 'rout_5',
-    time: '07:30 PM - 08:30 PM',
-    subject: 'हिंदी (गोधूलि & व्याकरण)',
-    topic: 'गद्य, पद्य एवं पत्र/निबंध लेखन',
-    instructor: 'हिंदी विशेषज्ञ',
-    days: 'सोमवार, बुधवार, शुक्रवार',
-    color: 'border-l-purple-500 bg-purple-50/50'
-  }
-];
-
-export const defaultQuotes: MotivationalQuote[] = [
-  {
-    id: 'q_1',
-    quote: 'मंजिलें उन्हीं को मिलती हैं, जिनके सपनों में जान होती है, पंखों से कुछ नहीं होता, हौसलों से उड़ान होती है!',
-    author: 'बिहार बोर्ड टॉपर प्रेरणा',
-    isActive: true,
-    createdAt: new Date().toISOString()
-  },
-  {
-    id: 'q_2',
-    quote: 'अशिक्षा को हराओ, बिहार बोर्ड फुल सिलेबस में 90%+ अंक लाकर अपने माता-पिता का नाम रोशन करो!',
-    author: 'राज सर',
-    isActive: true,
-    createdAt: new Date().toISOString()
-  },
-  {
-    id: 'q_3',
-    quote: 'संघर्ष ही सफलता की कुंजी है। प्रतिदिन 5 घंटे नियमित पढ़ाई ही आपको टॉपर बनाएगी।',
-    author: 'टॉपर गुरु टीम',
-    isActive: true,
-    createdAt: new Date().toISOString()
-  }
-];
-
-export const defaultNotifications: NotificationItem[] = [
-  {
-    id: 'notif-crash',
-    title: '🔥 बोर्ड परीक्षा 10वीं टॉपर क्रैश कोर्स शुरू!',
-    description: 'मात्र ₹299 में सभी 6 विषयों का सम्पूर्ण क्रैश कोर्स अनलॉक करें! हस्तलिखित नोट्स, VVI गैस प्रश्नोत्तर और OMR टेस्ट उपलब्ध। सहायता के लिए WhatsApp: 9241511070',
-    timeLabel: 'अभी-अभी',
-    isNew: true,
-    actionType: 'vip',
-    createdAt: new Date().toISOString()
-  },
-  {
-    id: 'notif-1',
-    title: '🎉 टॉपर बैच क्रैश कोर्स स्पेशल ऑफर!',
-    description: 'बिहार बोर्ड 10वीं के सभी 6 विषयों का सम्पूर्ण क्रैश कोर्स अब मात्र ₹299 में उपलब्ध है। अभी VIP क्रैश कोर्स अनलॉक करें।',
-    timeLabel: '10 मिनट पहले',
-    isNew: true,
-    actionType: 'vip',
-    createdAt: new Date().toISOString()
-  },
-  {
-    id: 'notif-2',
-    title: '📝 संस्कृत (मङ्गलम्) के 50 नए VVI MCQs लाइव हैं',
-    description: 'संस्कृत पीयूषम् के प्रथम पाठ के 50 चुनिंदा वस्तुनिष्ठ प्रश्नों का टेस्ट सेट अपलोड कर दिया गया है। अपना स्कोर तुरंत चेक करें।',
-    timeLabel: 'आज, 09:30 AM',
-    isNew: true,
-    actionType: 'courses',
-    createdAt: new Date().toISOString()
+    subjects: ['गणित', 'विज्ञान', 'सामाजिक विज्ञान', 'हिन्दी', 'संस्कृत'],
+    oldPrice: 'मुफ्त',
+    newPrice: 'FREE',
+    buttonText: 'PYQ पीडीएफ देखें 📥',
+    gradient: 'from-red-600 via-rose-600 to-amber-700',
+    badgeText: '100% फ्री'
   }
 ];
 
 export const defaultLiveClasses: LiveClass[] = [
   {
-    id: 'live_default_1',
-    title: 'संस्कृत - मङ्गलम् संपूर्ण व्याख्या एवं VVI ऑब्जेक्टिव प्रश्न (फ्री डेमो क्लास)',
-    youtubeUrl: 'https://www.youtube.com/watch?v=5qap5aO4i9A',
-    subjectName: 'संस्कृत',
-    teacherName: 'राज सर',
-    scheduledAt: 'आज शाम 6:00 बजे',
+    id: 'live_demo_1',
+    title: 'BSEB 10th गणित - वास्तविक संख्याएँ (Real Numbers) मैराथन क्लास',
+    youtubeUrl: 'ai_studio_lecture',
+    subjectName: 'गणित (Maths)',
+    teacherName: 'Raj Sir',
+    scheduledAt: 'आज शाम 7:00 बजे',
     isLive: true,
     isVip: false,
-    description: 'बिहार बोर्ड फुल सिलेबस परीक्षा के लिए संस्कृत प्रथम अध्याय मङ्गलम् का लाइव महामौरथन (सभी छात्रों के लिए फ्री डेमो)।',
-    createdAt: new Date().toISOString(),
-    publishType: 'instant'
+    description: '【 प्रश्न 】 : यूक्लिड विभाजन एल्गोरिथम से HCF कैसे निकालते हैं?\n【 उत्तर 】 : a = bq + r, जहाँ 0 ≤ r < b होता है।\n★ मुख्य बिंदु: म.स. और ल.स. का गुणनफल = दोनों संख्याओं का गुणनफल होता है।\nट्रिक: अभाज्य गुणनखंड विधि द्वारा सरलता से हल करें।',
+    createdAt: new Date().toISOString()
   },
   {
-    id: 'live_default_2',
-    title: 'विज्ञान - रासायनिक समीकरण एवं अभिक्रियाएँ (VIP स्पेशल क्लास)',
-    youtubeUrl: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
-    subjectName: 'विज्ञान',
-    teacherName: 'प्रिया मैम',
-    scheduledAt: 'कल अपलोड किया गया',
+    id: 'live_demo_2',
+    title: 'BSEB 10th विज्ञान - रासायनिक अभिक्रियाएँ एवं समीकरण VVI वस्तुनिष्ठ प्रश्न',
+    youtubeUrl: 'ai_studio_lecture',
+    subjectName: 'विज्ञान (Science)',
+    teacherName: 'KK Mam',
+    scheduledAt: 'कल शाम 6:30 बजे',
     isLive: false,
-    isVip: true,
-    description: 'कक्षा 10वीं रसायन विज्ञान चैप्टर 1 के सभी महत्वपूर्ण प्रश्न उत्तर (केवल पेड छात्रों के लिए)।',
-    createdAt: new Date().toISOString(),
-    publishType: 'instant'
+    isVip: false,
+    description: '【 प्रश्न 】 : वायु में जलाने से पहले मैग्नीशियम रिबन को साफ क्यों किया जाता है?\n【 उत्तर 】 : मैग्नीशियम रिबन की सतह पर मैग्नीशियम ऑक्साइड की जिद्दी परत जम जाती है, जिसे हटाने के लिए इसे रेगमार से साफ किया जाता है।',
+    createdAt: new Date().toISOString()
   }
 ];
 
 export const defaultDailyQuizzes: DailyQuizItem[] = [
-  { id: 'dq_pol_science', dateLabel: 'आज का टेस्ट', subjectName: 'राजनीति शास्त्र', title: 'लोकतांत्रिक राजनीति - संपूर्ण 5 अध्याय (250 वस्तुनिष्ठ प्रश्न)', chaptersCount: 5, totalQuestions: 250, createdAt: new Date().toISOString() },
-  { id: 'dq_1', dateLabel: '19 सितम्बर', subjectName: 'संस्कृत', title: 'संस्कृत - मङ्गलम् एवं व्याकरण टेस्ट', chaptersCount: 16, totalQuestions: 438, createdAt: new Date().toISOString() },
-  { id: 'dq_2', dateLabel: '18 सितम्बर', subjectName: 'अर्थव्यवस्था', title: 'भारतीय अर्थव्यवस्था का विकास - वस्तुनिष्ठ प्रश्न', chaptersCount: 5, totalQuestions: 150, createdAt: new Date().toISOString() },
-  { id: 'dq_3', dateLabel: '17 सितम्बर', subjectName: 'भूगोल', title: 'भारत - संसाधन एवं उपयोग टेस्ट', chaptersCount: 7, totalQuestions: 200, createdAt: new Date().toISOString() },
-  { id: 'dq_4', dateLabel: '16 सितम्बर', subjectName: 'इतिहास', title: 'यूरोप में राष्ट्रवाद - महत्वपूर्ण प्रश्न', chaptersCount: 8, totalQuestions: 250, createdAt: new Date().toISOString() },
-  { id: 'dq_5', dateLabel: '15 सितम्बर', subjectName: 'गणित', title: 'वास्तविक संख्याएँ & बहुपद - सुपर टेस्ट', chaptersCount: 15, totalQuestions: 300, createdAt: new Date().toISOString() },
-  { id: 'dq_6', dateLabel: '14 सितम्बर', subjectName: 'Mix - विज्ञान', title: 'भौतिकी, रसायन एवं जीवविज्ञान महामॉक टेस्ट', chaptersCount: 16, totalQuestions: 500, createdAt: new Date().toISOString() },
-  { id: 'dq_7', dateLabel: '13 सितम्बर', subjectName: 'Mix - All Subject', title: 'बिहार बोर्ड 10वीं ऑल-सब्जेक्ट ग्रैंड टेस्ट', chaptersCount: 20, totalQuestions: 600, createdAt: new Date().toISOString() },
-  { id: 'dq_8', dateLabel: '11 सितम्बर', subjectName: 'हिंदी - वर्णिका', title: 'वर्णिका भाग 2 सम्पूर्ण कथा वस्तुनिष्ठ टेस्ट', chaptersCount: 5, totalQuestions: 150, createdAt: new Date().toISOString() },
-  { id: 'dq_9', dateLabel: '10 सितम्बर', subjectName: 'हिंदी - पद्य', title: 'पद्य खंड - सूरदास, कबीर के पद व कविताएँ', chaptersCount: 12, totalQuestions: 350, createdAt: new Date().toISOString() },
-  { id: 'dq_10', dateLabel: '5 सितम्बर', subjectName: 'हिंदी - गद्य', title: 'गद्य खंड - श्रम विभाजन और जाति प्रथा', chaptersCount: 12, totalQuestions: 350, createdAt: new Date().toISOString() },
-  { id: 'dq_11', dateLabel: '4 सितम्बर', subjectName: 'भौतिकी', title: 'प्रकाश का परावर्तन तथा अपवर्तन टेस्ट', chaptersCount: 4, totalQuestions: 120, createdAt: new Date().toISOString() },
-  { id: 'dq_12', dateLabel: '3 सितम्बर', subjectName: 'रसायनशास्त्र', title: 'रासायनिक अभिक्रियाएँ एवं समीकरण', chaptersCount: 5, totalQuestions: 150, createdAt: new Date().toISOString() },
-  { id: 'dq_13', dateLabel: '20 अगस्त', subjectName: 'जीवविज्ञान', title: 'जैव प्रक्रम (Life Processes) महाटेस्ट', chaptersCount: 6, totalQuestions: 180, createdAt: new Date().toISOString() }
+  {
+    id: 'quiz_1',
+    title: 'बिहार बोर्ड 10वीं गणित - वास्तविक संख्याएँ (Real Numbers) ऑनलाइन टेस्ट',
+    subject: 'गणित (Maths)',
+    totalQuestions: 15,
+    durationMinutes: 10,
+    questions: [
+      {
+        question: 'दो संख्याओं a और b का म.स. (HCF) × ल.स. (LCM) किसके बराबर होता है?',
+        options: ['a + b', 'a - b', 'a × b', 'a / b'],
+        correctAnswer: 2,
+        explanation: 'सूत्र से: HCF(a,b) × LCM(a,b) = a × b होता है।'
+      },
+      {
+        question: 'निम्न में से कौन सी अभाज्य संख्या (Prime Number) है?',
+        options: ['4', '9', '11', '15'],
+        correctAnswer: 2,
+        explanation: '11 केवल 1 और 11 से विभाजित होती है, अतः यह अभाज्य संख्या है।'
+      }
+    ]
+  }
 ];
 
 export const defaultLeaderboard: LeaderboardEntry[] = [
   {
     id: 'lb_1',
-    studentName: 'राहुल कुमार (Topper)',
+    studentName: 'राहुल कुमार',
     district: 'पटना (Patna)',
-    score: 492,
+    score: 486,
     totalMarks: 500,
-    testName: 'बिहार बोर्ड फुल सिलेबस फाइनल मेगा टेस्ट',
-    subjectName: 'सभी विषय (All Subjects)',
+    testName: 'बोर्ड परीक्षा ऑल इंडिया महाटेस्ट',
+    subjectName: 'ऑल सब्जेक्ट',
     createdAt: new Date().toISOString(),
     isVip: true
   },
   {
     id: 'lb_2',
-    studentName: 'प्रिया शर्मा',
+    studentName: 'प्रिया कुमारी',
     district: 'मुजफ्फरपुर (Muzaffarpur)',
-    score: 486,
+    score: 479,
     totalMarks: 500,
-    testName: 'संस्कृत मङ्गलम् महामौरथन टेस्ट',
-    subjectName: 'संस्कृत',
+    testName: 'गणित टॉपर चैलेंज',
+    subjectName: 'गणित',
     createdAt: new Date().toISOString(),
     isVip: true
   },
   {
     id: 'lb_3',
-    studentName: 'अमित कुमार यादव',
-    district: 'दरभंगा (Darbhanga)',
-    score: 481,
+    studentName: 'अमित शर्मा',
+    district: 'समस्तीपुर (Samastipur)',
+    score: 472,
     totalMarks: 500,
-    testName: 'विज्ञान VVI ऑब्जेक्टिव टेस्ट',
+    testName: 'विज्ञान वीकली टेस्ट',
     subjectName: 'विज्ञान',
     createdAt: new Date().toISOString(),
     isVip: false
   },
   {
     id: 'lb_4',
-    studentName: 'नेहा कुमारी',
-    district: 'समस्तीपुर (Samastipur)',
-    score: 475,
+    studentName: 'नेहा गुप्ता',
+    district: 'गया (Gaya)',
+    score: 468,
     totalMarks: 500,
-    testName: 'गणित त्रिकोणमिति मॉडल टेस्ट',
-    subjectName: 'गणित',
+    testName: 'सामाजिक विज्ञान मेगा क्विज़',
+    subjectName: 'सामाजिक विज्ञान',
     createdAt: new Date().toISOString(),
     isVip: true
   },
   {
     id: 'lb_5',
-    studentName: 'विवेक राज',
-    district: 'गया (Gaya)',
-    score: 468,
+    studentName: 'विकी कुमार',
+    district: 'भागलपुर (Bhagalpur)',
+    score: 465,
     totalMarks: 500,
-    testName: 'सामाजिक विज्ञान इतिहास टेस्ट',
-    subjectName: 'सामाजिक विज्ञान',
+    testName: 'संस्कृत पीयूषम् टेस्ट',
+    subjectName: 'संस्कृत',
     createdAt: new Date().toISOString(),
     isVip: false
   },
@@ -325,9 +166,84 @@ export const defaultLeaderboard: LeaderboardEntry[] = [
   }
 ];
 
+export const defaultRoutine: RoutineItem[] = [
+  { id: 'rt_1', time: 'सुबह 5:00 - 6:30', title: 'गणित (Maths) फॉर्मूला रिवीजन', subject: 'गणित', isCompleted: false },
+  { id: 'rt_2', time: 'सुबह 7:00 - 8:30', title: 'विज्ञान (Science) भौतिकी & रसायन', subject: 'विज्ञान', isCompleted: false },
+  { id: 'rt_3', time: 'शाम 6:00 - 7:30', title: 'सामाजिक विज्ञान & इतिहास', subject: 'सामाजिक विज्ञान', isCompleted: false },
+  { id: 'rt_4', time: 'रात 8:00 - 9:30', title: 'हिन्दी गद्य खंड & संस्कृत पीयूषम्', subject: 'हिन्दी', isCompleted: false }
+];
+
+export const defaultQuotes: MotivationalQuote[] = [
+  { id: 'qt_1', quote: 'मंजिलें उन्हीं को मिलती हैं, जिनके सपनों में जान होती है, पंखों से कुछ नहीं होता, हौसलों से उड़ान होती है!', author: 'डॉ. एपीजे अब्दुल कलाम', isActive: true },
+  { id: 'qt_2', quote: 'बिहार बोर्ड 10वीं परीक्षा में 450+ अंक लाना अब हर छात्र का सपना सच होगा!', author: 'BSEB Topper Team', isActive: true }
+];
+
+export const defaultNotifications: NotificationItem[] = [
+  { id: 'notif_1', title: '🎯 नया क्रैश कोर्स लाइव!', description: 'बिहार बोर्ड 10वीं के लिए सभी 6 विषयों का फास्ट-ट्रैक रिवीजन शुरू हो गया है।', timeLabel: 'अभी', isNew: true, actionType: 'courses', createdAt: new Date().toISOString() },
+  { id: 'notif_2', title: '📄 PYQ बैंक अपडेटेड', description: 'पिछले वर्षों के ओरिजिनल प्रश्न पत्र उत्तर सहित अपलोड कर दिए गए हैं।', timeLabel: 'आज', isNew: true, actionType: 'courses', createdAt: new Date().toISOString() }
+];
+
+export const defaultAppConfig: AppConfig = {
+  upiId: '9241511070@ybl',
+  whatsappNumber: '9241511070',
+  qrCodeDataUrl: '',
+  appLogoUrl: '',
+  price1Month: 99,
+  price1Year: 499,
+  helplineNumber: '9241511070',
+  youtubeUrl: 'https://youtube.com',
+  instagramUrl: 'https://instagram.com',
+  whatsappGroupUrl: 'https://chat.whatsapp.com',
+  telegramUrl: 'https://t.me'
+};
+
+const defaultPyqs: PyqItem[] = [
+  // 2026
+  { id: 'pyq_2026_1', year: '2026', subjectName: 'गणित (Maths)', title: 'BSEB 10th गणित 2026 वार्षिक परीक्षा ओरिजिनल प्रश्न पत्र', pdfUrl: 'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf', isVip: false, downloadsCount: 4520, uploadedAt: '2026-02-15' },
+  { id: 'pyq_2026_2', year: '2026', subjectName: 'विज्ञान (Science)', title: 'BSEB 10th विज्ञान 2026 प्रथम & द्वितीय पाली प्रश्न पत्र', pdfUrl: 'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf', isVip: false, downloadsCount: 3890, uploadedAt: '2026-02-15' },
+  { id: 'pyq_2026_3', year: '2026', subjectName: 'सामाजिक विज्ञान', title: 'BSEB 10th सामाजिक विज्ञान 2026 बोर्ड परीक्षा प्रश्न पत्र व हल', pdfUrl: 'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf', isVip: false, downloadsCount: 3120, uploadedAt: '2026-02-16' },
+  { id: 'pyq_2026_4', year: '2026', subjectName: 'हिन्दी', title: 'BSEB 10th हिन्दी (गोधूलि भाग-2) 2026 प्रश्न पत्र', pdfUrl: 'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf', isVip: false, downloadsCount: 2950, uploadedAt: '2026-02-16' },
+  { id: 'pyq_2026_5', year: '2026', subjectName: 'संस्कृत', title: 'BSEB 10th संस्कृत (पीयूषम्) 2026 वार्षिक परीक्षा प्रश्न पत्र', pdfUrl: 'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf', isVip: false, downloadsCount: 2780, uploadedAt: '2026-02-17' },
+
+  // 2025
+  { id: 'pyq_2025_1', year: '2025', subjectName: 'गणित (Maths)', title: 'BSEB 10th गणित 2025 वार्षिक परीक्षा प्रश्न पत्र (Objective + Subjective)', pdfUrl: 'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf', isVip: false, downloadsCount: 5420, uploadedAt: '2025-02-20' },
+  { id: 'pyq_2025_2', year: '2025', subjectName: 'विज्ञान (Science)', title: 'BSEB 10th विज्ञान 2025 प्रथम पाली PYQ Solution PDF', pdfUrl: 'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf', isVip: false, downloadsCount: 4890, uploadedAt: '2025-02-20' },
+  { id: 'pyq_2025_3', year: '2025', subjectName: 'सामाजिक विज्ञान', title: 'BSEB 10th सामाजिक विज्ञान 2025 Model Paper with Answer', pdfUrl: 'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf', isVip: false, downloadsCount: 4150, uploadedAt: '2025-02-21' },
+  { id: 'pyq_2025_4', year: '2025', subjectName: 'हिन्दी', title: 'BSEB 10th हिन्दी 2025 बोर्ड परीक्षा ओरिजिनल क्वेश्चन पेपर', pdfUrl: 'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf', isVip: false, downloadsCount: 3920, uploadedAt: '2025-02-21' },
+  { id: 'pyq_2025_5', year: '2025', subjectName: 'संस्कृत', title: 'BSEB 10th संस्कृत 2025 वार्षिक परीक्षा प्रश्न पत्र', pdfUrl: 'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf', isVip: false, downloadsCount: 3640, uploadedAt: '2025-02-22' },
+
+  // 2024
+  { id: 'pyq_2024_1', year: '2024', subjectName: 'गणित (Maths)', title: 'BSEB 10th गणित 2024 वार्षिक परीक्षा प्रश्न पत्र', pdfUrl: 'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf', isVip: false, downloadsCount: 6200, uploadedAt: '2024-02-25' },
+  { id: 'pyq_2024_2', year: '2024', subjectName: 'विज्ञान (Science)', title: 'BSEB 10th विज्ञान 2024 ओरिजिनल क्वेश्चन पेपर', pdfUrl: 'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf', isVip: false, downloadsCount: 5780, uploadedAt: '2024-02-25' },
+  { id: 'pyq_2024_3', year: '2024', subjectName: 'सामाजिक विज्ञान', title: 'BSEB 10th सामाजिक विज्ञान 2024 प्रश्न पत्र व हल', pdfUrl: 'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf', isVip: false, downloadsCount: 4920, uploadedAt: '2024-02-26' },
+  { id: 'pyq_2024_4', year: '2024', subjectName: 'हिन्दी', title: 'BSEB 10th हिन्दी 2024 प्रश्न पत्र', pdfUrl: 'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf', isVip: false, downloadsCount: 4510, uploadedAt: '2024-02-26' },
+
+  // 2023
+  { id: 'pyq_2023_1', year: '2023', subjectName: 'गणित (Maths)', title: 'BSEB 10th गणित 2023 वार्षिक परीक्षा प्रश्न पत्र', pdfUrl: 'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf', isVip: false, downloadsCount: 7100, uploadedAt: '2023-02-20' },
+  { id: 'pyq_2023_2', year: '2023', subjectName: 'विज्ञान (Science)', title: 'BSEB 10th विज्ञान 2023 प्रश्न पत्र', pdfUrl: 'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf', isVip: false, downloadsCount: 6540, uploadedAt: '2023-02-20' },
+  { id: 'pyq_2023_3', year: '2023', subjectName: 'सामाजिक विज्ञान', title: 'BSEB 10th सामाजिक विज्ञान 2023 प्रश्न पत्र', pdfUrl: 'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf', isVip: false, downloadsCount: 5890, uploadedAt: '2023-02-21' },
+
+  // 2022
+  { id: 'pyq_2022_1', year: '2022', subjectName: 'गणित (Maths)', title: 'BSEB 10th गणित 2022 वार्षिक परीक्षा प्रश्न पत्र', pdfUrl: 'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf', isVip: false, downloadsCount: 8200, uploadedAt: '2022-02-24' },
+  { id: 'pyq_2022_2', year: '2022', subjectName: 'विज्ञान (Science)', title: 'BSEB 10th विज्ञान 2022 प्रश्न पत्र', pdfUrl: 'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf', isVip: false, downloadsCount: 7600, uploadedAt: '2022-02-24' },
+
+  // 2021
+  { id: 'pyq_2021_1', year: '2021', subjectName: 'गणित (Maths)', title: 'BSEB 10th गणित 2021 वार्षिक परीक्षा प्रश्न पत्र', pdfUrl: 'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf', isVip: false, downloadsCount: 9100, uploadedAt: '2021-02-22' },
+  { id: 'pyq_2021_2', year: '2021', subjectName: 'विज्ञान (Science)', title: 'BSEB 10th विज्ञान 2021 प्रश्न पत्र', pdfUrl: 'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf', isVip: false, downloadsCount: 8400, uploadedAt: '2021-02-22' },
+
+  // 2020 to 2018
+  { id: 'pyq_2020_1', year: '2020', subjectName: 'गणित (Maths)', title: 'BSEB 10th गणित 2020 वार्षिक परीक्षा प्रश्न पत्र', pdfUrl: 'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf', isVip: false, downloadsCount: 10200, uploadedAt: '2020-02-20' },
+  { id: 'pyq_2019_1', year: '2019', subjectName: 'गणित (Maths)', title: 'BSEB 10th गणित 2019 वार्षिक परीक्षा प्रश्न पत्र', pdfUrl: 'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf', isVip: false, downloadsCount: 11500, uploadedAt: '2019-02-21' },
+  { id: 'pyq_2018_1', year: '2018', subjectName: 'गणित (Maths)', title: 'BSEB 10th गणित 2018 वार्षिक परीक्षा प्रश्न पत्र', pdfUrl: 'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf', isVip: false, downloadsCount: 12800, uploadedAt: '2018-02-22' }
+];
+
+export const defaultCrashCoursePdfs: CrashCoursePdf[] = [];
+
 interface DataContextType {
   subjects: Record<string, Subject>;
   paidNotes: PaidPdfNote[];
+  pyqs: PyqItem[];
+  crashCoursePdfs: CrashCoursePdf[];
   liveClasses: LiveClass[];
   dailyQuizzes: DailyQuizItem[];
   leaderboard: LeaderboardEntry[];
@@ -338,6 +254,10 @@ interface DataContextType {
   refreshData: () => Promise<void>;
   addPaidNote: (note: Omit<PaidPdfNote, 'id'>) => Promise<string>;
   deletePaidNote: (id: string) => Promise<void>;
+  addPyq: (item: Omit<PyqItem, 'id'>) => Promise<string>;
+  deletePyq: (id: string) => Promise<void>;
+  addCrashCoursePdf: (pdf: Omit<CrashCoursePdf, 'id'>) => Promise<string>;
+  deleteCrashCoursePdf: (id: string) => Promise<void>;
   addLiveClass: (cls: Omit<LiveClass, 'id'>) => Promise<string>;
   updateLiveClass: (id: string, updates: Partial<LiveClass>) => Promise<void>;
   deleteLiveClass: (id: string) => Promise<void>;
@@ -368,9 +288,10 @@ const getMergedSubjects = (baseSubjects: Record<string, Subject>) => {
         if (!merged[sId]) {
           merged[sId] = parsed[sId];
         } else {
-          const existingMap = new Map((merged[sId].chapters || []).map((c: any) => [Number(c.chapter_no), c]));
-          (parsed[sId].chapters || []).forEach((c: any) => {
-            const chNo = Number(c.chapter_no);
+          const existingMap = new Map();
+          merged[sId].chapters.forEach((ch: any) => existingMap.set(ch.chapter_no, ch));
+          parsed[sId].chapters.forEach((c: any) => {
+            const chNo = c.chapter_no;
             const baseCh = existingMap.get(chNo);
             if (baseCh && (baseCh.mcq?.length || 0) > (c.mcq?.length || 0)) {
               existingMap.set(chNo, { ...c, mcq: baseCh.mcq });
@@ -415,6 +336,9 @@ export const DataProvider = ({ children }: any) => {
 
         // Paid Notes
         setPaidNotes(data.paid_notes || defaultPaidPdfNotes);
+
+        // PYQs
+        setPyqs(data.pyqs || defaultPyqs);
 
         // Live Classes
         const staticLive = data.live_classes || defaultLiveClasses;
@@ -498,6 +422,143 @@ export const DataProvider = ({ children }: any) => {
       await safeDeleteDoc(doc(db, 'paid_notes', id), 3000, true);
     } catch (e: any) {
       console.warn("Firestore note delete notice:", e?.message || String(e));
+    }
+  };
+
+  const [pyqs, setPyqs] = useState<PyqItem[]>(() => {
+    try {
+      const cached = localStorage.getItem('bseb_pyqs_cache');
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
+    } catch {}
+    return defaultPyqs;
+  });
+
+  const addPyq = async (pyqData: Omit<PyqItem, 'id'>): Promise<string> => {
+    const id = 'pyq_' + Date.now();
+    const newPyq: PyqItem = {
+      id,
+      ...pyqData,
+      uploadedAt: pyqData.uploadedAt || new Date().toISOString()
+    };
+
+    setPyqs((prev) => {
+      const updated = [newPyq, ...prev];
+      try {
+        localStorage.setItem('bseb_pyqs_cache', JSON.stringify(updated));
+      } catch {}
+      return updated;
+    });
+
+    try {
+      await safeSetDoc(doc(db, 'pyqs', id), newPyq, undefined, 3000, true);
+    } catch (e: any) {
+      console.warn("Firestore pyq save notice:", e?.message || String(e));
+    }
+    return id;
+  };
+
+  const deletePyq = async (id: string): Promise<void> => {
+    setPyqs((prev) => prev.filter((p) => p.id !== id));
+    try {
+      const updated = pyqs.filter((p) => p.id !== id);
+      localStorage.setItem('bseb_pyqs_cache', JSON.stringify(updated));
+    } catch {}
+
+    try {
+      await safeDeleteDoc(doc(db, 'pyqs', id), 3000, true);
+    } catch (e: any) {
+      console.warn("Firestore pyq delete notice:", e?.message || String(e));
+    }
+  };
+
+  // Crash Course PDFs State & Firestore sync
+  const [crashCoursePdfs, setCrashCoursePdfs] = useState<CrashCoursePdf[]>(() => {
+    try {
+      const cached = localStorage.getItem('bseb_crash_course_pdfs_cache');
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        if (Array.isArray(parsed)) {
+          // Keep only admin-added items (clean out old dummy placeholders)
+          return parsed.filter(item => 
+            !item.id.startsWith('cc_pdf_sci') && 
+            !item.id.startsWith('cc_pdf_math') && 
+            !item.id.startsWith('cc_pdf_sst') && 
+            !item.id.startsWith('cc_pdf_hin') && 
+            !item.id.startsWith('cc_pdf_san')
+          );
+        }
+      }
+    } catch {}
+    return [];
+  });
+
+  // Real-time listener for crash_course_pdfs
+  useEffect(() => {
+    try {
+      const unsub = onSnapshot(collection(db, 'crash_course_pdfs'), (snapshot) => {
+        const dbItems: CrashCoursePdf[] = [];
+        snapshot.forEach((docSnap) => {
+          dbItems.push({ id: docSnap.id, ...(docSnap.data() as any) });
+        });
+
+        setCrashCoursePdfs((prev) => {
+          const map = new Map<string, CrashCoursePdf>();
+          defaultCrashCoursePdfs.forEach(item => map.set(item.id, item));
+          prev.forEach(item => map.set(item.id, item));
+          dbItems.forEach(item => map.set(item.id, item));
+          const combined = Array.from(map.values());
+          try {
+            localStorage.setItem('bseb_crash_course_pdfs_cache', JSON.stringify(combined));
+          } catch {}
+          return combined;
+        });
+      }, (err) => {
+        console.warn("Crash course snapshot warning:", err?.message || String(err));
+      });
+      return () => unsub();
+    } catch (err: any) {
+      console.warn("Crash course listener error:", err?.message || String(err));
+    }
+  }, []);
+
+  const addCrashCoursePdf = async (pdfData: Omit<CrashCoursePdf, 'id'>): Promise<string> => {
+    const id = 'cc_pdf_' + Date.now();
+    const newPdf: CrashCoursePdf = {
+      id,
+      ...pdfData,
+      uploadedAt: pdfData.uploadedAt || new Date().toISOString()
+    };
+
+    setCrashCoursePdfs((prev) => {
+      const updated = [newPdf, ...prev];
+      try {
+        localStorage.setItem('bseb_crash_course_pdfs_cache', JSON.stringify(updated));
+      } catch {}
+      return updated;
+    });
+
+    try {
+      await safeSetDoc(doc(db, 'crash_course_pdfs', id), newPdf, undefined, 3000, true);
+    } catch (e: any) {
+      console.warn("Firestore crash course pdf save notice:", e?.message || String(e));
+    }
+    return id;
+  };
+
+  const deleteCrashCoursePdf = async (id: string): Promise<void> => {
+    setCrashCoursePdfs((prev) => prev.filter((p) => p.id !== id));
+    try {
+      const updated = crashCoursePdfs.filter((p) => p.id !== id);
+      localStorage.setItem('bseb_crash_course_pdfs_cache', JSON.stringify(updated));
+    } catch {}
+
+    try {
+      await safeDeleteDoc(doc(db, 'crash_course_pdfs', id), 3000, true);
+    } catch (e: any) {
+      console.warn("Firestore crash course pdf delete notice:", e?.message || String(e));
     }
   };
 
@@ -617,380 +678,74 @@ export const DataProvider = ({ children }: any) => {
     }
   };
 
-  const [dailyQuizzes, setDailyQuizzes] = useState<DailyQuizItem[]>(() => {
-    try {
-      const cached = localStorage.getItem('bseb_daily_quizzes_cache');
-      if (cached) {
-        const parsed = JSON.parse(cached);
-        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
-      }
-    } catch {}
-    return defaultDailyQuizzes;
-  });
-
-  useEffect(() => {
-    try {
-      const unsub = onSnapshot(collection(db, 'daily_quizzes'), (snapshot) => {
-        const quizzesFromDb: DailyQuizItem[] = [];
-        snapshot.forEach((docSnap) => {
-          quizzesFromDb.push({ id: docSnap.id, ...(docSnap.data() as any) });
-        });
-        setDailyQuizzes(quizzesFromDb.length > 0 ? quizzesFromDb : defaultDailyQuizzes);
-      }, (err) => {
-        console.warn("Daily quizzes snapshot warning:", err?.message || String(err));
-      });
-      return () => unsub();
-    } catch (err: any) {
-      console.warn("Daily quizzes listener error:", err?.message || String(err));
-    }
-  }, []);
+  const [dailyQuizzes, setDailyQuizzes] = useState<DailyQuizItem[]>(defaultDailyQuizzes);
+  const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>(defaultLeaderboard);
+  const [routine, setRoutine] = useState<RoutineItem[]>(defaultRoutine);
+  const [motivationalQuotes, setMotivationalQuotes] = useState<MotivationalQuote[]>(defaultQuotes);
+  const [notifications, setNotifications] = useState<NotificationItem[]>(defaultNotifications);
+  const [appConfig, setAppConfig] = useState<AppConfig>(defaultAppConfig);
 
   const addDailyQuiz = async (quizData: Omit<DailyQuizItem, 'id'>): Promise<string> => {
     const id = 'quiz_' + Date.now();
-    const newQuiz: DailyQuizItem = {
-      id,
-      ...quizData,
-      createdAt: quizData.createdAt || new Date().toISOString()
-    };
-
-    setDailyQuizzes((prev) => [newQuiz, ...prev]);
-    try {
-      const updated = [newQuiz, ...dailyQuizzes];
-      localStorage.setItem('bseb_daily_quizzes_cache', JSON.stringify(updated));
-    } catch {}
-
-    try {
-      await safeSetDoc(doc(db, 'daily_quizzes', id), newQuiz);
-    } catch (e: any) {
-      console.warn("Firestore daily quiz save notice:", e?.message || String(e));
-    }
+    const newQuiz: DailyQuizItem = { id, ...quizData };
+    setDailyQuizzes(prev => [newQuiz, ...prev]);
     return id;
   };
 
-  const deleteDailyQuiz = async (id: string): Promise<void> => {
-    setDailyQuizzes((prev) => prev.filter((q) => q.id !== id));
-    try {
-      const updated = dailyQuizzes.filter((q) => q.id !== id);
-      localStorage.setItem('bseb_daily_quizzes_cache', JSON.stringify(updated));
-    } catch {}
-
-    try {
-      await safeDeleteDoc(doc(db, 'daily_quizzes', id));
-    } catch (e: any) {
-      console.warn("Firestore daily quiz delete notice:", e?.message || String(e));
-    }
+  const deleteDailyQuiz = async (id: string) => {
+    setDailyQuizzes(prev => prev.filter(q => q.id !== id));
   };
 
-  const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>(() => {
-    try {
-      const cached = localStorage.getItem('bseb_leaderboard_cache');
-      if (cached) {
-        const parsed = JSON.parse(cached);
-        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
-      }
-    } catch {}
-    return defaultLeaderboard;
-  });
-
-  // Real-time listener removed - using static data load instead
-
-  const addLeaderboardScore = async (entryData: Omit<LeaderboardEntry, 'id'>): Promise<string> => {
+  const addLeaderboardScore = async (entry: Omit<LeaderboardEntry, 'id'>) => {
     const id = 'lb_' + Date.now();
-    const newEntry: LeaderboardEntry = {
-      id,
-      ...entryData,
-      createdAt: entryData.createdAt || new Date().toISOString()
-    };
-
-    setLeaderboard((prev) => {
-      const updated = [newEntry, ...prev];
-      updated.sort((a, b) => b.score - a.score);
-      try {
-        localStorage.setItem('bseb_leaderboard_cache', JSON.stringify(updated));
-      } catch {}
-      return updated;
-    });
-
-    try {
-      await safeSetDoc(doc(db, 'leaderboard', id), newEntry);
-    } catch (e: any) {
-      console.warn("Firestore leaderboard save notice:", e?.message || String(e));
-    }
+    const newEntry: LeaderboardEntry = { id, ...entry, createdAt: new Date().toISOString() };
+    setLeaderboard(prev => [newEntry, ...prev]);
     return id;
   };
 
-  const [routine, setRoutine] = useState<RoutineItem[]>(() => {
-    try {
-      const cached = localStorage.getItem('bseb_routine_cache');
-      if (cached) {
-        const parsed = JSON.parse(cached);
-        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
-      }
-    } catch {}
-    return defaultRoutine;
-  });
-
-  const [motivationalQuotes, setMotivationalQuotes] = useState<MotivationalQuote[]>(() => {
-    try {
-      const cached = localStorage.getItem('bseb_quotes_cache');
-      if (cached) {
-        const parsed = JSON.parse(cached);
-        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
-      }
-    } catch {}
-    return defaultQuotes;
-  });
-
-  // Routine Firestore listener
-  useEffect(() => {
-    try {
-      const unsub = onSnapshot(collection(db, 'routine'), (snapshot) => {
-        if (!snapshot.empty) {
-          const list: RoutineItem[] = [];
-          snapshot.forEach((docSnap) => {
-            list.push({ id: docSnap.id, ...(docSnap.data() as any) });
-          });
-          const merged = [...list];
-          defaultRoutine.forEach((def) => {
-            if (!merged.some(m => m.id === def.id)) merged.push(def);
-          });
-          setRoutine(merged);
-          try {
-            localStorage.setItem('bseb_routine_cache', JSON.stringify(merged));
-          } catch {}
-        }
-      }, () => {});
-      return () => unsub();
-    } catch {}
-  }, []);
-
-  // Quotes Firestore listener
-  useEffect(() => {
-    try {
-      const unsub = onSnapshot(collection(db, 'motivational_quotes'), (snapshot) => {
-        if (!snapshot.empty) {
-          const list: MotivationalQuote[] = [];
-          snapshot.forEach((docSnap) => {
-            list.push({ id: docSnap.id, ...(docSnap.data() as any) });
-          });
-          const merged = [...list];
-          defaultQuotes.forEach((def) => {
-            if (!merged.some(m => m.id === def.id)) merged.push(def);
-          });
-          setMotivationalQuotes(merged);
-          try {
-            localStorage.setItem('bseb_quotes_cache', JSON.stringify(merged));
-          } catch {}
-        }
-      }, () => {});
-      return () => unsub();
-    } catch {}
-  }, []);
-
-  const addRoutineItem = async (itemData: Omit<RoutineItem, 'id'>): Promise<string> => {
-    const id = 'rout_' + Date.now();
+  const addRoutineItem = async (itemData: Omit<RoutineItem, 'id'>) => {
+    const id = 'rt_' + Date.now();
     const newItem: RoutineItem = { id, ...itemData };
-    setRoutine((prev) => {
-      const updated = [...prev, newItem];
-      try { localStorage.setItem('bseb_routine_cache', JSON.stringify(updated)); } catch {}
-      return updated;
-    });
-    try {
-      await safeSetDoc(doc(db, 'routine', id), newItem);
-    } catch (e: any) {
-      console.warn("Firestore routine save notice:", e?.message);
-    }
+    setRoutine(prev => [...prev, newItem]);
     return id;
   };
 
-  const updateRoutineItem = async (id: string, itemData: Partial<RoutineItem>): Promise<void> => {
-    setRoutine((prev) => {
-      const updated = prev.map((r) => (r.id === id ? { ...r, ...itemData } : r));
-      try { localStorage.setItem('bseb_routine_cache', JSON.stringify(updated)); } catch {}
-      return updated;
-    });
-    try {
-      const target = routine.find(r => r.id === id);
-      if (target) {
-        await safeSetDoc(doc(db, 'routine', id), { ...target, ...itemData });
-      }
-    } catch (e: any) {
-      console.warn("Firestore routine update notice:", e?.message);
-    }
+  const updateRoutineItem = async (id: string, updates: Partial<RoutineItem>) => {
+    setRoutine(prev => prev.map(r => r.id === id ? { ...r, ...updates } : r));
   };
 
-  const deleteRoutineItem = async (id: string): Promise<void> => {
-    setRoutine((prev) => {
-      const updated = prev.filter((r) => r.id !== id);
-      try { localStorage.setItem('bseb_routine_cache', JSON.stringify(updated)); } catch {}
-      return updated;
-    });
-    try {
-      await safeDeleteDoc(doc(db, 'routine', id));
-    } catch (e: any) {
-      console.warn("Firestore routine delete notice:", e?.message);
-    }
+  const deleteRoutineItem = async (id: string) => {
+    setRoutine(prev => prev.filter(r => r.id !== id));
   };
 
-  const addQuote = async (quoteData: Omit<MotivationalQuote, 'id'>): Promise<string> => {
-    const id = 'q_' + Date.now();
-    const newQuote: MotivationalQuote = { id, ...quoteData, createdAt: new Date().toISOString() };
-    setMotivationalQuotes((prev) => {
-      const updated = [newQuote, ...prev];
-      try { localStorage.setItem('bseb_quotes_cache', JSON.stringify(updated)); } catch {}
-      return updated;
-    });
-    try {
-      await safeSetDoc(doc(db, 'motivational_quotes', id), newQuote);
-    } catch (e: any) {
-      console.warn("Firestore quote save notice:", e?.message);
-    }
+  const addQuote = async (quoteData: Omit<MotivationalQuote, 'id'>) => {
+    const id = 'qt_' + Date.now();
+    const newQ: MotivationalQuote = { id, ...quoteData };
+    setMotivationalQuotes(prev => [newQ, ...prev]);
     return id;
   };
 
-  const deleteQuote = async (id: string): Promise<void> => {
-    setMotivationalQuotes((prev) => {
-      const updated = prev.filter((q) => q.id !== id);
-      try { localStorage.setItem('bseb_quotes_cache', JSON.stringify(updated)); } catch {}
-      return updated;
-    });
-    try {
-      await safeDeleteDoc(doc(db, 'motivational_quotes', id));
-    } catch (e: any) {
-      console.warn("Firestore quote delete notice:", e?.message);
-    }
+  const deleteQuote = async (id: string) => {
+    setMotivationalQuotes(prev => prev.filter(q => q.id !== id));
   };
 
-  const toggleQuoteActive = async (id: string, isActive: boolean): Promise<void> => {
-    setMotivationalQuotes((prev) => {
-      const updated = prev.map((q) => (q.id === id ? { ...q, isActive } : q));
-      try { localStorage.setItem('bseb_quotes_cache', JSON.stringify(updated)); } catch {}
-      return updated;
-    });
-    try {
-      const target = motivationalQuotes.find(q => q.id === id);
-      if (target) {
-        await safeSetDoc(doc(db, 'motivational_quotes', id), { ...target, isActive });
-      }
-    } catch (e: any) {
-      console.warn("Firestore quote toggle notice:", e?.message);
-    }
+  const toggleQuoteActive = async (id: string, isActive: boolean) => {
+    setMotivationalQuotes(prev => prev.map(q => q.id === id ? { ...q, isActive } : q));
   };
 
-  const [notifications, setNotifications] = useState<NotificationItem[]>(() => {
-    try {
-      const cached = localStorage.getItem('bseb_notifications_cache');
-      if (cached) {
-        const parsed = JSON.parse(cached);
-        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
-      }
-    } catch {}
-    return defaultNotifications;
-  });
-
-  // Notifications Firestore listener removed - using static data load instead
-
-  const addNotification = async (itemData: Omit<NotificationItem, 'id'>): Promise<string> => {
+  const addNotification = async (notifData: Omit<NotificationItem, 'id'>) => {
     const id = 'notif_' + Date.now();
-    const newItem: NotificationItem = { id, ...itemData, createdAt: new Date().toISOString() };
-    setNotifications((prev) => {
-      const updated = [newItem, ...prev];
-      try { localStorage.setItem('bseb_notifications_cache', JSON.stringify(updated)); } catch {}
-      return updated;
-    });
-    try {
-      await safeSetDoc(doc(db, 'notifications', id), newItem);
-    } catch (e: any) {
-      console.warn("Firestore notification save notice:", e?.message);
-    }
+    const newN: NotificationItem = { id, ...notifData, createdAt: new Date().toISOString() };
+    setNotifications(prev => [newN, ...prev]);
     return id;
   };
 
-  const deleteNotification = async (id: string): Promise<void> => {
-    setNotifications((prev) => {
-      const updated = prev.filter((n) => n.id !== id);
-      try { localStorage.setItem('bseb_notifications_cache', JSON.stringify(updated)); } catch {}
-      return updated;
-    });
-    try {
-      await safeDeleteDoc(doc(db, 'notifications', id));
-    } catch (e: any) {
-      console.warn("Firestore notification delete notice:", e?.message);
-    }
+  const deleteNotification = async (id: string) => {
+    setNotifications(prev => prev.filter(n => n.id !== id));
   };
 
-  const [appConfig, setAppConfig] = useState<AppConfig>(() => {
-    try {
-      const cached = localStorage.getItem('bseb_app_config_cache');
-      if (cached) {
-        const parsed = JSON.parse(cached);
-        if (parsed && typeof parsed === 'object') {
-          if (parsed.whatsappNumber === '9507464117' || !parsed.whatsappNumber) parsed.whatsappNumber = '9241511070';
-          if (parsed.helplineNumber === '9507464117' || !parsed.helplineNumber) parsed.helplineNumber = '9241511070';
-          if (parsed.whatsappGroupUrl && parsed.whatsappGroupUrl.includes('9507464117')) {
-            parsed.whatsappGroupUrl = parsed.whatsappGroupUrl.replace('9507464117', '9241511070');
-          }
-          parsed.price1Year = 299;
-          // Ensure crash course banner is present
-          if (Array.isArray(parsed.banners) && !parsed.banners.some((b: any) => b.id === 'banner_crash')) {
-            parsed.banners = defaultBanners;
-          }
-          return { ...defaultAppConfig, ...parsed, price1Year: 299, whatsappNumber: parsed.whatsappNumber || '9241511070' };
-        }
-      }
-    } catch {}
-    return defaultAppConfig;
-  });
-
-  // Listen to remote payment_config in real time to sync Logo / DP / UPI across devices
-  useEffect(() => {
-    try {
-      const paymentRef = doc(db, 'app_settings', 'payment_config');
-      const unsub = onSnapshot(paymentRef, (snap) => {
-        if (snap.exists()) {
-          const data = snap.data();
-          setAppConfig((prev) => {
-            const rawWa = data.whatsappNumber;
-            const finalWa = (rawWa === '9507464117' || !rawWa) ? '9241511070' : rawWa;
-            const rawPrice = Number(data.price || data.price1Year);
-            const finalPrice = (rawPrice === 600 || !rawPrice) ? 299 : rawPrice;
-            if (rawPrice === 600) {
-              try {
-                safeSetDoc(paymentRef, { price: 299, price1Year: 299 }, { merge: true }, 3000, true).catch(() => {});
-              } catch {}
-            }
-            const updated = {
-              ...prev,
-              ...(data.upiId ? { upiId: data.upiId } : {}),
-              whatsappNumber: finalWa,
-              ...(data.qrCodeUrl !== undefined ? { qrCodeDataUrl: data.qrCodeUrl } : {}),
-              ...(data.appLogoUrl ? { appLogoUrl: data.appLogoUrl } : {}),
-              price1Year: finalPrice,
-              ...(data.helplineNumber ? { helplineNumber: data.helplineNumber === '9507464117' ? '9241511070' : data.helplineNumber } : { helplineNumber: '9241511070' })
-            };
-            try {
-              localStorage.setItem('bseb_app_config_cache', JSON.stringify(updated));
-            } catch {}
-            return updated;
-          });
-        }
-      }, (err) => {
-        console.warn("Payment config listener notice:", err?.message);
-      });
-      return () => unsub();
-    } catch {}
-  }, []);
-
-  const updateSettings = async (newConfig: AppConfig): Promise<void> => {
+  const updateSettings = async (newConfig: AppConfig) => {
     setAppConfig(newConfig);
-    try {
-      localStorage.setItem('bseb_app_config_cache', JSON.stringify(newConfig));
-    } catch {}
-    try {
-      await safeSetDoc(doc(db, 'settings', 'app_config'), newConfig);
-    } catch (e: any) {
-      console.warn("Firestore settings update notice:", e?.message);
-    }
     try {
       await safeSetDoc(doc(db, 'app_settings', 'payment_config'), {
         upiId: newConfig.upiId,
@@ -1014,6 +769,8 @@ export const DataProvider = ({ children }: any) => {
     <DataContext.Provider value={{ 
       subjects, 
       paidNotes, 
+      pyqs,
+      crashCoursePdfs,
       liveClasses,
       dailyQuizzes,
       leaderboard,
@@ -1025,6 +782,10 @@ export const DataProvider = ({ children }: any) => {
       refreshData: fetchData,
       addPaidNote,
       deletePaidNote,
+      addPyq,
+      deletePyq,
+      addCrashCoursePdf,
+      deleteCrashCoursePdf,
       addLiveClass,
       updateLiveClass,
       deleteLiveClass,
@@ -1053,4 +814,3 @@ export const useData = () => {
   }
   return context;
 };
-

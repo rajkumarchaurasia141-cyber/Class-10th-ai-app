@@ -116,7 +116,7 @@ export const hindiVarnikaChapter26: Chapter = {
   chapter_name: 'Dhate Vishwas',
   chapter_name_hindi: 'ढते विश्वास (सातकोड़ी होता)',
   subCategory: 'वर्णिका (कहानियाँ)',
-  intro_hidden: ``,
+  intro_hidden: false,
   intro_hindi: `【 पाठ परिचय एवं लेखक संदर्भ 】
 
 लेखक परिचय:

@@ -27,6 +27,7 @@ import { useData } from '../context/DataContext';
 import { LiveClass, LiveWatchRecord } from '../types';
 import { ClassAttendanceModal } from './ClassAttendanceModal';
 import { subscribeClassAttendance, DEFAULT_BATCH_STUDENTS } from '../services/attendanceTracker';
+import { extractYouTubeVideoId } from '../utils/youtubeHelper';
 
 export function AdminLiveClassesManager() {
   const { liveClasses, addLiveClass, updateLiveClass, deleteLiveClass } = useData();
@@ -108,9 +109,12 @@ export function AdminLiveClassesManager() {
         }
       }
 
+      const cleanVideoId = extractYouTubeVideoId(youtubeUrl);
+      const cleanUrl = cleanVideoId ? `https://www.youtube.com/watch?v=${cleanVideoId}` : youtubeUrl.trim();
+
       await addLiveClass({
         title: title.trim(),
-        youtubeUrl: youtubeUrl.trim(),
+        youtubeUrl: cleanUrl,
         subjectName,
         teacherName: teacherName.trim() || 'राज सर',
         scheduledAt: scheduledAt.trim() || (publishType === 'instant' ? 'अभी लाइव' : 'शेड्यूल्ड'),
@@ -300,9 +304,22 @@ export function AdminLiveClassesManager() {
               required
               value={youtubeUrl}
               onChange={(e) => setYoutubeUrl(e.target.value)}
-              placeholder="उदा: https://www.youtube.com/watch?v=..."
+              placeholder="उदा: https://www.youtube.com/watch?v=... या https://youtu.be/..."
               className="w-full bg-stone-900 border border-stone-800 rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none focus:border-red-500"
             />
+            {youtubeUrl.trim() && (
+              <div className="text-[11px] font-bold">
+                {extractYouTubeVideoId(youtubeUrl) ? (
+                  <span className="text-emerald-400 flex items-center gap-1">
+                    ✓ मान्य YouTube वीडियो (ID: {extractYouTubeVideoId(youtubeUrl)})
+                  </span>
+                ) : (
+                  <span className="text-amber-400">
+                    ⚠️ कृपया सही YouTube लिंक डालें (उदा: https://www.youtube.com/watch?v=...)
+                  </span>
+                )}
+              </div>
+            )}
           </div>
 
           <div className="space-y-1.5">

@@ -28,6 +28,7 @@ import { FreeTestModal } from './FreeTestModal';
 import { FreeNotesModal } from './FreeNotesModal';
 import { PaidTestHubModal } from './PaidTestHubModal';
 import { PaidCourseModal } from './PaidCourseModal';
+import { CrashCoursePaywallModal } from './CrashCoursePaywallModal';
 
 interface HomeScreenProps {
   onSelect?: (subjectId: string) => void;
@@ -50,6 +51,7 @@ export function HomeScreen({ onSelect, onOpenSubject, onNavigateTab, onOpenVip }
   const [showFreeNotes, setShowFreeNotes] = useState(false);
   const [showPaidTest, setShowPaidTest] = useState(false);
   const [showPaidCourse, setShowPaidCourse] = useState(false);
+  const [showCrashCourseModal, setShowCrashCourseModal] = useState(false);
 
   const handleFeatureNavigate = (id: string) => {
     switch (id) {
@@ -68,6 +70,11 @@ export function HomeScreen({ onSelect, onOpenSubject, onNavigateTab, onOpenVip }
           setShowPaywall(true);
         } else {
           onSelect && onSelect('sanskrit');
+        }
+        break;
+      case 'crash_course':
+        if (onNavigateTab) {
+          onNavigateTab('crash_course');
         }
         break;
       case 'paid_test':
@@ -192,7 +199,7 @@ export function HomeScreen({ onSelect, onOpenSubject, onNavigateTab, onOpenVip }
               <p className="text-[10px] text-stone-600 truncate">
                 {isVIP 
                   ? 'सभी 6 विषयों के सम्पूर्ण हल सहित गेस पेपर व वायरल सेट्स अनलॉक हैं।' 
-                  : 'यह सेक्शन केवल पेड छात्रों के लिए है। ₹299 में अनलॉक करवाएं।'}
+                  : 'यह सेक्शन केवल पेड छात्रों के लिए है। ₹499 में फुल कोर्स अनलॉक करवाएं।'}
               </p>
             </div>
           </div>
@@ -206,9 +213,91 @@ export function HomeScreen({ onSelect, onOpenSubject, onNavigateTab, onOpenVip }
             ) : (
               <span className="px-3 py-1.5 bg-gradient-to-r from-red-600 to-red-500 text-white font-black text-[11px] rounded-xl shadow-xs flex items-center gap-1 animate-pulse">
                 <Lock className="w-3 h-3" />
-                <span>अनलॉक (₹299)</span>
+                <span>अनलॉक (₹499)</span>
               </span>
             )}
+          </div>
+        </div>
+      </div>
+
+      {/* 2.3 PYQ Previous Year Questions Section Card */}
+      <div 
+        onClick={() => {
+          if (onNavigateTab) {
+            onNavigateTab('pyqs');
+          }
+        }}
+        className="rounded-2xl p-2.5 sm:p-3 transition-all shadow-sm relative overflow-hidden cursor-pointer border-2 bg-gradient-to-r from-red-600/10 via-rose-500/5 to-amber-500/10 border-red-400/80 hover:border-red-500 text-stone-900"
+      >
+        <div className="flex items-center justify-between gap-2.5">
+          <div className="flex items-center gap-2.5 min-w-0">
+            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center font-bold shrink-0 shadow-sm bg-red-600 text-white ring-2 ring-red-400">
+              📄
+            </div>
+            <div className="min-w-0">
+              <div className="flex items-center gap-1.5 flex-wrap">
+                <span className="text-[10px] font-black text-red-700 bg-red-100 px-1.5 py-0.2 rounded border border-red-200">
+                  📚 PYQ बैंक
+                </span>
+                <span className="text-[9px] font-black uppercase text-amber-700 bg-amber-50 border border-amber-200 px-1.5 py-0.2 rounded">
+                  2015 - 2025
+                </span>
+              </div>
+              <h4 className="text-xs sm:text-sm font-black tracking-tight mt-0.5 truncate text-stone-900">
+                पिछले वर्षों के प्रश्न पत्र (PYQs)
+              </h4>
+              <p className="text-[10px] text-stone-600 truncate">
+                पिछले 10 वर्षों के बोर्ड परीक्षा प्रश्न पत्र व हल पीडीएफ डाउनलोड करें।
+              </p>
+            </div>
+          </div>
+
+          <div className="shrink-0">
+            <span className="px-3 py-1.5 bg-gradient-to-r from-red-600 to-rose-600 text-white font-black text-[11px] rounded-xl shadow-xs flex items-center gap-1">
+              <span>देखें</span>
+              <ChevronRight className="w-3 h-3 stroke-[3]" />
+            </span>
+          </div>
+        </div>
+      </div>
+
+      {/* 2.4 Dedicated Crash Course Section Card (Strictly NO year as requested) */}
+      <div 
+        onClick={() => {
+          if (onNavigateTab) {
+            onNavigateTab('crash_course');
+          }
+        }}
+        className="rounded-2xl p-2.5 sm:p-3 transition-all shadow-sm relative overflow-hidden cursor-pointer border-2 bg-gradient-to-r from-amber-600/15 via-orange-500/10 to-red-600/10 border-amber-400/90 hover:border-amber-500 text-stone-900"
+      >
+        <div className="flex items-center justify-between gap-2.5">
+          <div className="flex items-center gap-2.5 min-w-0">
+            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center font-bold shrink-0 shadow-sm bg-gradient-to-br from-amber-500 to-red-600 text-white ring-2 ring-amber-400">
+              ⚡
+            </div>
+            <div className="min-w-0">
+              <div className="flex items-center gap-1.5 flex-wrap">
+                <span className="text-[10px] font-black text-amber-900 bg-amber-100 px-1.5 py-0.2 rounded border border-amber-200">
+                  🚀 फास्ट-ट्रैक
+                </span>
+                <span className="text-[9px] font-black uppercase text-red-700 bg-red-50 border border-red-200 px-1.5 py-0.2 rounded">
+                  सम्पूर्ण 6 विषय
+                </span>
+              </div>
+              <h4 className="text-xs sm:text-sm font-black tracking-tight mt-0.5 truncate text-stone-900">
+                Crash Course (Class 10th)
+              </h4>
+              <p className="text-[10px] text-stone-600 truncate">
+                चैप्टर-वाइज स्पेशल नोट्स, फॉर्मूला शीट्स और 30 VVI टेस्ट सेट्स।
+              </p>
+            </div>
+          </div>
+
+          <div className="shrink-0">
+            <span className="px-3 py-1.5 bg-gradient-to-r from-amber-500 to-red-600 text-white font-black text-[11px] rounded-xl shadow-xs flex items-center gap-1">
+              <span>खोलें</span>
+              <ChevronRight className="w-3 h-3 stroke-[3]" />
+            </span>
           </div>
         </div>
       </div>
@@ -251,7 +340,7 @@ export function HomeScreen({ onSelect, onOpenSubject, onNavigateTab, onOpenVip }
         {/* Bottom Actions Row */}
         <div className="relative z-10 flex items-center gap-2 pt-1 border-t border-yellow-400/20">
           <button
-            onClick={() => setShowPaywall(true)}
+            onClick={() => setShowCrashCourseModal(true)}
             className="flex-1 px-3 py-1.5 sm:py-2 bg-yellow-400 hover:bg-yellow-300 text-stone-950 font-black text-[10px] sm:text-xs rounded-xl shadow-lg transition-all flex items-center justify-center gap-1.5 active:scale-95 cursor-pointer border border-yellow-200"
           >
             <span>कोर्स अनलॉक करें (₹299)</span>
@@ -348,6 +437,11 @@ export function HomeScreen({ onSelect, onOpenSubject, onNavigateTab, onOpenVip }
           onClose={() => setShowPaidCourse(false)}
           onSelectSubject={(id) => handleSelectSubject(id)}
           onOpenPaidTest={() => setShowPaidTest(true)}
+        />
+      )}
+      {showCrashCourseModal && (
+        <CrashCoursePaywallModal
+          onClose={() => setShowCrashCourseModal(false)}
         />
       )}
     </div>

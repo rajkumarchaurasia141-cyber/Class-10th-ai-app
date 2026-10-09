@@ -20,6 +20,7 @@ export interface Chapter {
   chapter_no: number;
   chapter_name: string;
   chapter_name_hindi: string;
+  author_name?: string;
   section_name?: string;
   subCategory?: string;
   intro_hindi?: string; // पाठ परिचय
@@ -27,7 +28,7 @@ export interface Chapter {
   notes_hindi: string; // विस्तृत नोट्स एवं व्याख्या
   topper_tips?: string; // VVI टॉपर टिप्स
   mcq: MCQItem[];
-  subjective_qa: QAItem[];
+  subjective_qa?: QAItem[];
   isVIP?: boolean;
 }
 
@@ -51,6 +52,7 @@ export interface PaidPdfNote {
   totalPages?: number;
   fileSize?: string;
   isPaid?: boolean;
+  isVip?: boolean;
   uploadedAt?: string;
   isGuessPaper?: boolean;
 }
@@ -183,5 +185,45 @@ export interface BatchStudent {
   isPaid: boolean;
   registeredAt?: string;
 }
+
+export interface PyqItem {
+  id: string;
+  year: string; // e.g. "2025", "2024", "2023"
+  subjectName: string; // e.g. "गणित (Maths)"
+  title: string; // e.g. "BSEB 10th गणित 2025 वार्षिक परीक्षा प्रश्न पत्र"
+  pdfUrl: string;
+  isVip?: boolean;
+  downloadsCount?: number;
+  uploadedAt?: string;
+}
+
+export interface CrashCoursePdf {
+  id: string;
+  subjectId: string;
+  subjectName: string;
+  chapterNo: number;
+  chapterName: string;
+  title: string;
+  pdfUrl: string;
+  totalPages?: number;
+  fileSize?: string;
+  uploadedAt: string;
+  isVip?: boolean;
+}
+
+export interface CrashCoursePaymentRequestItem {
+  id: string;
+  userId: string;
+  studentName: string;
+  studentEmail: string;
+  courseName: string;
+  amount: number;
+  screenshotDataUrl: string;
+  utr?: string;
+  status: 'pending' | 'approved' | 'rejected';
+  submittedAt: string;
+  approvedAt?: string;
+}
+
 
 

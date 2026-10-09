@@ -13,7 +13,8 @@ import {
   FileText,
   BookOpen,
   Trophy,
-  Lock
+  Lock,
+  Zap
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
@@ -85,6 +86,25 @@ export function FeatureGrid({ onNavigate }: FeatureGridProps) {
               VIP
             </span>
           )}
+        </div>
+      )
+    },
+    {
+      id: 'crash_course',
+      title: 'Crash Course',
+      subtitle: 'Class 10th Only',
+      badge: '10th',
+      badgeColor: 'bg-amber-500 text-stone-950 font-black',
+      bgIcon: 'bg-gradient-to-br from-amber-500 to-red-600',
+      icon: Zap,
+      renderIcon: () => (
+        <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-xl bg-amber-50 border border-amber-200 flex items-center justify-center relative shadow-xs group-hover:scale-105 transition-transform">
+          <div className="w-7.5 h-7.5 sm:w-8 sm:h-8 rounded-lg bg-gradient-to-br from-amber-500 to-red-600 flex items-center justify-center text-white shadow-xs">
+            <Zap className="w-4 h-4 sm:w-4.5 sm:h-4.5 fill-current" />
+          </div>
+          <span className="absolute -top-1 -right-1 bg-amber-400 text-stone-950 font-black text-[7px] px-1 rounded-full shadow-2xs">
+            10th
+          </span>
         </div>
       )
     },

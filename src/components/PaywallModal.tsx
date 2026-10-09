@@ -21,18 +21,30 @@ import { useAuth } from '../context/AuthContext';
 import { db } from '../lib/firebase';
 import { doc, onSnapshot, setDoc, serverTimestamp } from 'firebase/firestore';
 
-export function PaywallModal({ onClose }: { onClose: () => void }) {
+export function PaywallModal({ 
+  onClose, 
+  courseType = 'full_course' 
+}: { 
+  onClose: () => void; 
+  courseType?: 'full_course' | 'crash_course';
+}) {
   const { user, fbUser, login } = useAuth();
   
+  const defaultPrice = courseType === 'crash_course' ? 299 : 499;
+
   // Dynamic UPI and Price Config with standard default values
   const [config, setConfig] = useState({
-    upiId: "9708868515",
+    upiId: "9241511070@ybl",
     whatsappNumber: "9241511070",
-    price: 299,
+    price: defaultPrice,
     qrCodeUrl: ""
   });
 
-  const activePrice = (config.price === 600 || !config.price) ? 299 : config.price;
+  const activePrice = courseType === 'crash_course' 
+    ? 299 
+    : (config.price && config.price !== 299 ? config.price : 499);
+
+  const upiPayLink = `upi://pay?pa=${encodeURIComponent(config.upiId)}&pn=${encodeURIComponent(courseType === 'crash_course' ? 'BiharBoardCrashCourse' : 'BiharBoardTopperBatch')}&am=${activePrice}&cu=INR&tn=${encodeURIComponent(courseType === 'crash_course' ? 'BSEB 10th Crash Course' : 'BSEB 10th Topper Batch')}`;
 
   const [copiedUpi, setCopiedUpi] = useState(false);
   const [studentEmailInput, setStudentEmailInput] = useState(user?.email || '');
@@ -63,14 +75,14 @@ export function PaywallModal({ onClose }: { onClose: () => void }) {
           } catch {}
         }
         setConfig({
-          upiId: data.upiId || "9708868515",
+          upiId: data.upiId || "9241511070@ybl",
           whatsappNumber: finalWa,
-          price: finalPrice,
+          price: courseType === 'crash_course' ? 299 : (finalPrice === 299 ? 499 : finalPrice),
           qrCodeUrl: data.qrCodeUrl || ""
         });
       } else {
         try {
-          setDoc(docRef, { price: 299, price1Year: 299, upiId: "9708868515", whatsappNumber: "9241511070" }, { merge: true }).catch(() => {});
+          setDoc(docRef, { price: defaultPrice, price1Year: 499, upiId: "9241511070@ybl", whatsappNumber: "9241511070" }, { merge: true }).catch(() => {});
         } catch {}
       }
     }, (err) => {
@@ -196,7 +208,8 @@ export function PaywallModal({ onClose }: { onClose: () => void }) {
         userId: uid,
         userEmail: emailForPayload,
         userName: finalStudentName,
-        courseName: "Crash Course",
+        courseName: courseType === 'crash_course' ? "न्यू क्रैश कोर्स (Class 10th)" : "Topper Batch (फुल कोर्स)",
+        courseType: courseType,
         amount: activePrice,
         upiRef: utrNumber.trim() || "N/A",
         screenshotBase64: screenshotBase64,
@@ -207,6 +220,26 @@ export function PaywallModal({ onClose }: { onClose: () => void }) {
       // Add to "payment_requests" collection
       const requestDocRef = doc(db, 'payment_requests', requestId);
       await setDoc(requestDocRef, payload);
+
+      // If crash course, also write to crash_course_requests
+      if (courseType === 'crash_course') {
+        try {
+          await setDoc(doc(db, 'crash_course_requests', requestId), {
+            id: requestId,
+            userId: uid,
+            studentName: finalStudentName,
+            studentEmail: emailForPayload,
+            courseName: "न्यू क्रैश कोर्स (Class 10th)",
+            amount: activePrice,
+            screenshotDataUrl: screenshotBase64,
+            utr: utrNumber.trim() || 'N/A',
+            status: 'pending',
+            submittedAt: new Date().toISOString()
+          }, { merge: true });
+        } catch (e) {
+          console.warn("Crash course requests doc save notice:", e);
+        }
+      }
 
       // Trigger email notification
       try {
@@ -226,7 +259,7 @@ export function PaywallModal({ onClose }: { onClose: () => void }) {
       }
 
       setSubmitSuccess(true);
-      alert("पेमेंट स्क्रीनशॉट सफलतापूर्वक भेज दिया गया है! एडमिन द्वारा सत्यापन होते ही सभी चैप्टर्स अनलॉक हो जाएंगे।");
+      alert("आपका पेमेंट रिक्वेस्ट एडमिन के पास चला गया है। एडमिन द्वारा एक्सेप्ट करते ही आपका कोर्स अनलॉक हो जाएगा। अगर 5 मिनट के अंदर नहीं खुलता है तो WhatsApp (9241511070) पर मैसेज करें।");
       onClose();
     } catch (err: any) {
       console.error("Payment submission failed:", err);
@@ -252,8 +285,12 @@ export function PaywallModal({ onClose }: { onClose: () => void }) {
               <Crown className="w-5 h-5 text-amber-500" />
             </div>
             <div>
-              <h3 className="text-sm font-black text-stone-900 tracking-tight uppercase">बिहार बोर्ड परीक्षा फुल सिलेबस</h3>
-              <p className="text-[10px] text-stone-500 font-bold">Board Exam Crash Course</p>
+              <h3 className="text-sm font-black text-stone-900 tracking-tight uppercase">
+                {courseType === 'crash_course' ? 'बिहार बोर्ड 10वीं न्यू क्रैश कोर्स' : 'बिहार बोर्ड 10वीं टॉपर बैच (फुल कोर्स)'}
+              </h3>
+              <p className="text-[10px] text-stone-500 font-bold">
+                {courseType === 'crash_course' ? '10th Fast-Track Crash Course (₹299)' : 'Full Syllabus Topper Batch (₹499)'}
+              </p>
             </div>
           </div>
           
@@ -272,10 +309,12 @@ export function PaywallModal({ onClose }: { onClose: () => void }) {
           {/* Main Hero Header */}
           <div className="text-center bg-stone-50 rounded-2xl p-4 border border-stone-100 relative">
             <h2 className="text-lg sm:text-xl font-black text-stone-900">
-              क्रैश कोर्स अनलॉक करें - मात्र ₹{activePrice}
+              {courseType === 'crash_course' ? `न्यू क्रैश कोर्स अनलॉक करें - मात्र ₹${activePrice}` : `टॉपर बैच (फुल कोर्स) अनलॉक करें - मात्र ₹${activePrice}`}
             </h2>
             <p className="text-[11px] text-stone-600 mt-1 font-semibold leading-relaxed">
-              सभी विषयों के चैप्टर 2 और उसके बाद के सभी नोट्स, VVI टॉपर टिप्स, और प्रश्नोत्तरी तुरंत अनलॉक करें।
+              {courseType === 'crash_course' 
+                ? 'सभी 6 विषयों के 151+ अध्यायों के 30 VVI MCQ टेस्ट, तुरंत व्याख्या व स्पेशल बूस्टर्स अनलॉक करें।' 
+                : 'कक्षा 10वीं सम्पूर्ण सिलेबस — सभी 6 विषयों के हस्तलिखित नोट्स, VVI टॉपर टिप्स और टेस्ट अनलॉक करें।'}
             </p>
             <div className="absolute top-1 right-2 animate-bounce">
               <Sparkles className="w-4 h-4 text-amber-500" />
@@ -283,28 +322,41 @@ export function PaywallModal({ onClose }: { onClose: () => void }) {
           </div>
 
           {/* QR Code and Scanner Section */}
-          {config.qrCodeUrl ? (
-            <div className="bg-stone-50 border border-stone-200 rounded-2xl p-3 text-center space-y-2">
-              <span className="text-[11px] font-black text-stone-500 flex items-center justify-center gap-1">
-                <QrCode className="w-4 h-4 text-red-600 animate-pulse" /> QR कोड स्कैन करके पेमेंट करें:
-              </span>
-              <div className="w-44 h-44 mx-auto bg-white p-2.5 rounded-xl border border-stone-200 shadow-sm">
-                <img 
-                  src={config.qrCodeUrl} 
-                  alt="UPI QR Code" 
-                  className="w-full h-full object-contain"
-                  referrerPolicy="no-referrer"
-                />
+          <div className="bg-stone-50 border border-stone-200 rounded-2xl p-3 text-center space-y-3">
+            {config.qrCodeUrl ? (
+              <>
+                <span className="text-[11px] font-black text-stone-500 flex items-center justify-center gap-1">
+                  <QrCode className="w-4 h-4 text-red-600 animate-pulse" /> QR कोड स्कैन करके पेमेंट करें:
+                </span>
+                <div className="w-44 h-44 mx-auto bg-white p-2.5 rounded-xl border border-stone-200 shadow-sm">
+                  <img 
+                    src={config.qrCodeUrl} 
+                    alt="UPI QR Code" 
+                    className="w-full h-full object-contain"
+                    referrerPolicy="no-referrer"
+                  />
+                </div>
+              </>
+            ) : (
+              <div className="py-2 space-y-1">
+                <QrCode className="w-6 h-6 text-stone-400 mx-auto" />
+                <span className="text-[11px] font-bold text-stone-500 block">QR कोड फ़िलहाल उपलब्ध नहीं है</span>
+                <p className="text-[9px] text-stone-400">नीचे दिए गए बटन या UPI ID का उपयोग करें।</p>
               </div>
-              <p className="text-[10px] text-stone-500 font-semibold">GPay, PhonePe, Paytm, या अन्य किसी भी UPI ऐप से स्कैन करें</p>
+            )}
+            
+            {/* Direct Pay Button for Mobile Users */}
+            <div className="px-4">
+              <a 
+                href={upiPayLink}
+                className="w-full flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white py-2.5 rounded-xl font-black text-xs transition-all shadow-md active:scale-95"
+              >
+                <Smartphone className="w-4 h-4" />
+                <span>🚀 सीधे पेमेंट करें (Direct Pay)</span>
+              </a>
+              <p className="text-[9px] text-stone-400 mt-1.5 font-bold">GPay, PhonePe, Paytm, या अन्य किसी भी UPI ऐप से भुगतान करें</p>
             </div>
-          ) : (
-            <div className="bg-stone-50 border border-dashed border-stone-300 rounded-2xl p-4 text-center space-y-1">
-              <QrCode className="w-6 h-6 text-stone-400 mx-auto" />
-              <span className="text-[11px] font-bold text-stone-500 block">QR कोड फ़िलहाल अनुपलब्ध है</span>
-              <p className="text-[9px] text-stone-400">कृपया नीचे दी गई UPI आईडी का उपयोग करके भुगतान करें।</p>
-            </div>
-          )}
+          </div>
 
           {/* Payment Steps Form */}
           <form onSubmit={handleSubmit} className="space-y-4">
@@ -371,7 +423,7 @@ export function PaywallModal({ onClose }: { onClose: () => void }) {
                 </div>
 
                 <a
-                  href={`https://wa.me/91${config.whatsappNumber || '9241511070'}?text=${encodeURIComponent(`नमस्ते राज सर, मैंने ₹${activePrice} का क्रैश कोर्स पेमेंट कर दिया है। यह रहा मेरा पेमेंट स्क्रीनशॉट। कृपया मेरा क्रैश कोर्स तुरंत अनलॉक कर दीजिए। (Gmail: ${studentEmailInput || user?.email || ''})`)}`}
+                  href={`https://wa.me/91${config.whatsappNumber || '9241511070'}?text=${encodeURIComponent(`नमस्ते राज सर, मैंने ₹${activePrice} का ${courseType === 'crash_course' ? 'न्यू क्रैश कोर्स (₹299)' : 'फुल कोर्स - टॉपर बैच (₹499)'} पेमेंट कर दिया है। यह रहा मेरा पेमेंट स्क्रीनशॉट। कृपया मेरा कोर्स तुरंत अनलॉक कर दीजिए। (Gmail: ${studentEmailInput || user?.email || ''})`)}`}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="w-full bg-white hover:bg-emerald-50 active:scale-95 text-emerald-800 font-black py-2.5 px-3 rounded-xl flex items-center justify-center gap-2 text-xs shadow-sm transition-all cursor-pointer border border-emerald-200"

@@ -159,6 +159,16 @@
     },
     "/admin_courses/{courseId}": {
       "description": "Course catalog managed by administrator"
+    },
+    "/crash_course_requests/{requestId}": {
+      "schema": "PaymentRequest",
+      "description": "Crash course purchase requests verification queue"
+    },
+    "/crash_course_access/{userEmail}": {
+      "description": "Crash course access entitlements for students"
+    },
+    "/crash_course_pdfs/{pdfId}": {
+      "description": "Crash course PDF study materials"
     }
   }
 }

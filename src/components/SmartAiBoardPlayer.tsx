@@ -21,17 +21,25 @@ export function SmartAiBoardPlayer({ classItem }: SmartAiBoardPlayerProps) {
     ? 'https://cdn-icons-png.flaticon.com/512/2922/2922510.png' 
     : 'https://cdn-icons-png.flaticon.com/512/1995/1995574.png';
 
-  // Average reading speed: ~10 characters per second for natural Hindi speech
-  const totalEstimatedTime = Math.max(15, Math.ceil(scriptText.length / 10));
+  // Fast & responsive speech speed: ~14 characters per second
+  const totalEstimatedTime = Math.max(10, Math.ceil(scriptText.length / 14));
 
-  // Start speaking the full script from beginning
+  // Start speech instantly with zero delay
   const startSpeech = () => {
     if (!('speechSynthesis' in window)) return;
     window.speechSynthesis.cancel();
 
-    const utterance = new SpeechSynthesisUtterance(scriptText);
+    const charIndex = Math.min(scriptText.length, Math.max(0, Math.floor((duration / totalEstimatedTime) * scriptText.length)));
+    const textToSpeak = scriptText.substring(charIndex);
+
+    if (!textToSpeak.trim()) {
+      setIsPlaying(false);
+      return;
+    }
+
+    const utterance = new SpeechSynthesisUtterance(textToSpeak);
     utterance.lang = 'hi-IN';
-    utterance.rate = 0.95;
+    utterance.rate = 1.0;
 
     const voices = window.speechSynthesis.getVoices();
     const hindiVoices = voices.filter(v => v.lang.includes('hi') || v.lang.includes('IN'));
@@ -49,11 +57,11 @@ export function SmartAiBoardPlayer({ classItem }: SmartAiBoardPlayerProps) {
       utterance.pitch = isFemale ? 1.3 : 0.85;
     }
 
-    // Real-time boundary tracking: as speech speaks each character/word, update typed text and duration perfectly
     utterance.onboundary = (event) => {
       if (event.charIndex !== undefined) {
-        setSpokenCharIndex(event.charIndex);
-        const progressSec = Math.floor((event.charIndex / scriptText.length) * totalEstimatedTime);
+        const actualIdx = charIndex + event.charIndex;
+        setSpokenCharIndex(actualIdx);
+        const progressSec = Math.floor((actualIdx / scriptText.length) * totalEstimatedTime);
         setDuration(progressSec);
       }
     };
@@ -71,7 +79,7 @@ export function SmartAiBoardPlayer({ classItem }: SmartAiBoardPlayerProps) {
     setIsPlaying(true);
   };
 
-  // Fallback timer when boundaries don't fire frequently on some devices
+  // Timer & Real-time typing sync
   useEffect(() => {
     let interval: any;
     if (isPlaying) {
@@ -82,8 +90,8 @@ export function SmartAiBoardPlayer({ classItem }: SmartAiBoardPlayerProps) {
             return totalEstimatedTime;
           }
           const next = prev + 1;
-          const charIdx = Math.min(scriptText.length, Math.floor((next / totalEstimatedTime) * scriptText.length));
-          setSpokenCharIndex(prevIdx => Math.max(prevIdx, charIdx));
+          const computedCharIndex = Math.min(scriptText.length, Math.floor((next / totalEstimatedTime) * scriptText.length));
+          setSpokenCharIndex(prevIdx => Math.max(prevIdx, computedCharIndex));
           return next;
         });
       }, 1000);
@@ -109,11 +117,11 @@ export function SmartAiBoardPlayer({ classItem }: SmartAiBoardPlayerProps) {
     setTimeout(() => setShowCenterIcon(false), 800);
   };
 
-  // Auto-play on mount instantly
+  // Auto-play immediately on mount with zero lag
   useEffect(() => {
     const timer = setTimeout(() => {
       startSpeech();
-    }, 300);
+    }, 150);
     return () => {
       clearTimeout(timer);
       if ('speechSynthesis' in window) {
@@ -126,7 +134,6 @@ export function SmartAiBoardPlayer({ classItem }: SmartAiBoardPlayerProps) {
     handlePlaySpeech();
   };
 
-  // Interactive timeline scrubber
   const handleSeek = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newTime = Number(e.target.value);
     setDuration(newTime);
@@ -143,6 +150,7 @@ export function SmartAiBoardPlayer({ classItem }: SmartAiBoardPlayerProps) {
     setDuration(newTime);
     const charIdx = Math.min(scriptText.length, Math.floor((newTime / totalEstimatedTime) * scriptText.length));
     setSpokenCharIndex(charIdx);
+    if (isPlaying) startSpeech();
   };
 
   const handleSkipBackward = (e: React.MouseEvent) => {
@@ -151,6 +159,7 @@ export function SmartAiBoardPlayer({ classItem }: SmartAiBoardPlayerProps) {
     setDuration(newTime);
     const charIdx = Math.min(scriptText.length, Math.floor((newTime / totalEstimatedTime) * scriptText.length));
     setSpokenCharIndex(charIdx);
+    if (isPlaying) startSpeech();
   };
 
   const formatTime = (sec: number) => {
@@ -159,7 +168,11 @@ export function SmartAiBoardPlayer({ classItem }: SmartAiBoardPlayerProps) {
     return `${mins}:${secs < 10 ? '0' : ''}${secs}`;
   };
 
+  // Clean paginated text display so board is never cluttered ("गाजर-माजर नहीं होना चाहिए")
   const activeText = scriptText.substring(0, Math.max(spokenCharIndex, Math.floor((duration / totalEstimatedTime) * scriptText.length)));
+  
+  // Split into clean sentence paragraphs for crystal clear board presentation
+  const paragraphs = activeText.split(/(?<=[.!?|।\n])/).filter(Boolean);
 
   const toggleFullscreen = () => {
     if (!containerRef.current) return;
@@ -174,55 +187,72 @@ export function SmartAiBoardPlayer({ classItem }: SmartAiBoardPlayerProps) {
     <div 
       ref={containerRef}
       onClick={togglePlayPause}
-      className="w-full aspect-video min-h-[360px] sm:min-h-[440px] bg-[#fbfaf5] rounded-2xl overflow-hidden text-stone-900 border border-stone-300 shadow-2xl flex flex-col justify-between relative select-none cursor-pointer group"
+      className="w-full aspect-video min-h-[380px] sm:min-h-[450px] bg-[#0f2a15] rounded-2xl overflow-hidden text-white border-2 border-stone-800 shadow-2xl flex flex-col justify-between relative select-none cursor-pointer group"
     >
       
-      {/* Top Whiteboard Title Banner */}
-      <div className="pt-3 px-4 text-center z-10">
-        <div className="inline-block bg-[#f4f2e8] border border-stone-300/80 px-5 py-1.5 rounded-xl shadow-xs">
-          <h3 className="font-bold text-xs sm:text-sm text-stone-700 tracking-wide">
-            {classItem.subjectName} : {classItem.title}
-          </h3>
+      {/* Top Digital Board Header Banner */}
+      <div className="pt-3 px-4 text-center z-10 bg-[#091b10] border-b border-emerald-900/60 pb-2 flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <span className="w-2.5 h-2.5 rounded-full bg-red-500 animate-pulse"></span>
+          <span className="text-[11px] font-black text-emerald-300">BSEB DIGITAL SMART BOARD</span>
         </div>
+        <div className="bg-[#163a22] border border-emerald-700/50 px-4 py-1 rounded-lg text-xs font-bold text-amber-300">
+          {classItem.subjectName} : {classItem.title}
+        </div>
+        <span className="text-[10px] text-stone-400 font-mono">HD Live</span>
       </div>
 
-      {/* Center Whiteboard Teaching Area */}
-      <div className="flex-1 flex flex-col items-center justify-center p-4 sm:p-6 text-center relative z-10">
-        <div className="max-w-xl mx-auto space-y-2">
-          <div className="text-xs sm:text-sm md:text-base font-semibold text-stone-800 leading-relaxed font-sans px-2">
-            {activeText}
-            <span className="inline-block w-1.5 h-4 bg-red-600 ml-1 animate-pulse align-middle"></span>
-          </div>
+      {/* Center Digital Board Teaching Area with Clean Paginated Text */}
+      <div className="flex-1 flex flex-col items-center justify-center p-5 sm:p-7 text-center relative z-10 overflow-y-auto">
+        {/* Subtle grid lines background */}
+        <div className="absolute inset-0 bg-[linear-gradient(to_right,#133820_1px,transparent_1px),linear-gradient(to_bottom,#133820_1px,transparent_1px)] bg-[size:28px_28px] pointer-events-none opacity-30"></div>
+
+        <div className="max-w-2xl mx-auto space-y-3 relative z-10">
+          {paragraphs.slice(-3).map((para, idx) => (
+            <div 
+              key={`board-para-${idx}`} 
+              className={`leading-relaxed font-sans transition-all duration-300 ${
+                idx === paragraphs.slice(-3).length - 1 
+                  ? 'text-sm sm:text-base md:text-lg font-bold text-emerald-100 bg-black/30 p-3 rounded-xl border border-emerald-500/30 shadow-md' 
+                  : 'text-xs sm:text-sm text-emerald-300/80 font-medium'
+              }`}
+            >
+              {para}
+              {idx === paragraphs.slice(-3).length - 1 && (
+                <span className="inline-block w-1.5 h-4 bg-amber-400 ml-1 animate-pulse align-middle"></span>
+              )}
+            </div>
+          ))}
         </div>
 
         {/* Center Play/Pause Flash Animation on Click */}
         {showCenterIcon && (
-          <div className="absolute inset-0 flex items-center justify-center bg-black/20 pointer-events-none animate-fade-in">
-            <div className="w-14 h-14 rounded-full bg-stone-900/80 text-white flex items-center justify-center shadow-2xl">
-              {isPlaying ? <Play className="w-7 h-7 fill-white ml-1" /> : <Pause className="w-7 h-7 fill-white" />}
+          <div className="absolute inset-0 flex items-center justify-center bg-black/30 pointer-events-none animate-fade-in z-30">
+            <div className="w-16 h-16 rounded-full bg-stone-900/90 text-white flex items-center justify-center shadow-2xl">
+              {isPlaying ? <Play className="w-8 h-8 fill-white ml-1" /> : <Pause className="w-8 h-8 fill-white" />}
             </div>
           </div>
         )}
 
-        {/* AI Robot / Live Teacher Box in Corner */}
-        <div className="absolute bottom-3 right-3 z-20 bg-stone-900/90 text-white px-3 py-2 rounded-xl shadow-xl flex items-center gap-2 border border-emerald-500/50 backdrop-blur-xs animate-fade-in pointer-events-none">
+        {/* AI Teacher Avatar Box in Corner */}
+        <div className="absolute bottom-3 right-3 z-25 bg-stone-900/95 text-white px-3.5 py-2 rounded-xl shadow-2xl flex items-center gap-2.5 border-2 border-emerald-500/60 backdrop-blur-xs pointer-events-none">
           <div className="relative">
             <img 
               src={teacherAvatar} 
               alt={teacherName} 
-              className={`w-9 h-9 rounded-lg object-cover bg-white border-2 ${
+              className={`w-10 h-10 rounded-xl object-cover bg-white border-2 ${
                 isPlaying ? 'border-emerald-400 animate-pulse' : 'border-amber-400'
               }`}
             />
-            <div className="absolute -bottom-1 -right-1 w-3 h-3 bg-emerald-500 rounded-full border-2 border-stone-900 animate-ping"></div>
+            <div className="absolute -bottom-1 -right-1 w-3.5 h-3.5 bg-emerald-500 rounded-full border-2 border-stone-900 animate-ping"></div>
           </div>
           <div className="text-left">
-            <div className="flex items-center gap-1 text-[11px] font-black leading-none text-white">
-              <Bot className="w-3 h-3 text-emerald-400" />
+            <div className="flex items-center gap-1 text-xs font-black leading-none text-white">
+              <Bot className="w-3.5 h-3.5 text-emerald-400" />
               <span>{teacherName}</span>
             </div>
-            <p className="text-[9px] text-emerald-300 font-semibold mt-0.5">
-              {isPlaying ? '🎙️ लाइव बोल रहे हैं...' : '⏸️ रुके हुए हैं'}
+            <p className="text-[10px] text-emerald-300 font-semibold mt-0.5">
+              {isPlaying ? '🎙️ बोर्ड पर पढ़ा रहे हैं...' : '⏸️ रुके हुए हैं'}
             </p>
           </div>
         </div>
@@ -231,10 +261,10 @@ export function SmartAiBoardPlayer({ classItem }: SmartAiBoardPlayerProps) {
       {/* YouTube Style Bottom Control Bar */}
       <div 
         onClick={(e) => e.stopPropagation()}
-        className="absolute bottom-0 left-0 right-0 z-30 bg-gradient-to-t from-black/95 via-black/75 to-transparent px-3 py-2 space-y-1 text-white"
+        className="absolute bottom-0 left-0 right-0 z-30 bg-gradient-to-t from-black/95 via-black/80 to-transparent px-3.5 py-2.5 space-y-1.5 text-white"
       >
         {/* Progress Scrubber */}
-        <div className="w-full bg-stone-600/80 h-1.5 rounded-full overflow-hidden cursor-pointer relative">
+        <div className="w-full bg-stone-700/80 h-2 rounded-full overflow-hidden cursor-pointer relative">
           <div 
             className="bg-red-600 h-full transition-all duration-300 relative"
             style={{ width: `${(duration / totalEstimatedTime) * 100}%` }}

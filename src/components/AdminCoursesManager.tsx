@@ -25,6 +25,17 @@ const DEFAULT_COURSES: CoursePackage[] = [
     description: 'सभी 7 मुख्य विषयों के हस्तलिखित नोट्स, VVI चैप्टर वाइज MCQs एवं लाइव क्लास।',
     badge: 'BSEB फुल सिलेबस अनिवार्य',
     subjects: ['math', 'science', 'social_science', 'hindi', 'sanskrit', 'english'],
+    price: 499,
+    isFeatured: true,
+    createdAt: new Date().toISOString()
+  },
+  {
+    id: 'new-crash-course-2025',
+    name: 'न्यू क्रैश कोर्स (New Crash Course)',
+    subtitle: '10th Fast-Track Revision Batch',
+    description: '151+ अध्यायों के 30 VVI MCQs, तुरंत व्याख्या और स्पेशल बूस्टर्स।',
+    badge: 'Limited Time Offer',
+    subjects: ['math', 'science', 'social_science', 'hindi', 'sanskrit', 'english'],
     price: 299,
     isFeatured: true,
     createdAt: new Date().toISOString()
@@ -42,7 +53,7 @@ export function AdminCoursesManager() {
   const [subtitle, setSubtitle] = useState('');
   const [description, setDescription] = useState('');
   const [badge, setBadge] = useState('BSEB फुल सिलेबस');
-  const [price, setPrice] = useState(299);
+  const [price, setPrice] = useState(499);
   const [isFeatured, setIsFeatured] = useState(true);
   const [selectedSubjects, setSelectedSubjects] = useState<string[]>(['math', 'science', 'social_science', 'hindi', 'sanskrit', 'english']);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -57,7 +68,7 @@ export function AdminCoursesManager() {
             list.push({ 
               id: d.id, 
               ...data,
-              price: Number(data.price) === 600 ? 299 : (Number(data.price) || 299)
+              price: Number(data.price) === 600 || Number(data.price) === 299 ? 499 : (Number(data.price) || 499)
             } as CoursePackage);
           });
           setCourses(list);
@@ -88,7 +99,7 @@ export function AdminCoursesManager() {
         description: description.trim() || 'उच्च गुणवत्ता वाले नोट्स और टेस्ट सीरीज़।',
         badge: badge.trim() || 'फुल सिलेबस Topper',
         subjects: selectedSubjects,
-        price: Number(price) === 600 ? 299 : (Number(price) || 299),
+        price: Number(price) || 499,
         isFeatured,
         createdAt: new Date().toISOString()
       };

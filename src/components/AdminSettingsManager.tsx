@@ -15,15 +15,19 @@ export function AdminSettingsManager() {
   const [whatsappNumber, setWhatsappNumber] = useState(
     (appConfig.whatsappNumber === '9507464117' ? '9241511070' : appConfig.whatsappNumber) || '9241511070'
   );
-  const [upiId, setUpiId] = useState(appConfig.upiId || '9708868515');
+  const [upiId, setUpiId] = useState(
+    (appConfig.upiId === '9708868515' || appConfig.upiId === '9241511070@paytm' || appConfig.upiId === '9241511070@gmail.com' || !appConfig.upiId) 
+      ? '9241511070@ybl' 
+      : appConfig.upiId
+  );
   const [qrCodeDataUrl, setQrCodeDataUrl] = useState(appConfig.qrCodeDataUrl || '');
   const [appLogoUrl, setAppLogoUrl] = useState(appConfig.appLogoUrl || '');
   const [youtubeUrl, setYoutubeUrl] = useState(appConfig.youtubeUrl);
   const [instagramUrl, setInstagramUrl] = useState(appConfig.instagramUrl);
   const [whatsappGroupUrl, setWhatsappGroupUrl] = useState(appConfig.whatsappGroupUrl);
   const [telegramUrl, setTelegramUrl] = useState(appConfig.telegramUrl);
-  const [price1Month, setPrice1Month] = useState((appConfig.price1Month || 99).toString());
-  const [price1Year, setPrice1Year] = useState((appConfig.price1Year || 299).toString());
+  const [price1Month, setPrice1Month] = useState((appConfig.price1Month === 99 || !appConfig.price1Month ? 299 : appConfig.price1Month).toString());
+  const [price1Year, setPrice1Year] = useState((appConfig.price1Year === 299 || !appConfig.price1Year ? 499 : appConfig.price1Year).toString());
 
   const qrInputRef = useRef<HTMLInputElement>(null);
   const logoInputRef = useRef<HTMLInputElement>(null);
@@ -235,7 +239,7 @@ export function AdminSettingsManager() {
                 required
                 value={upiId}
                 onChange={(e) => setUpiId(e.target.value)}
-                placeholder="उदा: 9708868515"
+                placeholder="उदा: 9241511070@ybl"
                 className="w-full bg-red-50/40 border border-red-200 rounded-xl px-3.5 py-2.5 text-xs text-stone-900 font-bold focus:outline-none focus:border-red-500 font-mono"
                 style={{ minHeight: '44px' }}
               />
@@ -385,30 +389,31 @@ export function AdminSettingsManager() {
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-1.5">
-              <label className="text-xs font-bold text-stone-700">1 माह डेमो मूल्य (वैकल्पिक) (₹)</label>
+              <label className="text-xs font-bold text-stone-700">न्यू क्रैश कोर्स मूल्य (₹)</label>
               <input
                 type="number"
                 required
                 value={price1Month}
                 onChange={(e) => setPrice1Month(e.target.value)}
-                placeholder="99"
+                placeholder="299"
                 className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs text-stone-900 font-bold focus:outline-none focus:border-emerald-500"
                 style={{ minHeight: '44px' }}
               />
+              <span className="text-[10px] text-stone-500 block font-bold">डिफ़ॉल्ट ₹299 सेट करें।</span>
             </div>
 
             <div className="space-y-1.5">
-              <label className="text-xs font-bold text-stone-700">क्रैश कोर्स संपूर्ण मूल्य (₹) *</label>
+              <label className="text-xs font-bold text-stone-700">टॉपर बैच (फुल कोर्स) मूल्य (₹) *</label>
               <input
                 type="number"
                 required
                 value={price1Year}
                 onChange={(e) => setPrice1Year(e.target.value)}
-                placeholder="299"
+                placeholder="499"
                 className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs text-stone-900 font-bold focus:outline-none focus:border-emerald-500"
                 style={{ minHeight: '44px' }}
               />
-              <span className="text-[10px] text-stone-500 block font-bold">डिफ़ॉल्ट ₹299 सेट करें। यही कीमत छात्रों को पॉपअप में दिखेगी।</span>
+              <span className="text-[10px] text-stone-500 block font-bold">डिफ़ॉल्ट ₹499 सेट करें। यही कीमत छात्रों को पॉपअप में दिखेगी।</span>
             </div>
           </div>
         </div>

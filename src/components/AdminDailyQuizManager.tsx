@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useData } from '../context/DataContext';
 import { CheckCircle2, Plus, Trash2, Calendar, BookOpen, Link as LinkIcon } from 'lucide-react';
+import { extractYouTubeVideoId } from '../utils/youtubeHelper';
 
 export function AdminDailyQuizManager() {
   const { dailyQuizzes, addDailyQuiz, deleteDailyQuiz } = useData();
@@ -22,13 +23,16 @@ export function AdminDailyQuizManager() {
 
     setIsSubmitting(true);
     try {
+      const cleanVid = extractYouTubeVideoId(youtubeUrl);
+      const cleanUrl = cleanVid ? `https://www.youtube.com/watch?v=${cleanVid}` : youtubeUrl.trim();
+
       await addDailyQuiz({
         dateLabel: dateLabel.trim(),
         subjectName: subjectName.trim(),
         title: title.trim(),
         chaptersCount: Number(chaptersCount) || 10,
         totalQuestions: Number(totalQuestions) || 200,
-        youtubeUrl: youtubeUrl.trim(),
+        youtubeUrl: cleanUrl,
         createdAt: new Date().toISOString()
       });
       alert('✅ नया डेली क्विज़/टेस्ट सफलतापर्वूक जोड़ दिया गया है!');

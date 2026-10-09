@@ -253,6 +253,54 @@ export function AppDrawer({ isOpen, onClose, onNavigate, onOpenVip, onOpenGmailA
             </button>
 
             <button
+              onClick={() => { onNavigate('cartoon_studio'); onClose(); }}
+              className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-stone-700 hover:bg-orange-50 hover:text-orange-700 font-bold transition-colors cursor-pointer text-left"
+            >
+              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-orange-500 to-pink-600 text-white flex items-center justify-center shadow-xs">
+                🎨
+              </div>
+              <div className="flex-1">
+                <div className="leading-tight flex items-center gap-1.5">
+                  <span>🎨 Cartoon 2D Class</span>
+                  <span className="text-[9px] bg-orange-100 text-orange-700 px-1.5 py-0.2 rounded-full font-black">Kids</span>
+                </div>
+                <p className="text-[10px] text-stone-500 font-normal">Animated 2D Teacher & Board</p>
+              </div>
+            </button>
+
+            <button
+              onClick={() => { onNavigate('crash_course'); onClose(); }}
+              className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-stone-700 hover:bg-amber-50 hover:text-amber-800 font-bold transition-colors cursor-pointer text-left"
+            >
+              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-amber-500 to-red-600 text-white flex items-center justify-center shadow-xs">
+                ⚡
+              </div>
+              <div className="flex-1">
+                <div className="leading-tight flex items-center gap-1.5">
+                  <span>⚡ Crash Course (Class 10th)</span>
+                  <span className="text-[9px] bg-amber-100 text-amber-800 px-1.5 py-0.2 rounded-full font-black">FAST</span>
+                </div>
+                <p className="text-[10px] text-stone-500 font-normal">चैप्टर नोट्स व 30 VVI टेस्ट</p>
+              </div>
+            </button>
+
+            <button
+              onClick={() => { onNavigate('pyqs'); onClose(); }}
+              className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-stone-700 hover:bg-red-50 hover:text-red-700 font-bold transition-colors cursor-pointer text-left"
+            >
+              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-red-600 to-amber-600 text-white flex items-center justify-center shadow-xs">
+                📄
+              </div>
+              <div className="flex-1">
+                <div className="leading-tight flex items-center gap-1.5">
+                  <span>📄 पिछले वर्ष के प्रश्न पत्र (PYQ)</span>
+                  <span className="text-[9px] bg-red-100 text-red-700 px-1.5 py-0.2 rounded-full font-black">PDF</span>
+                </div>
+                <p className="text-[10px] text-stone-500 font-normal">Board Exam PYQs with Solution</p>
+              </div>
+            </button>
+
+            <button
               onClick={() => { onNavigate('chat'); onClose(); }}
               className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-stone-700 hover:bg-red-50 hover:text-red-700 font-bold transition-colors cursor-pointer text-left"
             >

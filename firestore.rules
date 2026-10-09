@@ -85,6 +85,21 @@ service cloud.firestore {
     match /class_attendance/{recordId} {
       allow read, write: if true;
     }
+
+    // Allow read/write to crash_course_requests (payment proof and requests for new crash course)
+    match /crash_course_requests/{requestId} {
+      allow read, write: if true;
+    }
+
+    // Allow read/write to crash_course_access (entitlements for new crash course)
+    match /crash_course_access/{userEmail} {
+      allow read, write: if true;
+    }
+
+    // Allow read/write to crash_course_pdfs
+    match /crash_course_pdfs/{pdfId} {
+      allow read, write: if true;
+    }
   }
 }
 

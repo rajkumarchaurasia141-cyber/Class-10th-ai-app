@@ -73,9 +73,9 @@ export function AdminPaymentRequests() {
           userId: data.userId || data.uid || '',
           studentName: data.userName || data.studentName || 'विद्यार्थी',
           studentEmail: data.userEmail || data.studentEmail || data.email || '',
-          planTitle: data.courseName || 'Board Crash Course',
-          planAmount: data.amount ? `₹${data.amount}` : '₹299',
-          planPrice: Number(data.amount) || 299,
+          planTitle: data.courseName || 'Topper Batch (फुल कोर्स)',
+          planAmount: data.amount ? `₹${data.amount}` : '₹499',
+          planPrice: Number(data.amount) || 499,
           screenshotDataUrl: data.screenshotBase64 || data.screenshotUrl || data.screenshotDataUrl || '',
           utr: data.upiRef || data.utr || '',
           status: data.status || 'pending',
@@ -118,10 +118,12 @@ export function AdminPaymentRequests() {
       let dbSuccess1 = false;
       let dbSuccess2 = false;
 
-      // 1. Set isPaid and isActive to true in the student document
+      // 1. Set isPaid, hasFullCourse and isActive to true in the student document
       try {
         await safeSetDoc(doc(db, 'users', userId), {
           isPaid: true,
+          hasFullCourse: true,
+          hasCrashCourse: true,
           isActive: true,
           email: cleanEmail,
           name: req.studentName || ''
@@ -136,8 +138,8 @@ export function AdminPaymentRequests() {
         await safeSetDoc(doc(db, 'vip_users', cleanEmail), {
           isVip: true,
           plan: '1year',
-          planDuration: 'Board Crash Course',
-          planPrice: req.planPrice || 299,
+          planDuration: 'Topper Batch (फुल कोर्स)',
+          planPrice: req.planPrice || 499,
           studentName: req.studentName || '',
           validFrom: new Date().toISOString(),
           addedAt: new Date().toISOString(),
@@ -174,9 +176,9 @@ export function AdminPaymentRequests() {
       setTimeout(() => setToastMessage(null), 4000);
 
       if (dbSuccess1 && dbSuccess2) {
-        setActionMsg(`सफलता! छात्र ${req.studentName} का क्रैश कोर्स अनलॉक कर दिया गया है।`);
+        setActionMsg(`सफलता! छात्र ${req.studentName} का फुल कोर्स (टॉपर बैच) अनलॉक कर दिया गया है।`);
       } else {
-        setActionMsg(`सूचना: छात्र ${req.studentName} का कोर्स स्थानीय रूप से अनलॉक कर दिया गया है।`);
+        setActionMsg(`सूचना: छात्र ${req.studentName} का फुल कोर्स स्थानीय रूप से अनलॉक कर दिया गया है।`);
       }
 
       if (selectedImage?.id === req.id) {

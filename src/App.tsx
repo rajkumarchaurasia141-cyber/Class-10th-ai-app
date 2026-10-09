@@ -28,6 +28,9 @@ import { ContactView } from './components/ContactView';
 import { PrivacyPolicyView } from './components/PrivacyPolicyView';
 import { Footer } from './components/Footer';
 import { AiTeacherStudioView } from './components/AiTeacherStudioView';
+import { CartoonStudioView } from './components/CartoonStudioView';
+import { PyqView } from './components/PyqView';
+import { CrashCourseView } from './components/CrashCourseView';
 
 // Password check logic function as requested
 function checkAdminSecret(enteredPass: string): boolean {
@@ -173,6 +176,18 @@ function MainApp() {
       case 'social':
         setShowSocial(true);
         break;
+      case 'crash_course':
+        handleTabChange('crash_course');
+        break;
+      case 'pyqs':
+        handleTabChange('pyqs');
+        break;
+      case 'ai_studio':
+        handleTabChange('ai_studio');
+        break;
+      case 'cartoon_studio':
+        handleTabChange('cartoon_studio');
+        break;
       case 'admin':
         handleAdminClick();
         break;
@@ -235,6 +250,24 @@ function MainApp() {
 
           {activeTab === 'ai_studio' && (
             <AiTeacherStudioView onBack={() => setActiveTab('home')} />
+          )}
+
+          {activeTab === 'cartoon_studio' && (
+            <CartoonStudioView onBack={() => setActiveTab('home')} />
+          )}
+
+          {activeTab === 'crash_course' && (
+            <CrashCourseView 
+              onBack={() => setActiveTab('home')} 
+              onOpenVip={() => setShowVipModal(true)} 
+            />
+          )}
+
+          {activeTab === 'pyqs' && (
+            <PyqView 
+              onBack={() => setActiveTab('home')} 
+              onOpenVip={() => setShowVipModal(true)} 
+            />
           )}
 
           {activeTab === 'daily_quiz' && (

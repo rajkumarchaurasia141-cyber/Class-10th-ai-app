@@ -25,6 +25,8 @@ export const AuthProvider = ({ children }: any) => {
   });
   const [isVIP, setIsVIP] = useState<boolean>(false);
   const [isPaid, setIsPaid] = useState<boolean>(false);
+  const [hasCrashCourse, setHasCrashCourse] = useState<boolean>(false);
+  const [hasFullCourse, setHasFullCourse] = useState<boolean>(false);
   const [vipDetails, setVipDetails] = useState<any>({
     isVip: false,
     plan: 'free',
@@ -138,12 +140,15 @@ export const AuthProvider = ({ children }: any) => {
     }
   }, [user?.email, isPaid, isAdmin]);
 
-  // Real-time observer of current user's isPaid status in users collection
+  // Real-time observer of current user's entitlement status
   useEffect(() => {
     let unsubUserDoc = () => {};
+    let unsubCcDoc = () => {};
 
     if (isAdmin) {
       setIsPaid(true);
+      setHasCrashCourse(true);
+      setHasFullCourse(true);
       return;
     }
 
@@ -152,23 +157,77 @@ export const AuthProvider = ({ children }: any) => {
       const cleanEmail = emailForUid.trim().toLowerCase();
       const uid = fbUser?.uid || `simulated_${cleanEmail.replace(/[^a-zA-Z0-9]/g, '_')}`;
       const userRef = doc(db, 'users', uid);
+      const ccAccessRef = doc(db, 'crash_course_access', cleanEmail);
+
+      // Check local cache for offline/instant status
+      const cachedCcUnlocked = localStorage.getItem(`bseb_crash_course_unlocked_${cleanEmail}`) === 'true';
+      if (cachedCcUnlocked) {
+        setHasCrashCourse(true);
+      }
 
       unsubUserDoc = onSnapshot(userRef, (snap) => {
         if (snap.exists()) {
           const data = snap.data();
-          setIsPaid(data?.isPaid === true);
+          const userIsPaid = data?.isPaid === true;
+          const userHasCc = data?.hasCrashCourse === true || data?.isCrashCoursePaid === true || cachedCcUnlocked;
+          const userHasFull = data?.hasFullCourse === true || userIsPaid;
+
+          setIsPaid(userIsPaid);
+          setHasFullCourse(userHasFull);
+          if (data?.hasCrashCourse !== undefined || userIsPaid) {
+            setHasCrashCourse(data.hasCrashCourse === true || data.isCrashCoursePaid === true || userIsPaid);
+          }
         } else {
           setIsPaid(false);
+          setHasFullCourse(false);
+          if (!cachedCcUnlocked) setHasCrashCourse(false);
         }
       }, (err) => {
         console.warn("User doc listener error:", err);
       });
+
+      // Also listen to crash_course_access collection
+      unsubCcDoc = onSnapshot(ccAccessRef, (snap) => {
+        if (snap.exists()) {
+          const data = snap.data();
+          const unlocked = data?.unlocked === true || data?.isPaid === true;
+          setHasCrashCourse(unlocked);
+          try {
+            localStorage.setItem(`bseb_crash_course_unlocked_${cleanEmail}`, String(unlocked));
+          } catch {}
+        }
+      }, (err) => {
+        console.warn("Crash course access listener error:", err);
+      });
     } else {
       setIsPaid(false);
+      setHasFullCourse(false);
+      setHasCrashCourse(false);
     }
 
-    return () => unsubUserDoc();
+    return () => {
+      unsubUserDoc();
+      unsubCcDoc();
+    };
   }, [user?.email, fbUser?.uid, isAdmin]);
+
+  const unlockUserCrashCourse = (cleanEmail: string) => {
+    try {
+      localStorage.setItem(`bseb_crash_course_unlocked_${cleanEmail.trim().toLowerCase()}`, 'true');
+      if (cleanUserEmail === cleanEmail.trim().toLowerCase()) {
+        setHasCrashCourse(true);
+      }
+    } catch {}
+  };
+
+  const lockUserCrashCourse = (cleanEmail: string) => {
+    try {
+      localStorage.setItem(`bseb_crash_course_unlocked_${cleanEmail.trim().toLowerCase()}`, 'false');
+      if (cleanUserEmail === cleanEmail.trim().toLowerCase()) {
+        setHasCrashCourse(false);
+      }
+    } catch {}
+  };
 
   const login = async (name: string, email: string) => {
     setError(null);
@@ -247,6 +306,8 @@ export const AuthProvider = ({ children }: any) => {
     setUser(null);
     setIsVIP(false);
     setIsPaid(false);
+    setHasCrashCourse(false);
+    setHasFullCourse(false);
     setVipDetails({
       isVip: false,
       plan: 'free',
@@ -259,7 +320,23 @@ export const AuthProvider = ({ children }: any) => {
   };
 
   return (
-    <AuthContext.Provider value={{ user, fbUser, isAdmin, isVIP, isPaid, vipDetails, loading, login, logout, error, setError }}>
+    <AuthContext.Provider value={{ 
+      user, 
+      fbUser, 
+      isAdmin, 
+      isVIP, 
+      isPaid, 
+      hasCrashCourse, 
+      hasFullCourse, 
+      unlockUserCrashCourse, 
+      lockUserCrashCourse, 
+      vipDetails, 
+      loading, 
+      login, 
+      logout, 
+      error, 
+      setError 
+    }}>
       {children}
     </AuthContext.Provider>
   );

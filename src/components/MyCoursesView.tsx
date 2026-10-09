@@ -135,6 +135,50 @@ export function MyCoursesView({ onSelectSubject, onOpenVip }: MyCoursesViewProps
         </div>
       </div>
 
+      {/* ⚡ New Crash Course (₹299) Special Card */}
+      <div className="relative overflow-hidden bg-gradient-to-br from-stone-900 via-stone-800 to-amber-900 rounded-3xl p-5 text-white shadow-lg border border-amber-500/30">
+        <div className="absolute -right-10 -bottom-10 w-40 h-40 bg-amber-500/10 rounded-full blur-3xl" />
+        
+        <div className="relative z-10 space-y-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-1.5 bg-amber-500 text-stone-950 text-[10px] font-black px-2 py-0.5 rounded-full uppercase">
+              <Zap className="w-3 h-3 fill-current" />
+              <span>फास्ट-ट्रैक क्रैश कोर्स</span>
+            </div>
+
+            {(isAdmin || hasCrashCourse) ? (
+              <span className="bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 text-[11px] font-black px-2.5 py-0.5 rounded-full flex items-center gap-1">
+                <ShieldCheck className="w-3.5 h-3.5" />
+                क्रैश कोर्स अनलॉक
+              </span>
+            ) : (
+              <span className="bg-red-500/20 text-red-400 border border-red-500/30 text-[11px] font-black px-2.5 py-0.5 rounded-full flex items-center gap-1 animate-pulse">
+                <Lock className="w-3.5 h-3.5" />
+                लॉक (₹299)
+              </span>
+            )}
+          </div>
+
+          <div>
+            <h3 className="text-lg sm:text-xl font-black text-white flex items-center gap-2">
+              <span>बिहार बोर्ड 10वीं क्रैश कोर्स 2026</span>
+              <span className="text-[10px] bg-amber-500/20 text-amber-300 border border-amber-500/30 px-1.5 py-0.2 rounded">₹299</span>
+            </h3>
+            <p className="text-[11px] text-stone-300 mt-0.5">
+              अंतिम समय में 450+ पार तैयारी! 151+ स्पेशल टेस्ट और क्रैश कोर्स नोट्स।
+            </p>
+          </div>
+
+          <button
+            onClick={() => onSelectSubject('sanskrit')} // Or navigate to crash course tab if available
+            className="w-full py-2 bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-400 hover:to-orange-500 text-stone-950 font-black text-xs rounded-xl shadow-md transition-all flex items-center justify-center gap-2 active:scale-[0.98] cursor-pointer"
+          >
+            {(isAdmin || hasCrashCourse) ? 'कोर्स खोलें (Open Now)' : 'अनलॉक करें (Join Course)'}
+            <ChevronRight className="w-4 h-4 stroke-[3]" />
+          </button>
+        </div>
+      </div>
+
       {/* Course Sub-Navigation Tabs */}
       <div className="flex bg-slate-100 p-1 rounded-2xl border border-slate-200">
         <button
