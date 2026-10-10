@@ -501,7 +501,7 @@ export function AdminPanel({ onBack }: any) {
             <option value="banners">🖼️ होम बैनर (Widgets)</option>
             <option value="settings">⚙️ ऐप सेटिंग्स & मूल्य</option>
             <option value="admins">🔒 एडमिन आईडी मैनेज</option>
-            <option value="apk">📱 APK & AAB शेयर</option>
+            <option value="apk">📲 वेब ऐप (PWA) & Ads लिंक</option>
             <option value="sync">🔄 क्लाउड सिंक (1-क्लिक)</option>
             <option value="master">🛠️ मास्टर डेटा & टेक्स्ट एडिटर</option>
           </select>
@@ -687,7 +687,7 @@ export function AdminPanel({ onBack }: any) {
               activeTab === 'apk' ? 'border-b-2 border-amber-500 text-amber-500' : 'text-stone-400 hover:text-stone-200'
             }`}
           >
-            <Smartphone className="w-4 h-4 text-emerald-500" /> 📱 APK & AAB शेयर
+            <Smartphone className="w-4 h-4 text-emerald-500" /> 📲 वेब ऐप (PWA) & Ads
           </button>
           <button 
             onClick={() => setActiveTab('sync')} 

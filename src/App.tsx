@@ -20,7 +20,6 @@ import { MyCoursesView } from './components/MyCoursesView';
 import { LiveClassesView } from './components/LiveClassesView';
 import { DailyQuizView } from './components/DailyQuizView';
 import { TopperLeaderboardView } from './components/TopperLeaderboardView';
-import { DownloadPage } from './components/DownloadPage';
 import { InstallAppBanner } from './components/InstallAppBanner';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { AboutView } from './components/AboutView';
@@ -31,6 +30,7 @@ import { AiTeacherStudioView } from './components/AiTeacherStudioView';
 import { CartoonStudioView } from './components/CartoonStudioView';
 import { PyqView } from './components/PyqView';
 import { CrashCourseView } from './components/CrashCourseView';
+import { LoginScreen } from './components/LoginScreen';
 
 // Password check logic function as requested
 function checkAdminSecret(enteredPass: string): boolean {
@@ -77,8 +77,6 @@ function MainApp() {
     };
   }, []);
   
-  const isDownloadQuery = typeof window !== 'undefined' && 
-    (window.location.search.includes('download=apk') || window.location.pathname.includes('/download'));
   const isAdminQuery = typeof window !== 'undefined' && 
     (window.location.pathname === '/admin' || window.location.pathname.endsWith('/admin') || window.location.search.includes('tab=admin'));
   const isAboutQuery = typeof window !== 'undefined' && window.location.pathname.includes('/about');
@@ -95,7 +93,6 @@ function MainApp() {
 
   const [activeTab, setActiveTab] = useState(getInitialTab());
   const [selectedSubject, setSelectedSubject] = useState<string | null>(null);
-  const [forceDownloadMode, setForceDownloadMode] = useState(isDownloadQuery);
 
   // Modals
   const [showVipModal, setShowVipModal] = useState(false);
@@ -141,13 +138,9 @@ function MainApp() {
     setActiveTab('admin');
   };
 
-  if (forceDownloadMode) {
-    return (
-      <DownloadPage onBackToApp={() => {
-        window.history.replaceState({}, '', window.location.origin);
-        setForceDownloadMode(false);
-      }} />
-    );
+  // Show Login Screen first for new or unauthenticated users
+  if (!user) {
+    return <LoginScreen />;
   }
 
   const handleDrawerNavigate = (view: string, extra?: any) => {
@@ -197,9 +190,9 @@ function MainApp() {
   };
 
   return (
-    <div className="min-h-screen w-full bg-slate-50 flex flex-col selection:bg-red-500/30 overflow-x-hidden">
+    <div className="min-h-screen w-full bg-[#FFF4D6] flex flex-col selection:bg-[#D8B45A]/30 overflow-x-hidden text-[#222222]">
       {/* Edge-to-Edge Full-Width Responsive App Container */}
-      <div className="w-full bg-slate-50 min-h-screen flex flex-col relative overflow-x-hidden">
+      <div className="w-full bg-[#FFF4D6] min-h-screen flex flex-col relative overflow-x-hidden">
         {/* Top Header Bar with Hamburger Menu & Notifications */}
         <MobileTopBar
           onOpenDrawer={() => setShowDrawer(true)}

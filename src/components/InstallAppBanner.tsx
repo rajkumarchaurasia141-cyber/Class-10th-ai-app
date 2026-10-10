@@ -3,70 +3,139 @@ import { Smartphone, Download, X, Sparkles, CheckCircle2 } from 'lucide-react';
 import { AppLogo } from './AppLogo';
 
 export function InstallAppBanner() {
-  const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
+  const [deferredPrompt, setDeferredPrompt] = useState<any>(() => {
+    return typeof window !== 'undefined' ? (window as any).__deferredPrompt : null;
+  });
   const [showBanner, setShowBanner] = useState(false);
   const [installed, setInstalled] = useState(false);
+  const [installSuccess, setInstallSuccess] = useState(false);
 
   useEffect(() => {
+    // Check if dismissed recently in this session
+    const dismissed = sessionStorage.getItem('pwa_banner_dismissed');
+
+    // Also check if already in standalone mode
+    if (
+      typeof window !== 'undefined' &&
+      (window.matchMedia('(display-mode: standalone)').matches || (window.navigator as any).standalone)
+    ) {
+      setInstalled(true);
+      return;
+    }
+
+    if (typeof window !== 'undefined' && (window as any).__deferredPrompt) {
+      setDeferredPrompt((window as any).__deferredPrompt);
+      if (!dismissed) setShowBanner(true);
+    }
+
     const handler = (e: any) => {
       e.preventDefault();
+      (window as any).__deferredPrompt = e;
       setDeferredPrompt(e);
-      setShowBanner(true);
+      if (!dismissed) {
+        setShowBanner(true);
+      }
+    };
+
+    const readyHandler = () => {
+      if (typeof window !== 'undefined' && (window as any).__deferredPrompt) {
+        setDeferredPrompt((window as any).__deferredPrompt);
+        if (!dismissed) setShowBanner(true);
+      }
     };
 
     window.addEventListener('beforeinstallprompt', handler);
-
-    // Also check if already in standalone mode
-    if (window.matchMedia('(display-mode: standalone)').matches || (window.navigator as any).standalone) {
+    window.addEventListener('app-install-ready', readyHandler);
+    window.addEventListener('appinstalled', () => {
       setInstalled(true);
+      setShowBanner(false);
+    });
+
+    if (!dismissed) {
+      const t = setTimeout(() => {
+        setShowBanner(true);
+      }, 2500);
+      return () => {
+        clearTimeout(t);
+        window.removeEventListener('beforeinstallprompt', handler);
+        window.removeEventListener('app-install-ready', readyHandler);
+      };
     }
 
     return () => {
       window.removeEventListener('beforeinstallprompt', handler);
+      window.removeEventListener('app-install-ready', readyHandler);
     };
   }, []);
 
   const handleInstallClick = async () => {
-    if (!deferredPrompt) {
-      // Fallback instruction popup
-      alert("अपने मोबाइल में ऐप इनस्टॉल करने के लिए:\n1. ब्राउज़र मेनू (⋮) पर क्लिक करें।\n2. 'Add to Home screen' या 'Install app' चुनें।");
+    const prompt = deferredPrompt || (typeof window !== 'undefined' ? (window as any).__deferredPrompt : null);
+
+    if (prompt) {
+      try {
+        await prompt.prompt();
+        const { outcome } = await prompt.userChoice;
+        if (outcome === 'accepted') {
+          setInstalled(true);
+          setShowBanner(false);
+        }
+      } catch (err) {
+        console.warn('Install banner error:', err);
+      }
+      setDeferredPrompt(null);
+      if (typeof window !== 'undefined') (window as any).__deferredPrompt = null;
       return;
     }
 
-    deferredPrompt.prompt();
-    const { outcome } = await deferredPrompt.userChoice;
-    if (outcome === 'accepted') {
-      setInstalled(true);
-      setShowBanner(false);
+    // If in WhatsApp / in-app browser on Android
+    const isAndroid = typeof navigator !== 'undefined' && /Android/i.test(navigator.userAgent);
+    const isInApp = typeof navigator !== 'undefined' && /WhatsApp|FBAN|FBAV|Instagram/i.test(navigator.userAgent);
+    if (isAndroid && isInApp) {
+      const fullUrl = window.location.href.replace(/^https?:\/\//, '');
+      window.location.href = `intent://${fullUrl}#Intent;scheme=https;package=com.android.chrome;end`;
+      return;
     }
-    setDeferredPrompt(null);
+
+    // Dismiss banner cleanly
+    setShowBanner(false);
+    sessionStorage.setItem('pwa_banner_dismissed', 'true');
+  };
+
+  const handleDismiss = () => {
+    setShowBanner(false);
+    sessionStorage.setItem('pwa_banner_dismissed', 'true');
   };
 
   if (installed || !showBanner) return null;
 
   return (
-    <div className="fixed bottom-4 left-4 right-4 z-50 max-w-md mx-auto bg-gradient-to-r from-stone-900 via-red-950 to-stone-900 border-2 border-amber-400 text-white p-4 rounded-3xl shadow-2xl backdrop-blur-xl animate-bounce-short flex items-center justify-between gap-3">
+    <div className="fixed bottom-4 left-4 right-4 z-40 max-w-md mx-auto bg-[#FFFFFF] border border-[#EADBB8] text-[#222222] p-3.5 sm:p-4 rounded-3xl shadow-lg backdrop-blur-xl animate-fade-in flex items-center justify-between gap-3">
       <div className="flex items-center gap-3">
-        <AppLogo className="w-12 h-12 ring-2 ring-amber-400 shrink-0 shadow-lg" />
+        <AppLogo className="w-11 h-11 ring-2 ring-[#D8B45A] shrink-0 shadow-xs rounded-2xl" />
         <div>
-          <div className="flex items-center gap-1 text-[10px] font-bold text-amber-400 uppercase tracking-wider">
-            <Sparkles className="w-3 h-3" /> पढ़ेगा BR Mobile App
+          <div className="flex items-center gap-1 text-[10px] font-bold text-[#D8B45A] uppercase tracking-wider">
+            <Sparkles className="w-3 h-3 text-[#D8B45A]" /> वेब ऐप (PWA)
           </div>
-          <h4 className="text-sm font-black text-white">फोन में ऐप इनस्टॉल करें</h4>
-          <p className="text-[11px] text-stone-300">बिना ब्राउज़र के सीधे होम स्क्रीन पर चलाएँ!</p>
+          <h4 className="text-xs sm:text-sm font-black text-[#222222] leading-tight">
+            फोन में ऐप इंस्टॉल करें
+          </h4>
+          <p className="text-[10px] sm:text-[11px] text-[#777777]">
+            सीधे 1-टैप में अपने फोन में जोड़ें
+          </p>
         </div>
       </div>
 
-      <div className="flex items-center gap-2 shrink-0">
+      <div className="flex items-center gap-1.5 shrink-0">
         <button
           onClick={handleInstallClick}
-          className="bg-amber-400 hover:bg-amber-500 text-stone-950 font-black px-4 py-2.5 rounded-xl text-xs shadow-lg cursor-pointer flex items-center gap-1.5 transition-transform active:scale-95"
+          className="bg-[#F8E8B5] hover:bg-[#F3DD9C] border border-[#D8B45A] text-[#222222] font-black px-3.5 py-2 rounded-xl text-xs shadow-xs cursor-pointer flex items-center gap-1.5 transition-transform active:scale-95"
         >
-          <Download className="w-4 h-4" /> इनस्टॉल
+          <Smartphone className="w-3.5 h-3.5 text-[#222222]" />
+          <span>इनस्टॉल</span>
         </button>
         <button
-          onClick={() => setShowBanner(false)}
-          className="text-stone-400 hover:text-white p-1.5 rounded-lg bg-white/10 hover:bg-white/20 transition-colors cursor-pointer"
+          onClick={handleDismiss}
+          className="text-[#777777] hover:text-[#222222] p-1.5 rounded-lg bg-[#FFF4D6] hover:bg-[#F8E8B5] border border-[#EADBB8] transition-colors cursor-pointer"
           title="बंद करें"
         >
           <X className="w-4 h-4" />

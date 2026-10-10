@@ -28,7 +28,7 @@ interface MyCoursesViewProps {
 
 export function MyCoursesView({ onSelectSubject, onOpenVip }: MyCoursesViewProps) {
   const { subjects, paidNotes, loading } = useData();
-  const { isVIP, vipDetails } = useAuth();
+  const { isVIP, vipDetails, isAdmin, hasCrashCourse } = useAuth();
   
   const [activeCourseTab, setActiveCourseTab] = useState<'notes' | 'subjects'>('notes');
   const [selectedSubjectFilter, setSelectedSubjectFilter] = useState<string>('all');

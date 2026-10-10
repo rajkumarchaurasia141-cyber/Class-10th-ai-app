@@ -5,9 +5,18 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
     <title>BSEB GURU - Class 9-10 Topper App</title>
     <meta name="description" content="BSEB GURU - बिहार बोर्ड कक्षा 9वीं और 10वीं (BSEB) संपूर्ण तैयारी, लाइव क्लासेज, नोट्स और 50 MCQ टेस्ट" />
-    <link rel="icon" type="image/svg+xml" href="/app_logo.svg" />
-    <link rel="apple-touch-icon" href="/app_logo.svg" />
+    <link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
     <link rel="manifest" href="/manifest.json" />
+    <script>
+      // Early capture of PWA beforeinstallprompt so it is never missed
+      window.__deferredPrompt = null;
+      window.addEventListener('beforeinstallprompt', function(e) {
+        e.preventDefault();
+        window.__deferredPrompt = e;
+        window.dispatchEvent(new CustomEvent('app-install-ready'));
+      });
+    </script>
     <meta name="theme-color" content="#1e1b4b" />
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-capable" content="yes" />

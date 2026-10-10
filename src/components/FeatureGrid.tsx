@@ -241,11 +241,11 @@ export function FeatureGrid({ onNavigate }: FeatureGridProps) {
     <div className="space-y-2">
       {/* Section Title */}
       <div className="flex items-center justify-between px-1">
-        <h3 className="text-xs font-black text-stone-900 flex items-center gap-1.5">
-          <span className="w-2 h-3.5 rounded-full bg-red-600 inline-block"></span>
+        <h3 className="text-xs font-black text-[#222222] flex items-center gap-1.5">
+          <span className="w-2 h-3.5 rounded-full bg-[#D8B45A] inline-block"></span>
           <span>मुख्य सुविधाएँ & अध्ययन सामग्री</span>
         </h3>
-        <span className="text-[10px] text-stone-500 font-bold">BSEB 10th Special</span>
+        <span className="text-[10px] text-[#777777] font-bold">BSEB 10th Special</span>
       </div>
 
       {/* 3x3 Grid (Matches user screenshot perfectly!) */}
@@ -254,7 +254,7 @@ export function FeatureGrid({ onNavigate }: FeatureGridProps) {
           <div
             key={item.id}
             onClick={() => onNavigate(item.id)}
-            className="group bg-white hover:bg-slate-50/90 rounded-xl p-2 sm:p-2.5 border border-slate-200/80 shadow-2xs hover:shadow-xs transition-all duration-200 cursor-pointer flex flex-col items-center text-center justify-between relative overflow-hidden"
+            className="group bg-[#FFFFFF] hover:bg-[#FFFDF7] rounded-xl p-2 sm:p-2.5 border border-[#EADBB8] shadow-xs hover:shadow-sm transition-all duration-200 cursor-pointer flex flex-col items-center text-center justify-between relative overflow-hidden"
           >
             {/* Top Icon */}
             <div className="pt-0.5">
@@ -263,10 +263,10 @@ export function FeatureGrid({ onNavigate }: FeatureGridProps) {
 
             {/* Labels */}
             <div className="w-full mt-1.5 space-y-0.5">
-              <h4 className="text-[11px] sm:text-xs font-black text-stone-900 tracking-tight leading-tight group-hover:text-red-700 transition-colors">
+              <h4 className="text-[11px] sm:text-xs font-black text-[#222222] tracking-tight leading-tight group-hover:text-[#D8B45A] transition-colors">
                 {item.title}
               </h4>
-              <p className="text-[9px] sm:text-[10px] text-stone-500 font-semibold truncate leading-none">
+              <p className="text-[9px] sm:text-[10px] text-[#777777] font-semibold truncate leading-none">
                 {item.subtitle}
               </p>
             </div>
