@@ -249,6 +249,37 @@ export function DailyQuizView({ onOpenVip, onSelectSubject, onOpenSubject }: Dai
         </div>
       </div>
 
+      {/* Prominent Today's Daily Test Banner */}
+      <div 
+        onClick={() => {
+          try { window.history.pushState({}, '', '/daily-test'); } catch (e) {}
+          window.location.href = '/daily-test';
+        }}
+        className="bg-white border-2 border-[#D8B45A] hover:border-amber-500 rounded-2xl p-3 flex items-center justify-between shadow-xs cursor-pointer transition active:scale-[0.99]"
+      >
+        <div className="flex items-center gap-2.5">
+          <div className="w-9 h-9 rounded-xl bg-[#F8E8B5] border border-[#D8B45A] flex items-center justify-center text-lg shrink-0">
+            🎯
+          </div>
+          <div>
+            <div className="flex items-center gap-1.5">
+              <span className="text-[8px] font-black bg-emerald-100 text-emerald-800 px-1.5 py-0.2 rounded-full uppercase">
+                DAILY TEST
+              </span>
+              <span className="text-[9px] font-black text-[#D8B45A]">
+                /daily-test
+              </span>
+            </div>
+            <div className="text-xs font-black text-stone-900">
+              आज का दैनिक टेस्ट (Daily Test) दें
+            </div>
+          </div>
+        </div>
+        <span className="px-2.5 py-1 rounded-lg bg-[#F8E8B5] text-stone-900 text-[11px] font-black border border-[#D8B45A]">
+          ओपन करें →
+        </span>
+      </div>
+
       {/* View 1: Subject Cards Grid */}
       {!activeSubjectId ? (
         <div className="space-y-3">

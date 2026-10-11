@@ -217,6 +217,22 @@ export function AppDrawer({ isOpen, onClose, onNavigate, onOpenVip, onOpenGmailA
             </button>
 
             <button
+              onClick={() => { onNavigate('daily_test'); onClose(); }}
+              className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-stone-700 hover:bg-amber-50 hover:text-amber-900 font-bold transition-colors cursor-pointer text-left"
+            >
+              <div className="w-8 h-8 rounded-lg bg-amber-100 text-amber-800 flex items-center justify-center shadow-xs">
+                🎯
+              </div>
+              <div className="flex-1">
+                <div className="leading-tight flex items-center gap-1.5">
+                  <span>🎯 दैनिक टेस्ट (Daily Test)</span>
+                  <span className="text-[9px] bg-emerald-100 text-emerald-800 px-1.5 py-0.2 rounded-full font-black">NEW</span>
+                </div>
+                <p className="text-[10px] text-stone-500 font-normal">Class 10th लाइव प्रश्नोत्तरी</p>
+              </div>
+            </button>
+
+            <button
               onClick={() => { onNavigate('course'); onClose(); }}
               className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-stone-700 hover:bg-red-50 hover:text-red-700 font-semibold transition-colors cursor-pointer text-left"
             >
@@ -374,6 +390,19 @@ export function AppDrawer({ isOpen, onClose, onNavigate, onOpenVip, onOpenGmailA
 
           {isAdmin && (
             <div className="pt-3">
+              <button
+                onClick={() => { onNavigate('admin_daily_test'); onClose(); }}
+                className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-amber-900 bg-amber-50 hover:bg-amber-100 font-bold transition-colors cursor-pointer text-left border border-amber-200"
+              >
+                <div className="w-8 h-8 rounded-lg bg-amber-500 text-stone-950 flex items-center justify-center font-black">
+                  📝
+                </div>
+                <div>
+                  <div className="text-xs font-black">दैनिक टेस्ट मैनेजर (Daily Test)</div>
+                  <div className="text-[10px] text-amber-700">/admin/daily-test (प्रश्न डालें)</div>
+                </div>
+              </button>
+
               <button
                 onClick={() => { onNavigate('admin'); onClose(); }}
                 className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl bg-red-900 text-white font-bold transition-colors cursor-pointer text-left shadow-sm"

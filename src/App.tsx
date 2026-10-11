@@ -31,6 +31,8 @@ import { CartoonStudioView } from './components/CartoonStudioView';
 import { PyqView } from './components/PyqView';
 import { CrashCourseView } from './components/CrashCourseView';
 import { LoginScreen } from './components/LoginScreen';
+import { AdminDailyTestPage } from './components/AdminDailyTestPage';
+import { StudentDailyTestPage } from './components/StudentDailyTestPage';
 
 // Password check logic function as requested
 function checkAdminSecret(enteredPass: string): boolean {
@@ -77,6 +79,10 @@ function MainApp() {
     };
   }, []);
   
+  const isAdminDailyTestQuery = typeof window !== 'undefined' && 
+    (window.location.pathname === '/admin/daily-test' || window.location.pathname.endsWith('/admin/daily-test') || window.location.search.includes('tab=admin_daily_test'));
+  const isDailyTestQuery = typeof window !== 'undefined' && 
+    (window.location.pathname === '/daily-test' || window.location.pathname.endsWith('/daily-test') || window.location.search.includes('tab=daily_test'));
   const isAdminQuery = typeof window !== 'undefined' && 
     (window.location.pathname === '/admin' || window.location.pathname.endsWith('/admin') || window.location.search.includes('tab=admin'));
   const isAboutQuery = typeof window !== 'undefined' && window.location.pathname.includes('/about');
@@ -84,6 +90,8 @@ function MainApp() {
   const isPrivacyQuery = typeof window !== 'undefined' && window.location.pathname.includes('/privacy');
 
   const getInitialTab = () => {
+    if (isAdminDailyTestQuery) return 'admin_daily_test';
+    if (isDailyTestQuery) return 'daily_test';
     if (isAboutQuery) return 'about';
     if (isContactQuery) return 'contact';
     if (isPrivacyQuery) return 'privacy';
@@ -126,7 +134,13 @@ function MainApp() {
       setSelectedSubject(null);
       setActiveTab(tab);
       try {
-        const path = tab === 'about' ? '/about' : tab === 'contact' ? '/contact' : tab === 'privacy' ? '/privacy-policy' : tab === 'admin' ? '/admin' : '/';
+        const path = tab === 'about' ? '/about' 
+          : tab === 'contact' ? '/contact' 
+          : tab === 'privacy' ? '/privacy-policy' 
+          : tab === 'admin' ? '/admin' 
+          : tab === 'admin_daily_test' ? '/admin/daily-test' 
+          : tab === 'daily_test' ? '/daily-test' 
+          : '/';
         window.history.pushState({}, '', path);
       } catch (e) {}
       mainScrollRef.current?.scrollTo({ top: 0, left: 0, behavior: 'instant' });
@@ -138,8 +152,38 @@ function MainApp() {
     setActiveTab('admin');
   };
 
-  // Show Login Screen first for new or unauthenticated users
+  // Direct access for Daily Test and Admin Daily Test without requiring auth
   if (!user) {
+    if (activeTab === 'daily_test' || isDailyTestQuery) {
+      return (
+        <StudentDailyTestPage 
+          onBack={() => {
+            try { window.history.pushState({}, '', '/'); } catch (e) {}
+            setActiveTab('home');
+          }}
+          onNavigateToAdmin={() => {
+            try { window.history.pushState({}, '', '/admin/daily-test'); } catch (e) {}
+            setActiveTab('admin_daily_test');
+          }}
+        />
+      );
+    }
+
+    if (activeTab === 'admin_daily_test' || isAdminDailyTestQuery) {
+      return (
+        <AdminDailyTestPage 
+          onBack={() => {
+            try { window.history.pushState({}, '', '/'); } catch (e) {}
+            setActiveTab('home');
+          }}
+          onNavigateToStudent={() => {
+            try { window.history.pushState({}, '', '/daily-test'); } catch (e) {}
+            setActiveTab('daily_test');
+          }}
+        />
+      );
+    }
+
     return <LoginScreen />;
   }
 
@@ -150,6 +194,12 @@ function MainApp() {
         break;
       case 'course':
         handleTabChange('my_courses');
+        break;
+      case 'daily_test':
+        handleTabChange('daily_test');
+        break;
+      case 'admin_daily_test':
+        handleTabChange('admin_daily_test');
         break;
       case 'live':
         handleTabChange('live');
@@ -270,6 +320,20 @@ function MainApp() {
                 setSelectedSubject(id);
                 setActiveTab('explorer');
               }}
+            />
+          )}
+
+          {activeTab === 'daily_test' && (
+            <StudentDailyTestPage 
+              onBack={() => handleTabChange('home')}
+              onNavigateToAdmin={() => handleTabChange('admin_daily_test')}
+            />
+          )}
+
+          {activeTab === 'admin_daily_test' && (
+            <AdminDailyTestPage 
+              onBack={() => handleTabChange(isAdmin ? 'admin' : 'home')}
+              onNavigateToStudent={() => handleTabChange('daily_test')}
             />
           )}
 

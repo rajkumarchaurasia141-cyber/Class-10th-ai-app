@@ -46,6 +46,7 @@ import { CartoonStudioView } from './CartoonStudioView';
 import { AdminPyqManager } from './AdminPyqManager';
 import { AdminCrashCourseManager } from './AdminCrashCourseManager';
 import { AdminNewCrashCourseRecords } from './AdminNewCrashCourseRecords';
+import { AdminDailyTestPage } from './AdminDailyTestPage';
 import { Radio, Calendar, Bell, Layout, Smartphone, Eye, Zap } from 'lucide-react';
 import { calculateVipExpiry } from '../utils/vipHelper';
 
@@ -59,7 +60,7 @@ const PRESET_SUBJECTS = [
 
 export function AdminPanel({ onBack }: any) {
   const { refreshData } = useData();
-  const [activeTab, setActiveTab] = useState<'requests' | 'crash_course_records' | 'students' | 'vip' | 'content' | 'pdf_notes' | 'live_classes' | 'live_attendance' | 'routine' | 'quotes' | 'notifications' | 'settings' | 'banners' | 'admins' | 'apk' | 'sync' | 'master' | 'courses' | 'ai_studio' | 'cartoon_studio' | 'pyq_manager' | 'crash_course'>('requests');
+  const [activeTab, setActiveTab] = useState<'requests' | 'daily_test' | 'crash_course_records' | 'students' | 'vip' | 'content' | 'pdf_notes' | 'live_classes' | 'live_attendance' | 'routine' | 'quotes' | 'notifications' | 'settings' | 'banners' | 'admins' | 'apk' | 'sync' | 'master' | 'courses' | 'ai_studio' | 'cartoon_studio' | 'pyq_manager' | 'crash_course'>('requests');
   const [pendingRequestsCount, setPendingRequestsCount] = useState<number>(0);
   const [pendingCrashCourseCount, setPendingCrashCourseCount] = useState<number>(0);
 
@@ -483,6 +484,7 @@ export function AdminPanel({ onBack }: any) {
             className="w-full bg-stone-950 border border-stone-800 rounded-2xl px-4 py-4 text-white text-sm font-black focus:border-amber-500 focus:outline-none shadow-xl cursor-pointer"
           >
             <option value="requests">📥 पेमेंट रिक्वेस्ट (फुल कोर्स) {pendingRequestsCount > 0 ? `(${pendingRequestsCount})` : ''}</option>
+            <option value="daily_test">📝 डेली टेस्ट (/admin/daily-test) ★ NEW</option>
             <option value="crash_course_records">⚡ न्यू क्रैश कोर्स रिकॉर्ड {pendingCrashCourseCount > 0 ? `(${pendingCrashCourseCount})` : ''}</option>
             <option value="students">👥 पंजीकृत छात्र</option>
             <option value="pdf_notes">📄 Paid PDF नोट्स</option>
@@ -522,6 +524,18 @@ export function AdminPanel({ onBack }: any) {
                 {pendingRequestsCount}
               </span>
             )}
+          </button>
+          <button 
+            onClick={() => setActiveTab('daily_test')} 
+            className={`pb-3 px-4 font-bold text-sm flex items-center gap-2 transition-colors cursor-pointer whitespace-nowrap relative ${
+              activeTab === 'daily_test' ? 'border-b-2 border-amber-500 text-amber-500' : 'text-stone-400 hover:text-stone-200'
+            }`}
+          >
+            <span className="text-base">📝</span>
+            <span>डेली टेस्ट (/admin/daily-test)</span>
+            <span className="bg-amber-500 text-stone-950 text-[10px] font-black px-1.5 py-0.2 rounded-full">
+              NEW
+            </span>
           </button>
           <button 
             onClick={() => setActiveTab('crash_course_records')} 
@@ -717,6 +731,16 @@ export function AdminPanel({ onBack }: any) {
 
         {/* Payment Requests (Screenshots) Tab */}
         {activeTab === 'requests' && <AdminPaymentRequests />}
+
+        {/* Daily Test (Zero Backend / LocalStorage) Tab */}
+        {activeTab === 'daily_test' && (
+          <div className="relative z-10">
+            <AdminDailyTestPage 
+              onBack={() => setActiveTab('requests')}
+              onNavigateToStudent={() => { window.location.href = '/daily-test'; }}
+            />
+          </div>
+        )}
 
         {/* New Crash Course Records Tab */}
         {activeTab === 'crash_course_records' && (

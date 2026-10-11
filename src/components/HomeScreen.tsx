@@ -126,13 +126,22 @@ export function HomeScreen({ onSelect, onOpenSubject, onNavigateTab, onOpenVip }
               </p>
             </div>
           </div>
-          <button
-            onClick={() => onNavigateTab && onNavigateTab('admin')}
-            className="px-2.5 py-1 bg-[#F8E8B5] hover:bg-[#F3DD9C] border border-[#D8B45A] text-[#222222] font-black text-[10px] rounded-lg transition-all flex items-center gap-1 shrink-0 cursor-pointer shadow-xs ml-2"
-          >
-            <span>एडमिन पैनल</span>
-            <ArrowRight className="w-3 h-3 text-[#222222]" />
-          </button>
+          <div className="flex items-center gap-1.5">
+            <button
+              onClick={() => onNavigateTab && onNavigateTab('admin_daily_test')}
+              className="px-2 py-1 bg-amber-400 hover:bg-amber-500 text-stone-950 font-black text-[10px] rounded-lg transition-all flex items-center gap-1 shrink-0 cursor-pointer shadow-xs"
+              title="Daily Test Manager"
+            >
+              <span>📝 डेली टेस्ट</span>
+            </button>
+            <button
+              onClick={() => onNavigateTab && onNavigateTab('admin')}
+              className="px-2.5 py-1 bg-[#F8E8B5] hover:bg-[#F3DD9C] border border-[#D8B45A] text-[#222222] font-black text-[10px] rounded-lg transition-all flex items-center gap-1 shrink-0 cursor-pointer shadow-xs ml-1"
+            >
+              <span>एडमिन पैनल</span>
+              <ArrowRight className="w-3 h-3 text-[#222222]" />
+            </button>
+          </div>
         </div>
       )}
 
@@ -156,6 +165,38 @@ export function HomeScreen({ onSelect, onOpenSubject, onNavigateTab, onOpenVip }
           </p>
         </div>
       )}
+
+      {/* 1.8 Daily Test Prominent Card */}
+      <div 
+        onClick={() => onNavigateTab && onNavigateTab('daily_test')}
+        className="bg-white border-2 border-[#D8B45A] hover:border-amber-500 rounded-2xl p-2.5 sm:p-3 flex items-center justify-between shadow-xs cursor-pointer transition active:scale-[0.99]"
+      >
+        <div className="flex items-center gap-2.5 min-w-0">
+          <div className="w-10 h-10 rounded-xl bg-[#F8E8B5] border border-[#D8B45A] flex items-center justify-center text-xl shrink-0 shadow-2xs">
+            🎯
+          </div>
+          <div className="min-w-0">
+            <div className="flex items-center gap-1.5">
+              <span className="text-[8px] font-black uppercase text-emerald-800 bg-emerald-100 px-1.5 py-0.2 rounded-full">
+                TODAY LIVE
+              </span>
+              <span className="text-[9px] font-black text-[#D8B45A]">
+                बिहार बोर्ड 10th
+              </span>
+            </div>
+            <h4 className="text-xs sm:text-sm font-black text-[#222222] truncate mt-0.5">
+              आज का दैनिक टेस्ट (Daily Test)
+            </h4>
+            <p className="text-[10px] text-[#777777] truncate">
+              रोज नए VVI प्रश्न हल करें और लाइव स्कोर देखें
+            </p>
+          </div>
+        </div>
+        <div className="shrink-0 flex items-center gap-1 px-3 py-1.5 rounded-xl bg-[#F8E8B5] hover:bg-[#F3DD9C] text-stone-900 border border-[#D8B45A] font-black text-[11px] shadow-2xs">
+          <span>टेस्ट दें</span>
+          <ArrowRight className="w-3 h-3" />
+        </div>
+      </div>
 
       {/* 2. 3x3 Feature Grid (All 9 icons visible right on the screen) */}
       <FeatureGrid onNavigate={handleFeatureNavigate} />
