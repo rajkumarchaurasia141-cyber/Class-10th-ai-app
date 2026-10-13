@@ -1,10 +1,11 @@
 export interface TestQuestion {
-  id: number;
+  id: number | string;
   subject: string;
   chapter: string;
   question: string;
-  options: [string, string, string, string];
+  options: string[] | [string, string, string, string];
   correct_answer: number; // 0, 1, 2, 3
+  correctIndex?: number;
   explanation: string;
 }
 

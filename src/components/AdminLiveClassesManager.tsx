@@ -28,13 +28,15 @@ import { LiveClass, LiveWatchRecord } from '../types';
 import { ClassAttendanceModal } from './ClassAttendanceModal';
 import { subscribeClassAttendance, DEFAULT_BATCH_STUDENTS } from '../services/attendanceTracker';
 import { extractYouTubeVideoId } from '../utils/youtubeHelper';
+import { LIVE_PLAYLISTS, getPlaylistIdForClass } from '../utils/liveClassPlaylists';
 
 export function AdminLiveClassesManager() {
   const { liveClasses, addLiveClass, updateLiveClass, deleteLiveClass } = useData();
 
   const [title, setTitle] = useState('');
   const [youtubeUrl, setYoutubeUrl] = useState('');
-  const [subjectName, setSubjectName] = useState('संस्कृत');
+  const [subjectName, setSubjectName] = useState('VVI & Trick Classes');
+  const [adminPlaylistFilter, setAdminPlaylistFilter] = useState<string>('all');
   const [teacherName, setTeacherName] = useState('राज सर');
   const [publishType, setPublishType] = useState<'instant' | 'scheduled'>('instant');
   const [scheduledDate, setScheduledDate] = useState(() => new Date().toISOString().split('T')[0]);
@@ -112,10 +114,20 @@ export function AdminLiveClassesManager() {
       const cleanVideoId = extractYouTubeVideoId(youtubeUrl);
       const cleanUrl = cleanVideoId ? `https://www.youtube.com/watch?v=${cleanVideoId}` : youtubeUrl.trim();
 
+      const computedPlaylistId = subjectName === 'VVI & Trick Classes' ? 'vvi_tricks'
+        : (subjectName.includes('हिन्दी') || subjectName.includes('हिंदी')) ? 'hindi'
+        : (subjectName.includes('गणित') || subjectName.includes('Math')) ? 'math'
+        : (subjectName.includes('विज्ञान') && !subjectName.includes('सामाजिक')) ? 'science'
+        : (subjectName.includes('सामाजिक') || subjectName.includes('SST')) ? 'social_science'
+        : subjectName.includes('संस्कृत') ? 'sanskrit'
+        : subjectName.includes('अंग्रेजी') ? 'english'
+        : 'general';
+
       await addLiveClass({
         title: title.trim(),
         youtubeUrl: cleanUrl,
         subjectName,
+        playlistId: computedPlaylistId,
         teacherName: teacherName.trim() || 'राज सर',
         scheduledAt: scheduledAt.trim() || (publishType === 'instant' ? 'अभी लाइव' : 'शेड्यूल्ड'),
         isLive: publishType === 'instant' ? isLive : false,
@@ -323,20 +335,24 @@ export function AdminLiveClassesManager() {
           </div>
 
           <div className="space-y-1.5">
-            <label className="text-xs font-bold text-stone-300">विषय (Subject)</label>
+            <label className="text-xs font-bold text-stone-300">विषय / प्लेलिस्ट (Subject / Playlist)</label>
             <select
               value={subjectName}
               onChange={(e) => setSubjectName(e.target.value)}
-              className="w-full bg-stone-900 border border-stone-800 rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none focus:border-red-500"
+              className="w-full bg-stone-900 border border-stone-800 rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none focus:border-red-500 font-bold"
             >
-              <option value="संस्कृत">संस्कृत (Sanskrit)</option>
-              <option value="विज्ञान">विज्ञान (Science)</option>
-              <option value="गणित">गणित (Math)</option>
-              <option value="हिन्दी">हिन्दी (Hindi)</option>
-              <option value="सामाजिक विज्ञान">सामाजिक विज्ञान (Social Science)</option>
-              <option value="अंग्रेजी">अंग्रेजी (English)</option>
-              <option value="सामान्य">सामान्य (General / Topper Tips)</option>
+              <option value="VVI & Trick Classes">🔥 VVI & Trick Classes (रामबाण ट्रिक्स प्लेलिस्ट)</option>
+              <option value="हिन्दी">📖 हिन्दी (Hindi Live & Recorded Playlist)</option>
+              <option value="गणित">📐 गणित (Mathematics Live & Recorded Playlist)</option>
+              <option value="विज्ञान">🔬 विज्ञान (Science Live & Recorded Playlist)</option>
+              <option value="सामाजिक विज्ञान">🏛️ सामाजिक विज्ञान (SST Live & Recorded Playlist)</option>
+              <option value="संस्कृत">🪔 संस्कृत (Sanskrit Live & Recorded Playlist)</option>
+              <option value="अंग्रेजी">🔤 अंग्रेजी (English Live & Recorded Playlist)</option>
+              <option value="सामान्य">🎯 सामान्य / टॉपर्स गाइड (General / Motivation)</option>
             </select>
+            <p className="text-[10px] text-amber-400 font-semibold">
+              💡 यह क्लास सीधे छात्र ऐप में उसी विषय की प्लेलिस्ट (उदा: हिन्दी, गणित या VVI ट्रिक्स) में स्वतः जुड़ जाएगी।
+            </p>
           </div>
 
           <div className="space-y-1.5">
@@ -429,33 +445,90 @@ export function AdminLiveClassesManager() {
         </button>
       </form>
 
-      {/* Existing Classes List */}
+        {/* Existing Classes List */}
       <div className="bg-stone-950 p-6 rounded-3xl border border-stone-800 space-y-4">
-        <h4 className="text-sm font-bold text-white flex items-center justify-between">
-          <span className="flex items-center gap-2">
-            <PlaySquare className="w-4 h-4 text-red-500" /> प्रकाशित लाइव व रिकॉर्डेड क्लासेस ({liveClasses.length})
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+          <h4 className="text-sm font-bold text-white flex items-center gap-2">
+            <PlaySquare className="w-4 h-4 text-red-500" /> 
+            <span>प्रकाशित क्लासेस ({liveClasses.length})</span>
+          </h4>
+          <span className="text-[11px] text-stone-400">
+            दिखाई दे रही: <b>{liveClasses.filter(c => adminPlaylistFilter === 'all' || getPlaylistIdForClass(c) === adminPlaylistFilter).length}</b>
           </span>
-        </h4>
+        </div>
+
+        {/* Playlist filter chips */}
+        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none text-xs">
+          <button
+            type="button"
+            onClick={() => setAdminPlaylistFilter('all')}
+            className={`px-3 py-1.5 rounded-xl font-bold whitespace-nowrap transition-colors cursor-pointer ${
+              adminPlaylistFilter === 'all'
+                ? 'bg-red-600 text-white shadow-xs'
+                : 'bg-stone-900 border border-stone-800 text-stone-400 hover:text-stone-200'
+            }`}
+          >
+            सभी ({liveClasses.length})
+          </button>
+          {LIVE_PLAYLISTS.map((pl) => {
+            const count = liveClasses.filter(c => getPlaylistIdForClass(c) === pl.id).length;
+            const isSelected = adminPlaylistFilter === pl.id;
+            return (
+              <button
+                key={pl.id}
+                type="button"
+                onClick={() => setAdminPlaylistFilter(pl.id)}
+                className={`px-3 py-1.5 rounded-xl font-bold whitespace-nowrap transition-all cursor-pointer flex items-center gap-1 ${
+                  isSelected
+                    ? pl.isSpecial
+                      ? 'bg-amber-400 text-stone-950 font-black shadow-xs'
+                      : 'bg-amber-600 text-white font-black shadow-xs'
+                    : 'bg-stone-900 border border-stone-800 text-stone-400 hover:text-stone-200'
+                }`}
+              >
+                <span>{pl.shortLabel}</span>
+                <span className={`text-[10px] px-1.5 py-0.2 rounded-full ${
+                  isSelected ? 'bg-black/20 text-current' : 'bg-stone-800 text-stone-400'
+                }`}>
+                  {count}
+                </span>
+              </button>
+            );
+          })}
+        </div>
 
         <div className="space-y-3">
-          {liveClasses.length === 0 ? (
+          {liveClasses.filter(c => adminPlaylistFilter === 'all' || getPlaylistIdForClass(c) === adminPlaylistFilter).length === 0 ? (
             <div className="text-center py-8 text-stone-500 text-xs">
-              कोई लाइव क्लास नहीं है। ऊपर दिए गए फॉर्म से नई क्लास जोड़ें।
+              इस प्लेलिस्ट में अभी कोई क्लास नहीं है। ऊपर दिए गए फॉर्म से क्लास जोड़ें।
             </div>
           ) : (
-            liveClasses.map((cls) => (
+            liveClasses
+              .filter(c => adminPlaylistFilter === 'all' || getPlaylistIdForClass(c) === adminPlaylistFilter)
+              .map((cls) => {
+                const playlist = LIVE_PLAYLISTS.find(p => p.id === getPlaylistIdForClass(cls)) || LIVE_PLAYLISTS[0];
+                return (
               <div
                 key={cls.id}
                 className="bg-stone-900 border border-stone-800 rounded-2xl p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3"
               >
                 <div className="space-y-1 overflow-hidden">
                   <div className="flex items-center gap-2 flex-wrap">
+                    {/* Playlist Ribbon */}
+                    <span className={`text-[10px] font-black px-2 py-0.5 rounded-md flex items-center gap-1 ${
+                      playlist.isSpecial 
+                        ? 'bg-amber-500/20 text-amber-300 border border-amber-400/40' 
+                        : 'bg-blue-500/20 text-blue-300 border border-blue-500/30'
+                    }`}>
+                      📁 {playlist.shortLabel} प्लेलिस्ट
+                    </span>
+
                     {cls.publishType === 'scheduled' && cls.scheduledDateTime && new Date(cls.scheduledDateTime).getTime() > Date.now() ? (
                       <span className="bg-amber-500/20 text-amber-300 border border-amber-500/40 text-[10px] font-black px-2.5 py-0.5 rounded-full flex items-center gap-1 animate-pulse">
                         <Clock className="w-3 h-3 text-amber-400" /> ⏳ शेड्यूल्ड (तय समय पर चालू होगा)
                       </span>
                     ) : cls.isLive ? (
-                      <span className="bg-red-500/20 text-red-400 border border-red-500/30 text-[10px] font-black px-2 py-0.5 rounded-full flex items-center gap-1">
+                      <span className="bg-red-500/20 text-red-400 border border-red-500/30 text-[10px] font-black px-2.5 py-0.5 rounded-full flex items-center gap-1">
                         <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-ping" /> LIVE
                       </span>
                     ) : (
@@ -552,8 +625,9 @@ export function AdminLiveClassesManager() {
                   </button>
                 </div>
               </div>
-            ))
-          )}
+            );
+          })
+        )}
         </div>
       </div>
 

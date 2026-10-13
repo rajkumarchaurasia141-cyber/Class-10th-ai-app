@@ -49,8 +49,8 @@ export function AdminBannersManager() {
     setSubtitle(b.subtitle);
     setOldPrice(b.oldPrice);
     setNewPrice(b.newPrice);
-    setActionText(b.actionText);
-    setActionSub(b.actionSub);
+    setActionText(b.actionText || '');
+    setActionSub(b.actionSub || '');
     setFeaturesInput(b.features.join(', '));
     setSubjectsInput(b.subjects.join(', '));
     setBgGradient(b.bgGradient || 'from-red-900 via-stone-900 to-red-950');

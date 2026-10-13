@@ -60,7 +60,7 @@ const PRESET_SUBJECTS = [
 
 export function AdminPanel({ onBack }: any) {
   const { refreshData } = useData();
-  const [activeTab, setActiveTab] = useState<'requests' | 'daily_test' | 'crash_course_records' | 'students' | 'vip' | 'content' | 'pdf_notes' | 'live_classes' | 'live_attendance' | 'routine' | 'quotes' | 'notifications' | 'settings' | 'banners' | 'admins' | 'apk' | 'sync' | 'master' | 'courses' | 'ai_studio' | 'cartoon_studio' | 'pyq_manager' | 'crash_course'>('requests');
+  const [activeTab, setActiveTab] = useState<'requests' | 'daily_test' | 'daily_quizzes' | 'crash_course_records' | 'students' | 'vip' | 'content' | 'pdf_notes' | 'live_classes' | 'live_attendance' | 'routine' | 'quotes' | 'notifications' | 'settings' | 'banners' | 'admins' | 'apk' | 'sync' | 'master' | 'courses' | 'ai_studio' | 'cartoon_studio' | 'pyq_manager' | 'crash_course'>('requests');
   const [pendingRequestsCount, setPendingRequestsCount] = useState<number>(0);
   const [pendingCrashCourseCount, setPendingCrashCourseCount] = useState<number>(0);
 

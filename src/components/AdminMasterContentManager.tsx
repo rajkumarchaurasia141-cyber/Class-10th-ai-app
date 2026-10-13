@@ -203,12 +203,12 @@ export function AdminMasterContentManager() {
               {(subjectsArray || []).map((subj) => (
                 <div key={subj.id} className="bg-slate-50 border border-slate-200 rounded-2xl p-4 space-y-2">
                   <div className="flex items-center justify-between">
-                    <span className="text-xs font-black text-stone-900">{subj.name}</span>
+                    <span className="text-xs font-black text-stone-900">{subj.subject_name || subj.name}</span>
                     <span className="bg-indigo-100 text-indigo-800 text-[10px] font-bold px-2 py-0.5 rounded">
                       {subj.chapters?.length || 0} चैप्टर्स
                     </span>
                   </div>
-                  <p className="text-[11px] text-stone-600">{subj.hindi} • {subj.subtitle}</p>
+                  <p className="text-[11px] text-stone-600">{subj.subject_name_hindi || subj.hindi || ''} {subj.subtitle ? `• ${subj.subtitle}` : ''}</p>
                   <div className="pt-1 text-[11px] text-emerald-700 font-bold">
                     फीचर्ड विषय • लाइव एवं नोट्स उपलब्ध
                   </div>

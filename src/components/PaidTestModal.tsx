@@ -19,6 +19,8 @@ import {
 } from 'lucide-react';
 import { PAID_TEST_50_QUESTIONS, TestQuestion } from '../data/paidTestQuestions';
 
+export type { TestQuestion };
+
 export interface GenericTestQuestion {
   id: number | string;
   subject?: string;
@@ -496,7 +498,7 @@ export function PaidTestModal({
                     <button
                       onClick={() => {
                         setShowConfirmSubmit(false);
-                        showAdOnTestEnd();
+                        setSubmitted(true);
                       }}
                       className="px-5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-sm cursor-pointer"
                     >

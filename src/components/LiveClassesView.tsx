@@ -26,13 +26,23 @@ import {
   Users,
   Eye,
   ExternalLink,
-  RefreshCw
+  RefreshCw,
+  Calculator,
+  Atom,
+  Landmark,
+  Compass,
+  Flame,
+  ChevronRight,
+  Layers,
+  BookOpen,
+  Award
 } from 'lucide-react';
 import { useData } from '../context/DataContext';
 import { useAuth } from '../context/AuthContext';
 import { LiveClass, LiveWatchRecord } from '../types';
 import { ClassAttendanceModal } from './ClassAttendanceModal';
 import { SmartAiBoardPlayer } from './SmartAiBoardPlayer';
+import { LIVE_PLAYLISTS, getPlaylistIdForClass, getPlaylistClasses, PlaylistDef } from '../utils/liveClassPlaylists';
 import { extractYouTubeVideoId, getYouTubeEmbedUrl, getYouTubeDirectWatchUrl } from '../utils/youtubeHelper';
 import { 
   syncWatchHeartbeat, 
@@ -52,6 +62,8 @@ export function LiveClassesView({ onOpenVip }: LiveClassesViewProps) {
   const [selectedClass, setSelectedClass] = useState<LiveClass | null>(null);
   const [lockedClassPrompt, setLockedClassPrompt] = useState<LiveClass | null>(null);
   const [activeFilter, setActiveFilter] = useState<'all' | 'free' | 'vip'>('all');
+  const [selectedPlaylistId, setSelectedPlaylistId] = useState<'all' | string>('all');
+  const [playlistSubFilter, setPlaylistSubFilter] = useState<'all' | 'live' | 'recorded' | 'free' | 'vip'>('all');
 
   // Attendance & Watch-Time State
   const [activeAttendanceRecords, setActiveAttendanceRecords] = useState<LiveWatchRecord[]>([]);
@@ -322,14 +334,190 @@ export function LiveClassesView({ onOpenVip }: LiveClassesViewProps) {
 
   const freeCount = liveClasses.filter(c => !c.isVip).length;
   const vipCount = liveClasses.filter(c => c.isVip).length;
-
-  const filteredClasses = liveClasses.filter((cls) => {
-    if (activeFilter === 'free') return !cls.isVip;
-    if (activeFilter === 'vip') return cls.isVip;
-    return true;
-  });
+  const liveCount = liveClasses.filter(c => c.isLive).length;
+  const activeLiveNowClasses = liveClasses.filter(c => c.isLive);
 
   const whatsappNumber = appConfig.whatsappNumber || '9241511070';
+
+  const renderPlaylistIcon = (iconName: string, className = "w-4 h-4") => {
+    switch (iconName) {
+      case 'zap': return <Zap className={className} />;
+      case 'book': return <BookOpen className={className} />;
+      case 'calculator': return <Calculator className={className} />;
+      case 'atom': return <Atom className={className} />;
+      case 'landmark': return <Landmark className={className} />;
+      case 'award': return <Award className={className} />;
+      case 'languages': return <Languages className={className} />;
+      case 'sparkles': return <Sparkles className={className} />;
+      default: return <Video className={className} />;
+    }
+  };
+
+  // Reusable Class Item Card
+  const renderClassItem = (cls: LiveClass, index?: number, showPlaylistBadge = false) => {
+    const hasAccess = userCanAccess(cls);
+    const clsPlaylist = LIVE_PLAYLISTS.find(p => p.id === getPlaylistIdForClass(cls)) || LIVE_PLAYLISTS[0];
+
+    return (
+      <div
+        key={cls.id}
+        onClick={() => handleWatchClass(cls)}
+        className={`bg-white hover:bg-slate-50 border rounded-2xl p-3.5 transition-all shadow-xs hover:shadow-md cursor-pointer flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 group relative overflow-hidden ${
+          cls.isVip 
+            ? 'border-amber-300/80 bg-gradient-to-r from-amber-500/5 via-white to-white' 
+            : 'border-emerald-300/80 bg-gradient-to-r from-emerald-500/5 via-white to-white'
+        }`}
+      >
+        {/* Access Ribbon Top Right */}
+        {cls.isVip ? (
+          <span className={`absolute -top-1 -right-1 text-[9px] font-black px-2.5 py-0.5 rounded-bl-lg shadow-xs flex items-center gap-1 ${
+            hasAccess 
+              ? 'bg-amber-500 text-stone-950' 
+              : 'bg-red-600 text-white animate-pulse'
+          }`}>
+            {hasAccess ? (
+              <>
+                <Crown className="w-2.5 h-2.5" />
+                <span>VIP अनलॉक</span>
+              </>
+            ) : (
+              <>
+                <Lock className="w-2.5 h-2.5" />
+                <span>केवल VIP लॉक्ड</span>
+              </>
+            )}
+          </span>
+        ) : (
+          <span className="absolute -top-1 -right-1 bg-emerald-600 text-white text-[9px] font-black px-2.5 py-0.5 rounded-bl-lg shadow-xs flex items-center gap-1">
+            <Gift className="w-2.5 h-2.5" />
+            <span>फ्री डेमो</span>
+          </span>
+        )}
+
+        <div className="flex items-start gap-3 w-full sm:w-auto">
+          {/* Lecture Sequence & Video Icon */}
+          <div className="relative shrink-0">
+            <div className={`w-13 h-13 rounded-2xl border flex items-center justify-center font-bold shrink-0 group-hover:scale-105 transition-transform relative overflow-hidden ${
+              cls.isVip
+                ? (hasAccess ? 'bg-amber-50 text-amber-700 border-amber-200' : 'bg-stone-900 text-amber-400 border-amber-500/50')
+                : 'bg-emerald-50 text-emerald-700 border-emerald-200'
+            }`}>
+              {cls.isVip && !hasAccess ? (
+                <Lock className="w-6 h-6 text-amber-400" />
+              ) : (
+                <Video className={`w-6 h-6 ${cls.isVip ? 'text-amber-700' : 'text-emerald-700'}`} />
+              )}
+
+              {cls.isLive && (
+                <span className="absolute bottom-1 bg-red-600 text-white text-[8px] font-black px-1 rounded animate-pulse">
+                  LIVE
+                </span>
+              )}
+            </div>
+
+            {typeof index === 'number' && (
+              <span className="absolute -bottom-1 -left-1 bg-stone-900 text-amber-400 text-[9px] font-black px-1.5 py-0.2 rounded-md border border-stone-700 shadow-xs">
+                #{index + 1}
+              </span>
+            )}
+          </div>
+
+          <div className="space-y-1 overflow-hidden flex-1">
+            <div className="flex items-center gap-1.5 flex-wrap">
+              {showPlaylistBadge && (
+                <span className={`text-[9.5px] font-black px-2 py-0.5 rounded-md flex items-center gap-1 ${
+                  clsPlaylist.isSpecial 
+                    ? 'bg-amber-100 text-amber-900 border border-amber-300' 
+                    : 'bg-blue-50 text-blue-900 border border-blue-200'
+                }`}>
+                  {renderPlaylistIcon(clsPlaylist.iconName, "w-3 h-3")}
+                  <span>{clsPlaylist.shortLabel}</span>
+                </span>
+              )}
+
+              {isClassScheduledFuture(cls) ? (
+                <span className="bg-amber-100 text-amber-900 border border-amber-300 text-[10px] font-black px-2 py-0.5 rounded-md flex items-center gap-1 animate-pulse">
+                  <Clock className="w-3 h-3 text-amber-700" /> ⏳ शेड्यूल्ड ({cls.scheduledAt})
+                </span>
+              ) : cls.isLive ? (
+                <span className="bg-red-100 text-red-700 text-[10px] font-extrabold px-2 py-0.5 rounded-md flex items-center gap-1">
+                  <span className="w-1.5 h-1.5 rounded-full bg-red-600 animate-ping" /> लाइव क्लास
+                </span>
+              ) : (
+                <span className="bg-stone-100 text-stone-600 text-[10px] font-bold px-2 py-0.5 rounded-md">
+                  रिकॉर्डेड क्लास
+                </span>
+              )}
+
+              <span className="bg-amber-50 text-amber-800 text-[10px] font-bold px-2 py-0.5 rounded-md border border-amber-100">
+                {cls.subjectName}
+              </span>
+
+              <span className="bg-stone-100 text-stone-700 text-[10px] font-bold px-2 py-0.5 rounded-md flex items-center gap-1">
+                <Languages className="w-3 h-3 text-stone-500" />
+                <span>{cls.language === 'english' ? '🇬🇧 English' : '🇮🇳 हिंदी'}</span>
+              </span>
+
+              <span className="text-[11px] text-stone-400 flex items-center gap-1">
+                <User className="w-3 h-3" /> {cls.teacherName}
+              </span>
+
+              <span className="text-[11px] text-stone-400 flex items-center gap-1">
+                <Calendar className="w-3 h-3" /> {cls.scheduledAt}
+              </span>
+            </div>
+
+            <h4 className="font-extrabold text-stone-900 text-sm group-hover:text-red-700 transition-colors leading-snug">
+              {cls.title}
+            </h4>
+
+            {cls.description && (
+              <p className="text-xs text-stone-500 line-clamp-1">
+                {cls.description}
+              </p>
+            )}
+
+            {/* Notice if locked */}
+            {cls.isVip && !hasAccess && (
+              <p className="text-[11px] text-amber-800 font-bold flex items-center gap-1">
+                <Lock className="w-3 h-3 text-amber-700" />
+                <span>यह क्लास केवल पेड (VIP) छात्रों के लिए सुरक्षित है।</span>
+              </p>
+            )}
+          </div>
+        </div>
+
+        {/* Action Button */}
+        <div className="flex items-center gap-2 self-end sm:self-center shrink-0 w-full sm:w-auto justify-end pt-2 sm:pt-0 border-t sm:border-t-0 border-slate-100">
+          {hasAccess ? (
+            isClassScheduledFuture(cls) ? (
+              <span className="bg-amber-500 hover:bg-amber-600 text-stone-950 font-black px-4 py-2 rounded-xl text-xs flex items-center gap-1.5 shadow-xs transition-colors">
+                <Clock className="w-3.5 h-3.5 text-stone-950" />
+                <span>शेड्यूल देखें</span>
+              </span>
+            ) : (
+              <span className="bg-red-700 hover:bg-red-800 text-white px-4 py-2 rounded-xl text-xs font-black flex items-center gap-1.5 shadow-xs transition-colors">
+                <Play className="w-3.5 h-3.5 fill-white" />
+                <span>{cls.isLive ? 'लाइव देखें' : 'क्लास देखें'}</span>
+              </span>
+            )
+          ) : (
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                setLockedClassPrompt(cls);
+              }}
+              className="bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-stone-950 font-black px-4 py-2 rounded-xl text-xs flex items-center gap-1.5 shadow-md border border-amber-300 transition-all cursor-pointer animate-pulse"
+            >
+              <Lock className="w-3.5 h-3.5 stroke-[2.5]" />
+              <span>VIP लें (₹299)</span>
+            </button>
+          )}
+        </div>
+      </div>
+    );
+  };
 
   return (
     <div className="p-2.5 sm:p-3 w-full max-w-2xl mx-auto space-y-3 pb-8">
@@ -340,7 +528,7 @@ export function LiveClassesView({ onOpenVip }: LiveClassesViewProps) {
         <div className="flex items-center justify-between relative z-10 flex-wrap gap-2">
           <span className="bg-red-500/20 text-red-300 border border-red-500/30 text-[10px] font-black px-2.5 py-0.5 rounded-full flex items-center gap-1.5">
             <span className="w-2 h-2 rounded-full bg-red-500 animate-ping" />
-            BSEB फुल सिलेबस LIVE CLASSES
+            BSEB फुल सिलेबस विषयवार LIVE & RECORDED PLAYLISTS
           </span>
 
           {(isVIP || isAdmin) ? (
@@ -359,13 +547,70 @@ export function LiveClassesView({ onOpenVip }: LiveClassesViewProps) {
         <div className="relative z-10">
           <h2 className="text-xl sm:text-2xl font-black text-white flex items-center gap-2">
             <Radio className="w-6 h-6 text-red-500 animate-pulse" />
-            लाइव एवं रिकॉर्डेड कक्षाएं (Live Classes)
+            विषयवार प्लेलिस्ट्स & लाइव क्लासेज
           </h2>
           <p className="text-xs text-stone-300 mt-1">
-            प्रतिदिन बिहार बोर्ड टॉपर फैकल्टी द्वारा कक्षाएं • 4x स्पीड व फुल स्क्रीन मोड।
+            प्रत्येक विषय की अलग प्लेलिस्ट (हिन्दी, गणित, विज्ञान आदि) एवं स्पेशल VVI & ट्रिक क्लासेज।
           </p>
         </div>
+
+        {/* Quick Stats Pill */}
+        <div className="relative z-10 pt-1 flex items-center gap-2 flex-wrap text-[11px] font-bold text-stone-200">
+          <span className="bg-white/10 px-2.5 py-1 rounded-lg backdrop-blur-xs">
+            🎥 कुल {liveClasses.length} लेक्चर्स
+          </span>
+          {liveCount > 0 && (
+            <span className="bg-red-500/30 text-red-200 border border-red-400/30 px-2.5 py-1 rounded-lg flex items-center gap-1">
+              <span className="w-1.5 h-1.5 rounded-full bg-red-400 animate-ping" />
+              {liveCount} लाइव क्लास सक्रिय
+            </span>
+          )}
+          <span className="bg-white/10 px-2.5 py-1 rounded-lg">
+            📚 {LIVE_PLAYLISTS.length} विषय प्लेलिस्ट्स
+          </span>
+        </div>
       </div>
+
+      {/* Active Live Broadcast Banner (If any class is currently LIVE) */}
+      {activeLiveNowClasses.length > 0 && (
+        <div className="bg-gradient-to-r from-red-600 via-rose-700 to-red-800 rounded-2xl p-4 text-white shadow-lg border border-red-400/40 space-y-2.5 animate-in fade-in duration-200">
+          <div className="flex items-center justify-between">
+            <span className="bg-white text-red-700 text-[10px] font-black px-2.5 py-0.5 rounded-full flex items-center gap-1.5 uppercase shadow-xs">
+              <span className="w-2 h-2 rounded-full bg-red-600 animate-ping" />
+              🔴 अभी लाइव चल रहा है (Live Now)
+            </span>
+            <span className="text-[11px] text-red-100 font-bold">
+              {activeLiveNowClasses.length} क्लास चालू
+            </span>
+          </div>
+
+          {activeLiveNowClasses.map((cls) => (
+            <div 
+              key={cls.id} 
+              onClick={() => handleWatchClass(cls)}
+              className="bg-black/25 hover:bg-black/35 border border-white/20 rounded-xl p-3 flex items-center justify-between gap-3 cursor-pointer transition-colors"
+            >
+              <div className="space-y-0.5 min-w-0">
+                <div className="flex items-center gap-1.5 text-[11px] text-amber-300 font-bold">
+                  <span>{cls.subjectName}</span>
+                  <span>•</span>
+                  <span>{cls.teacherName}</span>
+                </div>
+                <h4 className="text-xs sm:text-sm font-black text-white truncate">
+                  {cls.title}
+                </h4>
+              </div>
+              <button 
+                type="button"
+                className="bg-white text-red-700 font-black px-3.5 py-1.5 rounded-xl text-xs flex items-center gap-1 shadow-md hover:scale-105 active:scale-95 transition-all shrink-0 cursor-pointer"
+              >
+                <Play className="w-3.5 h-3.5 fill-red-700" />
+                <span>लाइव देखें</span>
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
 
       {/* Notice Banner for Non-Paid Students */}
       {!isVIP && !isAdmin && (
@@ -392,197 +637,461 @@ export function LiveClassesView({ onOpenVip }: LiveClassesViewProps) {
         </div>
       )}
 
-      {/* Filter Tabs */}
-      <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none text-xs">
-        <button
-          onClick={() => setActiveFilter('all')}
-          className={`px-3.5 py-1.5 rounded-xl font-bold whitespace-nowrap transition-all cursor-pointer ${
-            activeFilter === 'all'
-              ? 'bg-red-700 text-white shadow-xs'
-              : 'bg-white border border-slate-200 text-stone-600 hover:bg-slate-50'
-          }`}
-        >
-          सभी कक्षाएं ({liveClasses.length})
-        </button>
+      {/* Top Playlist Navigation Chips Carousel */}
+      <div className="space-y-1.5">
+        <div className="flex items-center justify-between px-1">
+          <span className="text-[11px] font-black uppercase tracking-wider text-stone-600 flex items-center gap-1">
+            <Layers className="w-3.5 h-3.5 text-amber-600" />
+            <span>विषय प्लेलिस्ट्स चुनें (Subject Playlists)</span>
+          </span>
+          {selectedPlaylistId !== 'all' && (
+            <button
+              onClick={() => setSelectedPlaylistId('all')}
+              className="text-[11px] font-extrabold text-red-700 hover:text-red-800 flex items-center gap-0.5 cursor-pointer"
+            >
+              <span>← सभी प्लेलिस्ट देखें</span>
+            </button>
+          )}
+        </div>
 
-        <button
-          onClick={() => setActiveFilter('free')}
-          className={`px-3.5 py-1.5 rounded-xl font-extrabold whitespace-nowrap transition-all cursor-pointer flex items-center gap-1.5 ${
-            activeFilter === 'free'
-              ? 'bg-emerald-600 text-white shadow-xs'
-              : 'bg-emerald-50 border border-emerald-200 text-emerald-800 hover:bg-emerald-100'
-          }`}
-        >
-          <Gift className="w-3.5 h-3.5" />
-          <span>फ्री डेमो ({freeCount})</span>
-        </button>
+        <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none text-xs">
+          {/* All Playlists Overview Tab */}
+          <button
+            onClick={() => {
+              setSelectedPlaylistId('all');
+              setPlaylistSubFilter('all');
+            }}
+            className={`px-3.5 py-2 rounded-xl font-black whitespace-nowrap transition-all cursor-pointer flex items-center gap-1.5 shadow-xs ${
+              selectedPlaylistId === 'all'
+                ? 'bg-stone-900 text-amber-400 border border-amber-500/40 ring-2 ring-amber-400/30'
+                : 'bg-white border border-slate-200 text-stone-700 hover:bg-slate-50'
+            }`}
+          >
+            <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+            <span>🌟 सभी प्लेलिस्ट ({liveClasses.length})</span>
+          </button>
 
-        <button
-          onClick={() => setActiveFilter('vip')}
-          className={`px-3.5 py-1.5 rounded-xl font-extrabold whitespace-nowrap transition-all cursor-pointer flex items-center gap-1.5 ${
-            activeFilter === 'vip'
-              ? 'bg-amber-500 text-stone-950 shadow-xs'
-              : 'bg-amber-50 border border-amber-200 text-amber-900 hover:bg-amber-100'
-          }`}
-        >
-          <Lock className="w-3.5 h-3.5" />
-          <span>केवल VIP ({vipCount})</span>
-        </button>
-      </div>
-
-      {/* Classes List */}
-      <div className="space-y-3">
-        {filteredClasses.length === 0 ? (
-          <div className="text-center py-12 bg-white rounded-2xl border border-slate-200 p-6 text-stone-500 text-xs">
-            इस फ़िल्टर में कोई क्लास उपलब्ध नहीं है।
-          </div>
-        ) : (
-          filteredClasses.map((cls) => {
-            const hasAccess = userCanAccess(cls);
+          {/* Individual Subject Playlist Tabs */}
+          {LIVE_PLAYLISTS.map((pl) => {
+            const count = getPlaylistClasses(pl.id, liveClasses).length;
+            const isSelected = selectedPlaylistId === pl.id;
 
             return (
-              <div
-                key={cls.id}
-                onClick={() => handleWatchClass(cls)}
-                className={`bg-white hover:bg-slate-50 border rounded-2xl p-4 transition-all shadow-xs hover:shadow-md cursor-pointer flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 group relative overflow-hidden ${
-                  cls.isVip 
-                    ? 'border-amber-300/80 bg-gradient-to-r from-amber-500/5 via-white to-white' 
-                    : 'border-emerald-300/80 bg-gradient-to-r from-emerald-500/5 via-white to-white'
+              <button
+                key={pl.id}
+                onClick={() => {
+                  setSelectedPlaylistId(pl.id);
+                  setPlaylistSubFilter('all');
+                }}
+                className={`px-3.5 py-2 rounded-xl font-bold whitespace-nowrap transition-all cursor-pointer flex items-center gap-1.5 shadow-xs ${
+                  isSelected
+                    ? pl.isSpecial
+                      ? 'bg-gradient-to-r from-amber-500 to-orange-600 text-stone-950 font-black ring-2 ring-amber-400 shadow-md scale-102'
+                      : 'bg-red-700 text-white font-black shadow-md scale-102'
+                    : pl.isSpecial
+                      ? 'bg-amber-50 border border-amber-300 text-amber-900 hover:bg-amber-100 font-black'
+                      : 'bg-white border border-slate-200 text-stone-700 hover:bg-slate-50'
                 }`}
               >
-                {/* Access Ribbon Top Right */}
-                {cls.isVip ? (
-                  <span className={`absolute -top-1 -right-1 text-[9px] font-black px-2.5 py-0.5 rounded-bl-lg shadow-xs flex items-center gap-1 ${
-                    hasAccess 
-                      ? 'bg-amber-500 text-stone-950' 
-                      : 'bg-red-600 text-white animate-pulse'
-                  }`}>
-                    {hasAccess ? (
-                      <>
-                        <Crown className="w-2.5 h-2.5" />
-                        <span>VIP अनलॉक</span>
-                      </>
-                    ) : (
-                      <>
-                        <Lock className="w-2.5 h-2.5" />
-                        <span>केवल VIP लॉक्ड</span>
-                      </>
-                    )}
-                  </span>
-                ) : (
-                  <span className="absolute -top-1 -right-1 bg-emerald-600 text-white text-[9px] font-black px-2.5 py-0.5 rounded-bl-lg shadow-xs flex items-center gap-1">
-                    <Gift className="w-2.5 h-2.5" />
-                    <span>फ्री डेमो</span>
-                  </span>
-                )}
+                {renderPlaylistIcon(pl.iconName, `w-3.5 h-3.5 ${pl.isSpecial ? 'text-amber-600' : 'text-stone-500'}`)}
+                <span>{pl.shortLabel}</span>
+                <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-black ${
+                  isSelected 
+                    ? 'bg-black/20 text-current' 
+                    : pl.isSpecial ? 'bg-amber-200 text-amber-900' : 'bg-slate-100 text-stone-600'
+                }`}>
+                  {count}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      </div>
 
-                <div className="flex items-start gap-3 w-full sm:w-auto">
-                  {/* Clean In-App Class Icon */}
-                  <div className={`w-14 h-14 rounded-2xl border flex items-center justify-center font-bold shrink-0 group-hover:scale-105 transition-transform mt-0.5 relative overflow-hidden ${
-                    cls.isVip
-                      ? (hasAccess ? 'bg-amber-50 text-amber-700 border-amber-200' : 'bg-stone-900 text-amber-400 border-amber-500/50')
-                      : 'bg-emerald-50 text-emerald-700 border-emerald-200'
-                  }`}>
-                    {cls.isVip && !hasAccess ? (
-                      <Lock className="w-7 h-7 text-amber-400" />
-                    ) : (
-                      <Video className={`w-7 h-7 ${cls.isVip ? 'text-amber-700' : 'text-emerald-700'}`} />
-                    )}
+      {/* ======================= VIEW MODE 1: ALL PLAYLISTS SHELVES (OVERVIEW) ======================= */}
+      {selectedPlaylistId === 'all' && (
+        <div className="space-y-5">
+          {/* Global Quick Filter Chips */}
+          <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none text-xs">
+            <button
+              onClick={() => setActiveFilter('all')}
+              className={`px-3 py-1.5 rounded-xl font-bold whitespace-nowrap transition-all cursor-pointer ${
+                activeFilter === 'all'
+                  ? 'bg-stone-800 text-white shadow-xs'
+                  : 'bg-white border border-slate-200 text-stone-600 hover:bg-slate-50'
+              }`}
+            >
+              सभी ({liveClasses.length})
+            </button>
 
-                    {cls.isLive && (
-                      <span className="absolute bottom-1 bg-red-600 text-white text-[8px] font-black px-1 rounded">
-                        LIVE
+            <button
+              onClick={() => setActiveFilter('free')}
+              className={`px-3 py-1.5 rounded-xl font-bold whitespace-nowrap transition-all cursor-pointer flex items-center gap-1 ${
+                activeFilter === 'free'
+                  ? 'bg-emerald-600 text-white shadow-xs'
+                  : 'bg-emerald-50 border border-emerald-200 text-emerald-800 hover:bg-emerald-100'
+              }`}
+            >
+              <Gift className="w-3.5 h-3.5" />
+              <span>फ्री डेमो ({freeCount})</span>
+            </button>
+
+            <button
+              onClick={() => setActiveFilter('vip')}
+              className={`px-3 py-1.5 rounded-xl font-bold whitespace-nowrap transition-all cursor-pointer flex items-center gap-1 ${
+                activeFilter === 'vip'
+                  ? 'bg-amber-500 text-stone-950 font-black shadow-xs'
+                  : 'bg-amber-50 border border-amber-200 text-amber-900 hover:bg-amber-100'
+              }`}
+            >
+              <Lock className="w-3.5 h-3.5" />
+              <span>केवल VIP ({vipCount})</span>
+            </button>
+          </div>
+
+          {/* 1. SPECIAL FEATURED HERO SHELF: 🔥 VVI & Trick Classes */}
+          {(() => {
+            const vviPlaylist = LIVE_PLAYLISTS.find(p => p.id === 'vvi_tricks')!;
+            let vviClasses = getPlaylistClasses('vvi_tricks', liveClasses);
+            if (activeFilter === 'free') vviClasses = vviClasses.filter(c => !c.isVip);
+            if (activeFilter === 'vip') vviClasses = vviClasses.filter(c => c.isVip);
+
+            return (
+              <div className="bg-gradient-to-br from-amber-500/15 via-orange-500/10 to-red-500/15 border-2 border-amber-400 rounded-3xl p-4 sm:p-5 space-y-3.5 shadow-md relative overflow-hidden">
+                <div className="absolute top-0 right-0 w-48 h-48 bg-amber-400/10 rounded-full blur-2xl pointer-events-none" />
+
+                {/* Hero Shelf Header */}
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 relative z-10 border-b border-amber-300/60 pb-3">
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-2">
+                      <span className="bg-gradient-to-r from-amber-500 to-orange-600 text-stone-950 text-[10px] font-black px-2.5 py-0.5 rounded-full flex items-center gap-1 uppercase shadow-xs">
+                        <Flame className="w-3 h-3 text-red-950 fill-red-950" />
+                        विशेष रामबाण प्लेलिस्ट
                       </span>
-                    )}
-                  </div>
-
-                  <div className="space-y-1 overflow-hidden flex-1">
-                    <div className="flex items-center gap-1.5 flex-wrap">
-                      {isClassScheduledFuture(cls) ? (
-                        <span className="bg-amber-100 text-amber-900 border border-amber-300 text-[10px] font-black px-2.5 py-0.5 rounded-md flex items-center gap-1 animate-pulse">
-                          <Clock className="w-3 h-3 text-amber-700" /> ⏳ शेड्यूल्ड (${cls.scheduledAt})
-                        </span>
-                      ) : cls.isLive ? (
-                        <span className="bg-red-100 text-red-700 text-[10px] font-extrabold px-2 py-0.5 rounded-md flex items-center gap-1">
-                          <span className="w-1.5 h-1.5 rounded-full bg-red-600 animate-ping" /> लाइव क्लास
-                        </span>
-                      ) : (
-                        <span className="bg-stone-100 text-stone-600 text-[10px] font-bold px-2 py-0.5 rounded-md">
-                          रिकॉर्डेड क्लास
-                        </span>
-                      )}
-
-                      <span className="bg-amber-50 text-amber-800 text-[10px] font-bold px-2 py-0.5 rounded-md border border-amber-100">
-                        {cls.subjectName}
-                      </span>
-
-                      <span className="bg-stone-100 text-stone-700 text-[10px] font-bold px-2 py-0.5 rounded-md flex items-center gap-1">
-                        <Languages className="w-3 h-3 text-stone-500" />
-                        <span>{cls.language === 'english' ? '🇬🇧 English' : '🇮🇳 हिंदी'}</span>
-                      </span>
-
-                      <span className="text-[11px] text-stone-400 flex items-center gap-1">
-                        <User className="w-3 h-3" /> {cls.teacherName}
-                      </span>
-
-                      <span className="text-[11px] text-stone-400 flex items-center gap-1">
-                        <Calendar className="w-3 h-3" /> {cls.scheduledAt}
+                      <span className="bg-white/80 border border-amber-300 text-amber-900 text-[10px] font-black px-2 py-0.5 rounded-md">
+                        {vviClasses.length} वीडियो लेक्चर्स
                       </span>
                     </div>
 
-                    <h4 className="font-extrabold text-stone-900 text-sm group-hover:text-red-700 transition-colors leading-snug">
-                      {cls.title}
-                    </h4>
-
-                    {cls.description && (
-                      <p className="text-xs text-stone-500 line-clamp-1">
-                        {cls.description}
-                      </p>
-                    )}
-
-                    {/* Notice if locked */}
-                    {cls.isVip && !hasAccess && (
-                      <p className="text-[11px] text-amber-800 font-bold flex items-center gap-1">
-                        <Lock className="w-3 h-3 text-amber-700" />
-                        <span>यह क्लास केवल पेड (VIP) छात्रों के लिए सुरक्षित है।</span>
-                      </p>
-                    )}
+                    <h3 className="text-base sm:text-lg font-black text-stone-900 flex items-center gap-2">
+                      <Zap className="w-5 h-5 text-amber-600 fill-amber-500" />
+                      <span>{vviPlaylist.hindiName}</span>
+                    </h3>
+                    <p className="text-xs text-stone-600 leading-snug">
+                      {vviPlaylist.desc}
+                    </p>
                   </div>
+
+                  <button
+                    onClick={() => {
+                      setSelectedPlaylistId('vvi_tricks');
+                      setPlaylistSubFilter('all');
+                    }}
+                    className="self-start sm:self-center bg-stone-950 hover:bg-stone-850 text-amber-400 border border-amber-400/50 font-black text-xs px-4 py-2 rounded-xl shrink-0 shadow-sm cursor-pointer active:scale-95 transition-all flex items-center gap-1.5"
+                  >
+                    <span>पूरी VVI प्लेलिस्ट खोलें</span>
+                    <ChevronRight className="w-4 h-4 text-amber-400" />
+                  </button>
                 </div>
 
-                {/* Action Button */}
-                <div className="flex items-center gap-2 self-end sm:self-center shrink-0 w-full sm:w-auto justify-end pt-2 sm:pt-0 border-t sm:border-t-0 border-slate-100">
-                  {hasAccess ? (
-                    isClassScheduledFuture(cls) ? (
-                      <span className="bg-amber-500 hover:bg-amber-600 text-stone-950 font-black px-4 py-2 rounded-xl text-xs flex items-center gap-1.5 shadow-xs transition-colors">
-                        <Clock className="w-3.5 h-3.5 text-stone-950" />
-                        <span>शेड्यूल देखें</span>
-                      </span>
-                    ) : (
-                      <span className="bg-red-700 hover:bg-red-800 text-white px-4 py-2 rounded-xl text-xs font-black flex items-center gap-1.5 shadow-xs transition-colors">
-                        <Play className="w-3.5 h-3.5 fill-white" />
-                        <span>{cls.isLive ? 'लाइव देखें' : 'क्लास देखें'}</span>
-                      </span>
-                    )
+                {/* VVI Videos Preview Cards */}
+                <div className="space-y-2.5 relative z-10">
+                  {vviClasses.length === 0 ? (
+                    <div className="text-center py-6 bg-white/80 rounded-2xl border border-amber-200 text-stone-500 text-xs space-y-1">
+                      <p className="font-bold text-stone-700">अभी कोई VVI & ट्रिक क्लास उपलब्ध नहीं है।</p>
+                      <p className="text-[11px] text-stone-500">एडमिन द्वारा नई वायरल ट्रिक क्लास जल्द जोड़ी जाएगी।</p>
+                    </div>
                   ) : (
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setLockedClassPrompt(cls);
-                      }}
-                      className="bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-stone-950 font-black px-4 py-2 rounded-xl text-xs flex items-center gap-1.5 shadow-md border border-amber-300 transition-all cursor-pointer animate-pulse"
-                    >
-                      <Lock className="w-3.5 h-3.5 stroke-[2.5]" />
-                      <span>VIP लें (₹299)</span>
-                    </button>
+                    <>
+                      {vviClasses.slice(0, 3).map((cls, idx) => renderClassItem(cls, idx, false))}
+
+                      {vviClasses.length > 3 && (
+                        <button
+                          onClick={() => {
+                            setSelectedPlaylistId('vvi_tricks');
+                            setPlaylistSubFilter('all');
+                          }}
+                          className="w-full bg-white hover:bg-amber-50 border border-amber-300 text-stone-800 font-black text-xs py-2.5 rounded-xl shadow-xs transition-colors cursor-pointer flex items-center justify-center gap-1.5"
+                        >
+                          <span>+{vviClasses.length - 3} और VVI ट्रिक्स वीडियो देखें (पूरी प्लेलिस्ट खोलें)</span>
+                          <ArrowRight className="w-3.5 h-3.5 text-amber-700" />
+                        </button>
+                      )}
+                    </>
                   )}
                 </div>
               </div>
             );
-          })
-        )}
-      </div>
+          })()}
+
+          {/* 2. SUBJECT PLAYLISTS SHELVES (Hindi, Math, Science, Social Science, Sanskrit, English, General) */}
+          <div className="space-y-4">
+            <h4 className="text-xs font-black uppercase tracking-wider text-stone-600 flex items-center gap-1.5 px-1 pt-1">
+              <BookOpen className="w-4 h-4 text-red-600" />
+              <span>सभी विषयवार लाइव एवं रिकॉर्डेड प्लेलिस्ट्स (Subject Shelves)</span>
+            </h4>
+
+            {LIVE_PLAYLISTS.filter(p => p.id !== 'vvi_tricks').map((playlist) => {
+              let subjectClasses = getPlaylistClasses(playlist.id, liveClasses);
+              if (activeFilter === 'free') subjectClasses = subjectClasses.filter(c => !c.isVip);
+              if (activeFilter === 'vip') subjectClasses = subjectClasses.filter(c => c.isVip);
+
+              const subLiveCount = subjectClasses.filter(c => c.isLive).length;
+
+              return (
+                <div 
+                  key={playlist.id}
+                  className="bg-white border border-slate-200 rounded-3xl p-4 sm:p-5 space-y-3 shadow-xs hover:shadow-md transition-shadow"
+                >
+                  {/* Subject Shelf Header */}
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 pb-3">
+                    <div className="flex items-start gap-3">
+                      <div className={`w-11 h-11 rounded-2xl ${playlist.bgLight} border ${playlist.borderLight} flex items-center justify-center shrink-0`}>
+                        {renderPlaylistIcon(playlist.iconName, `w-5 h-5 ${playlist.textColor}`)}
+                      </div>
+                      <div className="space-y-0.5">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <h4 className="font-black text-sm sm:text-base text-stone-900">
+                            {playlist.hindiName}
+                          </h4>
+                          <span className={`text-[10px] font-black px-2 py-0.2 rounded-md ${playlist.badgeBg} ${playlist.badgeText}`}>
+                            {subjectClasses.length} लेक्चर्स
+                          </span>
+                          {subLiveCount > 0 && (
+                            <span className="bg-red-100 text-red-700 text-[10px] font-black px-2 py-0.2 rounded-md flex items-center gap-1 animate-pulse">
+                              <span className="w-1.5 h-1.5 rounded-full bg-red-600 animate-ping" />
+                              {subLiveCount} लाइव
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-[11px] text-stone-500 leading-snug line-clamp-1">
+                          {playlist.desc}
+                        </p>
+                      </div>
+                    </div>
+
+                    <button
+                      onClick={() => {
+                        setSelectedPlaylistId(playlist.id);
+                        setPlaylistSubFilter('all');
+                      }}
+                      className="self-start sm:self-center bg-slate-50 hover:bg-slate-100 border border-slate-200 text-stone-800 font-extrabold text-xs px-3.5 py-2 rounded-xl shrink-0 transition-colors cursor-pointer flex items-center gap-1"
+                    >
+                      <span>प्लेलिस्ट खोलें</span>
+                      <ChevronRight className="w-3.5 h-3.5 text-stone-500" />
+                    </button>
+                  </div>
+
+                  {/* Subject Classes Cards (up to 2 in overview) */}
+                  <div className="space-y-2.5">
+                    {subjectClasses.length === 0 ? (
+                      <div className="py-4 px-3 rounded-2xl bg-slate-50 border border-dashed border-slate-200 text-center text-xs text-stone-500">
+                        इस विषय में अभी कक्षाएं अपलोड हो रही हैं • नया वीडियो जल्द आएगा।
+                      </div>
+                    ) : (
+                      <>
+                        {subjectClasses.slice(0, 2).map((cls, idx) => renderClassItem(cls, idx, false))}
+
+                        {subjectClasses.length > 2 && (
+                          <button
+                            onClick={() => {
+                              setSelectedPlaylistId(playlist.id);
+                              setPlaylistSubFilter('all');
+                            }}
+                            className="w-full bg-slate-50 hover:bg-slate-100 border border-slate-200 text-stone-700 font-bold text-xs py-2 rounded-xl transition-colors cursor-pointer flex items-center justify-center gap-1"
+                          >
+                            <span>+{subjectClasses.length - 2} और क्लास देखें (पूरी प्लेलिस्ट खोलें)</span>
+                            <ArrowRight className="w-3.5 h-3.5 text-stone-500" />
+                          </button>
+                        )}
+                      </>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* ======================= VIEW MODE 2: DEDICATED SUBJECT PLAYLIST SCREEN ======================= */}
+      {selectedPlaylistId !== 'all' && (() => {
+        const currentPlaylist = LIVE_PLAYLISTS.find(p => p.id === selectedPlaylistId) || LIVE_PLAYLISTS[0];
+        const allPlaylistClasses = getPlaylistClasses(currentPlaylist.id, liveClasses);
+
+        let displayClasses = allPlaylistClasses;
+        if (playlistSubFilter === 'live') displayClasses = displayClasses.filter(c => c.isLive);
+        if (playlistSubFilter === 'recorded') displayClasses = displayClasses.filter(c => !c.isLive);
+        if (playlistSubFilter === 'free') displayClasses = displayClasses.filter(c => !c.isVip);
+        if (playlistSubFilter === 'vip') displayClasses = displayClasses.filter(c => c.isVip);
+
+        const subLiveCount = allPlaylistClasses.filter(c => c.isLive).length;
+        const subRecCount = allPlaylistClasses.filter(c => !c.isLive).length;
+        const subFreeCount = allPlaylistClasses.filter(c => !c.isVip).length;
+        const subVipCount = allPlaylistClasses.filter(c => c.isVip).length;
+
+        return (
+          <div className="space-y-3.5 animate-in fade-in duration-150">
+            {/* Top Navigation & Back Button */}
+            <div className="flex items-center justify-between">
+              <button
+                onClick={() => setSelectedPlaylistId('all')}
+                className="bg-white hover:bg-slate-50 border border-slate-200 text-stone-800 text-xs font-black px-3.5 py-2 rounded-xl flex items-center gap-1.5 transition-colors cursor-pointer shadow-xs"
+              >
+                <ArrowLeft className="w-4 h-4 text-stone-600" />
+                <span>← सभी प्लेलिस्ट पर वापस जाएं</span>
+              </button>
+
+              <span className="text-xs font-bold text-stone-500">
+                प्लेलिस्ट {LIVE_PLAYLISTS.findIndex(p => p.id === currentPlaylist.id) + 1} of {LIVE_PLAYLISTS.length}
+              </span>
+            </div>
+
+            {/* Subject Playlist Header Banner */}
+            <div className={`rounded-3xl p-5 text-white shadow-lg space-y-3 relative overflow-hidden bg-gradient-to-br ${currentPlaylist.gradient}`}>
+              <div className="flex items-start justify-between gap-3">
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2">
+                    <span className="bg-white/20 text-white text-[10px] font-black px-2.5 py-0.5 rounded-full flex items-center gap-1 uppercase tracking-wider">
+                      {renderPlaylistIcon(currentPlaylist.iconName, "w-3 h-3 text-amber-300")}
+                      <span>विषय प्लेलिस्ट</span>
+                    </span>
+                    {currentPlaylist.isSpecial && (
+                      <span className="bg-amber-400 text-stone-950 text-[10px] font-black px-2 py-0.5 rounded-full">
+                        ⭐ मोस्ट VVI
+                      </span>
+                    )}
+                  </div>
+
+                  <h3 className="text-lg sm:text-xl font-black text-white leading-tight">
+                    {currentPlaylist.hindiName}
+                  </h3>
+                  <p className="text-xs text-white/80 leading-relaxed max-w-lg">
+                    {currentPlaylist.desc}
+                  </p>
+                </div>
+              </div>
+
+              {/* Metadata strip & Play First button */}
+              <div className="pt-2 border-t border-white/20 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div className="flex items-center gap-2 flex-wrap text-xs font-bold">
+                  <span className="bg-white/15 px-2.5 py-1 rounded-lg">
+                    🎥 {allPlaylistClasses.length} कुल लेक्चर्स
+                  </span>
+                  {subLiveCount > 0 && (
+                    <span className="bg-red-500/40 text-red-100 border border-red-300/30 px-2.5 py-1 rounded-lg flex items-center gap-1">
+                      <span className="w-1.5 h-1.5 rounded-full bg-red-400 animate-ping" />
+                      {subLiveCount} लाइव
+                    </span>
+                  )}
+                  <span className="bg-white/15 px-2.5 py-1 rounded-lg">
+                    🎁 {subFreeCount} फ्री डेमो
+                  </span>
+                  <span className="bg-white/15 px-2.5 py-1 rounded-lg">
+                    🔒 {subVipCount} VIP
+                  </span>
+                </div>
+
+                {allPlaylistClasses.length > 0 && (
+                  <button
+                    onClick={() => handleWatchClass(allPlaylistClasses[0])}
+                    className="self-start sm:self-center bg-white text-stone-950 hover:bg-amber-100 font-black text-xs px-4 py-2 rounded-xl shadow-md cursor-pointer transition-all flex items-center gap-1.5 active:scale-95"
+                  >
+                    <Play className="w-3.5 h-3.5 fill-current" />
+                    <span>पहली क्लास से शुरू करें (Play #1)</span>
+                  </button>
+                )}
+              </div>
+            </div>
+
+            {/* Playlist Sub-filters Pills */}
+            <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none text-xs">
+              <button
+                onClick={() => setPlaylistSubFilter('all')}
+                className={`px-3 py-1.5 rounded-xl font-bold whitespace-nowrap transition-colors cursor-pointer ${
+                  playlistSubFilter === 'all'
+                    ? 'bg-stone-900 text-white shadow-xs'
+                    : 'bg-white border border-slate-200 text-stone-600 hover:bg-slate-50'
+                }`}
+              >
+                सभी लेक्चर्स ({allPlaylistClasses.length})
+              </button>
+
+              {subLiveCount > 0 && (
+                <button
+                  onClick={() => setPlaylistSubFilter('live')}
+                  className={`px-3 py-1.5 rounded-xl font-bold whitespace-nowrap transition-colors cursor-pointer flex items-center gap-1 ${
+                    playlistSubFilter === 'live'
+                      ? 'bg-red-600 text-white shadow-xs'
+                      : 'bg-red-50 border border-red-200 text-red-800 hover:bg-red-100'
+                  }`}
+                >
+                  <Radio className="w-3 h-3" />
+                  <span>केवल लाइव ({subLiveCount})</span>
+                </button>
+              )}
+
+              <button
+                onClick={() => setPlaylistSubFilter('recorded')}
+                className={`px-3 py-1.5 rounded-xl font-bold whitespace-nowrap transition-colors cursor-pointer ${
+                  playlistSubFilter === 'recorded'
+                    ? 'bg-stone-800 text-white shadow-xs'
+                    : 'bg-white border border-slate-200 text-stone-600 hover:bg-slate-50'
+                }`}
+              >
+                रिकॉर्डेड ({subRecCount})
+              </button>
+
+              <button
+                onClick={() => setPlaylistSubFilter('free')}
+                className={`px-3 py-1.5 rounded-xl font-bold whitespace-nowrap transition-colors cursor-pointer flex items-center gap-1 ${
+                  playlistSubFilter === 'free'
+                    ? 'bg-emerald-600 text-white shadow-xs'
+                    : 'bg-emerald-50 border border-emerald-200 text-emerald-800 hover:bg-emerald-100'
+                }`}
+              >
+                <Gift className="w-3 h-3" />
+                <span>फ्री डेमो ({subFreeCount})</span>
+              </button>
+
+              <button
+                onClick={() => setPlaylistSubFilter('vip')}
+                className={`px-3 py-1.5 rounded-xl font-bold whitespace-nowrap transition-colors cursor-pointer flex items-center gap-1 ${
+                  playlistSubFilter === 'vip'
+                    ? 'bg-amber-500 text-stone-950 font-black shadow-xs'
+                    : 'bg-amber-50 border border-amber-200 text-amber-900 hover:bg-amber-100'
+                }`}
+              >
+                <Lock className="w-3 h-3" />
+                <span>केवल VIP ({subVipCount})</span>
+              </button>
+            </div>
+
+            {/* Playlist Classes List */}
+            <div className="space-y-3">
+              {displayClasses.length === 0 ? (
+                <div className="text-center py-12 bg-white rounded-3xl border border-slate-200 p-6 text-stone-500 text-xs space-y-2">
+                  <div className="w-12 h-12 rounded-2xl bg-amber-50 text-amber-600 border border-amber-200 flex items-center justify-center mx-auto">
+                    {renderPlaylistIcon(currentPlaylist.iconName, "w-6 h-6")}
+                  </div>
+                  <h4 className="font-black text-stone-800 text-sm">इस फ़िल्टर में कोई क्लास नहीं मिली</h4>
+                  <p className="text-stone-500 text-xs max-w-sm mx-auto">
+                    कृपया दूसरा फ़िल्टर चुनें या "सभी लेक्चर्स" पर क्लिक करें।
+                  </p>
+                  <button
+                    onClick={() => setPlaylistSubFilter('all')}
+                    className="bg-stone-900 text-white text-xs font-bold px-4 py-1.5 rounded-xl transition-colors cursor-pointer"
+                  >
+                    सभी लेक्चर्स देखें
+                  </button>
+                </div>
+              ) : (
+                displayClasses.map((cls, idx) => renderClassItem(cls, idx, false))
+              )}
+            </div>
+          </div>
+        );
+      })()}
 
       {/* Locked Class Prompt Modal */}
       {lockedClassPrompt && (

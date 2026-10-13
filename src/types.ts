@@ -21,6 +21,7 @@ export interface Chapter {
   chapter_name: string;
   chapter_name_hindi: string;
   author_name?: string;
+  author_intro?: string;
   section_name?: string;
   subCategory?: string;
   intro_hindi?: string; // पाठ परिचय
@@ -36,6 +37,9 @@ export interface Subject {
   id: string;
   subject_name: string;
   subject_name_hindi: string;
+  name?: string;
+  hindi?: string;
+  subtitle?: string;
   icon?: string;
   chapters: Chapter[];
 }
@@ -62,12 +66,13 @@ export interface LiveClass {
   title: string;
   youtubeUrl: string;
   subjectName: string;
+  playlistId?: string;
   teacherName: string;
   scheduledAt: string;
   isLive: boolean;
   isVip?: boolean;
   description?: string;
-  createdAt: string;
+  createdAt?: string;
   publishType?: 'instant' | 'scheduled';
   scheduledDateTime?: string; // ISO string e.g. "2026-10-02T19:00:00"
   isUploaded?: boolean;
@@ -76,14 +81,17 @@ export interface LiveClass {
 
 export interface DailyQuizItem {
   id: string;
-  dateLabel: string; // e.g. "19 सितम्बर"
-  subjectName: string; // e.g. "संस्कृत"
+  dateLabel?: string; // e.g. "19 सितम्बर"
+  subjectName?: string; // e.g. "संस्कृत"
+  subject?: string;
   title: string; // e.g. "संस्कृत - मङ्गलम् टेस्ट"
   chaptersCount?: number;
   totalQuestions?: number;
+  durationMinutes?: number;
+  questions?: any[];
   youtubeUrl?: string;
   description?: string;
-  createdAt: string;
+  createdAt?: string;
 }
 
 export interface LeaderboardEntry {
@@ -103,10 +111,12 @@ export interface RoutineItem {
   id: string;
   time: string;
   subject: string;
-  topic: string;
-  instructor: string;
-  days: string;
-  color: string;
+  topic?: string;
+  title?: string;
+  instructor?: string;
+  days?: string;
+  color?: string;
+  isCompleted?: boolean;
 }
 
 export interface MotivationalQuote {
@@ -114,7 +124,7 @@ export interface MotivationalQuote {
   quote: string;
   author: string;
   isActive: boolean;
-  createdAt: string;
+  createdAt?: string;
 }
 
 export interface NotificationItem {
@@ -136,11 +146,14 @@ export interface BannerItem {
   subjects: string[];
   oldPrice: string;
   newPrice: string;
-  priceLabel: string;
-  actionText: string;
-  actionSub: string;
-  bgGradient: string;
-  badgeColor: string;
+  priceLabel?: string;
+  actionText?: string;
+  actionSub?: string;
+  buttonText?: string;
+  bgGradient?: string;
+  gradient?: string;
+  badgeColor?: string;
+  badgeText?: string;
 }
 
 export interface AppConfig {

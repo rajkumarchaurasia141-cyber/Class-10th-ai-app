@@ -60,7 +60,7 @@ export function HomeScreen({ onSelect, onOpenSubject, onNavigateTab, onOpenVip }
         break;
       case 'free_courses':
         // Open first subject demo
-        onSelect('sanskrit');
+        onSelect?.('sanskrit');
         break;
       case 'paid_notes':
       case 'guess_paper':

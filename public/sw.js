@@ -36,6 +36,14 @@ self.addEventListener('fetch', (event) => {
       .then((response) => {
         return response;
       })
-      .catch(() => caches.match(event.request).then((res) => res || caches.match('/')))
+      .catch(async () => {
+        const cached = await caches.match(event.request);
+        if (cached) return cached;
+        if (event.request.mode === 'navigate') {
+          const fallback = await caches.match('/');
+          if (fallback) return fallback;
+        }
+        return new Response('Network error', { status: 408, headers: { 'Content-Type': 'text/plain' } });
+      })
   );
 });
