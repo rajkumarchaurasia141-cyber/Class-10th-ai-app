@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { Settings, Phone, QrCode, Youtube, Instagram, MessageCircle, Send, CheckCircle2, AlertCircle, Save, Upload, Image as ImageIcon, RotateCcw } from 'lucide-react';
+import { Settings, Phone, QrCode, Youtube, Instagram, MessageCircle, Send, CheckCircle2, AlertCircle, Save, Upload, Image as ImageIcon, RotateCcw, Ticket, Percent, Sparkles, Lock } from 'lucide-react';
 import { useData } from '../context/DataContext';
 import { db } from '../lib/firebase';
 import { doc } from 'firebase/firestore';
@@ -28,6 +28,12 @@ export function AdminSettingsManager() {
   const [telegramUrl, setTelegramUrl] = useState(appConfig.telegramUrl);
   const [price1Month, setPrice1Month] = useState((appConfig.price1Month === 99 || !appConfig.price1Month ? 299 : appConfig.price1Month).toString());
   const [price1Year, setPrice1Year] = useState((appConfig.price1Year === 299 || !appConfig.price1Year ? 499 : appConfig.price1Year).toString());
+  const [crashCourseDiscountCode, setCrashCourseDiscountCode] = useState(
+    appConfig.crashCourseDiscountCode || 'BSEB100'
+  );
+  const [crashCourseDiscountAmount, setCrashCourseDiscountAmount] = useState(
+    (appConfig.crashCourseDiscountAmount || 100).toString()
+  );
 
   const qrInputRef = useRef<HTMLInputElement>(null);
   const logoInputRef = useRef<HTMLInputElement>(null);
@@ -128,6 +134,9 @@ export function AdminSettingsManager() {
       return;
     }
 
+    const discAmount = parseInt(crashCourseDiscountAmount) || 100;
+    const cleanDiscCode = crashCourseDiscountCode.trim().toUpperCase() || 'BSEB100';
+
     try {
       // 1. Update general settings config
       await updateSettings({
@@ -141,11 +150,19 @@ export function AdminSettingsManager() {
         whatsappGroupUrl: whatsappGroupUrl.trim(),
         telegramUrl: telegramUrl.trim(),
         price1Month: mPrice,
-        price1Year: yPrice
+        price1Year: yPrice,
+        crashCoursePrice: mPrice,
+        crashCourseDiscountCode: cleanDiscCode,
+        crashCourseDiscountAmount: discAmount
       });
 
+      // Local storage cache for instant discount code retrieval
+      try {
+        localStorage.setItem('bseb_crash_course_discount_code', cleanDiscCode);
+        localStorage.setItem('bseb_crash_course_discount_amount', discAmount.toString());
+      } catch {}
+
       // 2. Synchronize configuration to Firestore "app_settings/payment_config"
-      // to store config with fields: { upiId, whatsappNumber, price, qrCodeUrl, appLogoUrl, helplineNumber }
       const paymentConfigRef = doc(db, 'app_settings', 'payment_config');
       await safeSetDoc(paymentConfigRef, {
         upiId: upiId.trim(),
@@ -153,10 +170,13 @@ export function AdminSettingsManager() {
         price: yPrice || 299,
         qrCodeUrl: qrCodeDataUrl.trim(),
         appLogoUrl: appLogoUrl.trim(),
-        helplineNumber: helplineNumber.trim()
+        helplineNumber: helplineNumber.trim(),
+        crashCoursePrice: mPrice,
+        crashCourseDiscountCode: cleanDiscCode,
+        crashCourseDiscountAmount: discAmount
       }, { merge: true }, 5000, true);
 
-      setSuccessMsg(`बधाई हो! UPI ID (${upiId.trim()}), WhatsApp नंबर (${whatsappNumber.trim()}), स्कैनर और सभी सेटिंग्स सफलतापूर्वक हमेशा के लिए सेव हो गई हैं!`);
+      setSuccessMsg(`बधाई हो! डिस्काउंट कोड (${cleanDiscCode}), UPI ID (${upiId.trim()}), WhatsApp नंबर और सभी सेटिंग्स सफलतापूर्वक हमेशा के लिए सेव हो गई हैं!`);
       setTimeout(() => setSuccessMsg(''), 5000);
     } catch (err: any) {
       console.error("Save settings error:", err);
@@ -414,6 +434,94 @@ export function AdminSettingsManager() {
                 style={{ minHeight: '44px' }}
               />
               <span className="text-[10px] text-stone-500 block font-bold">डिफ़ॉल्ट ₹499 सेट करें। यही कीमत छात्रों को पॉपअप में दिखेगी।</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Secret Crash Course Discount Coupon Code Card */}
+        <div className="bg-gradient-to-br from-amber-500/10 via-orange-500/10 to-red-500/10 border-2 border-amber-400/80 rounded-3xl p-5 space-y-4">
+          <div className="flex items-start justify-between gap-3">
+            <div className="space-y-1">
+              <div className="flex items-center gap-2">
+                <span className="bg-amber-400 text-stone-950 text-[10px] font-black px-2.5 py-0.5 rounded-full uppercase flex items-center gap-1 shadow-xs">
+                  <Lock className="w-3 h-3" />
+                  केवल एडमिन को ज्ञात (Admin Only)
+                </span>
+                <span className="bg-emerald-100 text-emerald-800 text-[10px] font-black px-2 py-0.5 rounded-md">
+                  ₹100 विशेष छूट
+                </span>
+              </div>
+              <h4 className="text-sm sm:text-base font-black text-stone-900 flex items-center gap-2">
+                <Ticket className="w-4 h-4 text-amber-600" />
+                <span>क्रैश कोर्स गुप्त डिस्काउंट कूपन कोड (₹100 डिस्काउंट सिस्टम)</span>
+              </h4>
+              <p className="text-xs text-stone-600 leading-relaxed">
+                यह कोड केवल आप जानते हैं। जब आप किसी विशेष छात्र को यह कोड देंगे और वह पेमेंट के समय यह कोड डालेगा, तो उसे ₹100 की छूट मिलेगी और उसे <b>₹299 के बदले मात्र ₹199</b> पे करना पड़ेगा। आप इस कोड को कभी भी यहाँ से बदल सकते हैं।
+              </p>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-1">
+            <div className="space-y-1.5">
+              <label className="text-xs font-black text-stone-800 flex items-center justify-between">
+                <span>सक्रिय गुप्त डिस्काउंट कोड (Secret Code) *</span>
+                <span className="text-[10px] text-amber-700 font-bold">छात्र इसे दर्ज करेगा</span>
+              </label>
+              <input
+                type="text"
+                required
+                value={crashCourseDiscountCode}
+                onChange={(e) => setCrashCourseDiscountCode(e.target.value.toUpperCase())}
+                placeholder="BSEB100"
+                className="w-full bg-white border-2 border-amber-400 rounded-xl px-3.5 py-2.5 text-xs text-stone-900 font-mono font-black tracking-wider uppercase focus:outline-none focus:ring-2 focus:ring-amber-400 shadow-xs"
+                style={{ minHeight: '44px' }}
+              />
+              <span className="text-[10px] text-stone-500 block">
+                उदा: <b>BSEB100</b>, <b>RAJ100</b>, <b>TOPPER100</b> (बड़े अक्षरों में)
+              </span>
+            </div>
+
+            <div className="space-y-1.5">
+              <label className="text-xs font-black text-stone-800 flex items-center justify-between">
+                <span>छूट राशि (Discount in ₹)</span>
+                <span className="text-[10px] text-emerald-700 font-bold">₹100 छूट</span>
+              </label>
+              <input
+                type="number"
+                required
+                value={crashCourseDiscountAmount}
+                onChange={(e) => setCrashCourseDiscountAmount(e.target.value)}
+                placeholder="100"
+                className="w-full bg-white border border-slate-300 rounded-xl px-3.5 py-2.5 text-xs text-stone-900 font-black focus:outline-none focus:border-amber-500 shadow-xs"
+                style={{ minHeight: '44px' }}
+              />
+              <span className="text-[10px] text-stone-500 block">
+                डिफ़ॉल्ट ₹100 छूट। (299 - 100 = ₹199)
+              </span>
+            </div>
+          </div>
+
+          {/* Live Discount Calculator Preview */}
+          <div className="bg-white/90 border border-amber-300 rounded-2xl p-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs shadow-xs">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-amber-500/20 text-amber-800 flex items-center justify-center shrink-0 font-black">
+                <Percent className="w-5 h-5 text-amber-700" />
+              </div>
+              <div className="space-y-0.5">
+                <span className="text-[11px] font-black text-stone-900 block">
+                  लाइव मूल्य पूर्वावलोकन (Live Pricing Calculation):
+                </span>
+                <p className="text-[11px] text-stone-600">
+                  सामान्य फीस: <span className="line-through text-stone-400">₹{price1Month || 299}</span> • कोड लागू होने पर: <b className="text-emerald-700 font-black text-xs">₹{Math.max(0, (parseInt(price1Month) || 299) - (parseInt(crashCourseDiscountAmount) || 100))}</b>
+                </p>
+              </div>
+            </div>
+
+            <div className="bg-emerald-50 border border-emerald-300 px-3 py-1.5 rounded-xl text-center shrink-0">
+              <span className="text-[10px] text-emerald-800 font-bold block">छात्र को अंतिम भुगतान</span>
+              <span className="text-base font-black text-emerald-700">
+                ₹{Math.max(0, (parseInt(price1Month) || 299) - (parseInt(crashCourseDiscountAmount) || 100))}
+              </span>
             </div>
           </div>
         </div>

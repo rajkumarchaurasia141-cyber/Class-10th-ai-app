@@ -16,11 +16,15 @@ import {
   Smartphone,
   MessageCircle,
   HelpCircle,
-  Lock
+  Lock,
+  Ticket,
+  Tag,
+  Clock
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { useData } from '../context/DataContext';
 import { db } from '../lib/firebase';
-import { doc, onSnapshot, setDoc, serverTimestamp } from 'firebase/firestore';
+import { collection, doc, onSnapshot, serverTimestamp } from 'firebase/firestore';
 import { safeSetDoc } from '../utils/firestoreSafe';
 
 interface CrashCoursePaywallModalProps {
@@ -31,10 +35,28 @@ interface CrashCoursePaywallModalProps {
 
 export function CrashCoursePaywallModal({ onClose, onSuccess }: CrashCoursePaywallModalProps) {
   const { user, fbUser } = useAuth();
+  const { appConfig } = useData();
 
-  const upiId = "9241511070@ybl";
-  const whatsappNumber = "9241511070";
-  const crashCoursePrice = 299;
+  const upiId = appConfig.upiId || "9241511070@ybl";
+  const whatsappNumber = appConfig.whatsappNumber || "9241511070";
+  const basePrice = appConfig.crashCoursePrice || 299;
+  const discountAmount = appConfig.crashCourseDiscountAmount || 100;
+
+  // Active secret code from Admin settings or local storage cache
+  const adminSecretCode = (
+    appConfig.crashCourseDiscountCode || 
+    (typeof window !== 'undefined' ? localStorage.getItem('bseb_crash_course_discount_code') : '') || 
+    'BSEB100'
+  ).trim().toUpperCase();
+
+  // Coupon state
+  const [couponInput, setCouponInput] = useState('');
+  const [appliedCoupon, setAppliedCoupon] = useState<string | null>(null);
+  const [couponError, setCouponError] = useState<string | null>(null);
+  const [couponSuccess, setCouponSuccess] = useState<string | null>(null);
+
+  const isDiscountApplied = !!appliedCoupon;
+  const effectivePrice = isDiscountApplied ? Math.max(0, basePrice - discountAmount) : basePrice;
 
   const [copiedUpi, setCopiedUpi] = useState(false);
   const [studentName, setStudentName] = useState(user?.name || '');
@@ -46,10 +68,40 @@ export function CrashCoursePaywallModal({ onClose, onSuccess }: CrashCoursePaywa
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [successSent, setSuccessSent] = useState(false);
 
+  // Existing payment request check for this student
+  const [existingRequest, setExistingRequest] = useState<any>(null);
+
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Dynamic UPI URL for QR code
-  const upiPayLink = `upi://pay?pa=${encodeURIComponent(upiId)}&pn=${encodeURIComponent('BiharBoardCrashCourse')}&am=${crashCoursePrice}&cu=INR&tn=${encodeURIComponent('BSEB 10th Crash Course')}`;
+  // Listen / Check for existing request for current email
+  useEffect(() => {
+    const cleanEmail = studentEmail.trim().toLowerCase();
+    if (!cleanEmail) return;
+
+    try {
+      const localItems = JSON.parse(localStorage.getItem('bseb_crash_course_requests') || '[]');
+      const found = localItems.find((r: any) => (r.studentEmail || '').toLowerCase() === cleanEmail);
+      if (found) {
+        setExistingRequest(found);
+      }
+    } catch {}
+
+    try {
+      const unsub = onSnapshot(collection(db, 'crash_course_requests'), (snapshot) => {
+        const found = snapshot.docs.find(d => {
+          const data = d.data();
+          return (data.studentEmail || data.userEmail || '').toLowerCase() === cleanEmail;
+        });
+        if (found) {
+          setExistingRequest({ id: found.id, ...found.data() });
+        }
+      }, () => {});
+      return () => unsub();
+    } catch {}
+  }, [studentEmail]);
+
+  // Dynamic UPI URL for QR code & direct pay with calculated effective price
+  const upiPayLink = `upi://pay?pa=${encodeURIComponent(upiId)}&pn=${encodeURIComponent('BiharBoardCrashCourse')}&am=${effectivePrice}&cu=INR&tn=${encodeURIComponent(isDiscountApplied ? `BSEB 10th Crash Course Disc ${appliedCoupon}` : 'BSEB 10th Crash Course')}`;
   const qrCodeApiUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(upiPayLink)}`;
 
   const handleCopyUpi = async () => {
@@ -77,6 +129,33 @@ export function CrashCoursePaywallModal({ onClose, onSuccess }: CrashCoursePaywa
     } catch {
       alert(`UPI ID: ${upiId}`);
     }
+  };
+
+  // Coupon application logic
+  const handleApplyCoupon = (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    const clean = couponInput.trim().toUpperCase();
+    if (!clean) {
+      setCouponError('कृपया कूपन कोड दर्ज करें।');
+      setCouponSuccess(null);
+      return;
+    }
+
+    if (clean === adminSecretCode) {
+      setAppliedCoupon(clean);
+      setCouponSuccess(`🎉 बधाई हो! गुप्त कूपन कोड "${clean}" लागू हो गया है! आपको ₹${discountAmount} की छूट मिली है। अब आपको केवल ₹${basePrice - discountAmount} पे करना है।`);
+      setCouponError(null);
+    } else {
+      setCouponError('अमान्य या गलत डिस्काउंट कोड! कृपया एडमिन द्वारा दिया गया सही गुप्त कोड दर्ज करें।');
+      setCouponSuccess(null);
+    }
+  };
+
+  const handleRemoveCoupon = () => {
+    setAppliedCoupon(null);
+    setCouponInput('');
+    setCouponError(null);
+    setCouponSuccess(null);
   };
 
   // Client-side image compression
@@ -141,7 +220,7 @@ export function CrashCoursePaywallModal({ onClose, onSuccess }: CrashCoursePaywa
     }
 
     if (!screenshotBase64) {
-      setErrorMsg('कृपया ₹299 पेमेंट का स्क्रीनशॉट अवश्य चुनें!');
+      setErrorMsg(`कृपया ₹${effectivePrice} पेमेंट का स्क्रीनशॉट अवश्य चुनें!`);
       return;
     }
 
@@ -156,7 +235,10 @@ export function CrashCoursePaywallModal({ onClose, onSuccess }: CrashCoursePaywa
       studentName: cleanName,
       studentEmail: cleanEmail,
       courseName: "न्यू क्रैश कोर्स (Class 10th)",
-      amount: crashCoursePrice,
+      amount: effectivePrice, // 199 if coupon applied, else 299
+      originalPrice: basePrice,
+      discountAmount: isDiscountApplied ? discountAmount : 0,
+      discountCode: isDiscountApplied ? appliedCoupon : null,
       screenshotDataUrl: screenshotBase64,
       screenshotBase64: screenshotBase64,
       utr: utrNumber.trim() || 'N/A',
@@ -188,7 +270,6 @@ export function CrashCoursePaywallModal({ onClose, onSuccess }: CrashCoursePaywa
       if (onSuccess) onSuccess();
     } catch (err: any) {
       console.warn("Failed to upload request to cloud, stored locally:", err);
-      // Still store locally
       try {
         const localList = JSON.parse(localStorage.getItem('bseb_crash_course_requests') || '[]');
         localStorage.setItem('bseb_crash_course_requests', JSON.stringify([requestPayload, ...localList]));
@@ -217,8 +298,12 @@ export function CrashCoursePaywallModal({ onClose, onSuccess }: CrashCoursePaywa
             <div>
               <h3 className="font-black text-sm text-white flex items-center gap-1.5">
                 <span>न्यू क्रैश कोर्स अनलॉक करें</span>
-                <span className="text-[10px] bg-amber-500/20 text-amber-300 border border-amber-500/30 px-1.5 py-0.2 rounded font-black">
-                  ₹{crashCoursePrice}
+                <span className={`text-[10px] px-2 py-0.5 rounded-full font-black ${
+                  isDiscountApplied 
+                    ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40' 
+                    : 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
+                }`}>
+                  ₹{effectivePrice}
                 </span>
               </h3>
               <p className="text-[10px] text-stone-400">बिहार बोर्ड 10वीं सम्पूर्ण 6 विषय (151+ टेस्ट)</p>
@@ -235,13 +320,13 @@ export function CrashCoursePaywallModal({ onClose, onSuccess }: CrashCoursePaywa
         {/* Success View */}
         {successSent ? (
           <div className="py-8 text-center space-y-4 my-auto relative z-10 animate-fade-in">
-            <div className="w-16 h-16 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 flex items-center justify-center mx-auto">
+            <div className="w-16 h-16 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 flex items-center justify-center mx-auto shadow-lg">
               <CheckCircle2 className="w-10 h-10" />
             </div>
             <div className="space-y-1.5">
               <h4 className="text-lg font-black text-white">🎉 पेमेंट रिक्वेस्ट भेज दी गई है!</h4>
               <p className="text-xs text-stone-300 max-w-xs mx-auto leading-relaxed">
-                आपका पेमेंट रिक्वेस्ट एडमिन के पास चला गया है। एडमिन द्वारा एक्सेप्ट करते ही आपका कोर्स अनलॉक हो जाएगा। अगर 5 मिनट के अंदर नहीं खुलता है तो <strong className="text-amber-400 font-bold">WhatsApp: 9241511070</strong> पर मैसेज करें।
+                आपका पेमेंट रिक्वेस्ट एडमिन के पास चला गया है। एडमिन द्वारा एक्सेप्ट करते ही आपका कोर्स अनलॉक हो जाएगा। अगर 5 मिनट के अंदर नहीं खुलता है तो <strong className="text-amber-400 font-bold">WhatsApp: {whatsappNumber}</strong> पर मैसेज करें।
               </p>
             </div>
 
@@ -254,9 +339,16 @@ export function CrashCoursePaywallModal({ onClose, onSuccess }: CrashCoursePaywa
                 <span>Gmail ID:</span>
                 <strong className="text-amber-300 truncate max-w-[180px]">{studentEmail}</strong>
               </div>
-              <div className="flex justify-between text-stone-400 text-[11px]">
-                <span>फीस राशि:</span>
-                <strong className="text-emerald-400 font-black">₹{crashCoursePrice}</strong>
+              <div className="flex justify-between text-stone-400 text-[11px] items-center">
+                <span>फीस भुगतान राशि:</span>
+                <div className="flex items-center gap-1.5">
+                  {isDiscountApplied && (
+                    <span className="text-[10px] bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 px-1.5 py-0.2 rounded font-black">
+                      ₹100 छूट (कूपन: {appliedCoupon})
+                    </span>
+                  )}
+                  <strong className="text-emerald-400 font-black text-sm">₹{effectivePrice}</strong>
+                </div>
               </div>
               <div className="flex justify-between text-stone-400 text-[11px]">
                 <span>कोर्स:</span>
@@ -266,7 +358,7 @@ export function CrashCoursePaywallModal({ onClose, onSuccess }: CrashCoursePaywa
 
             <div className="space-y-2 pt-2">
               <a
-                href={`https://wa.me/91${whatsappNumber}?text=${encodeURIComponent(`नमस्ते राज सर, मैंने ₹${crashCoursePrice} का न्यू क्रैश कोर्स पेमेंट कर दिया है। मेरी Gmail ID: ${studentEmail} है। कृपया एडमिन पैनल के 'न्यू क्रैश कोर्स रिकॉर्ड' से मेरा कोर्स अनलॉक कर दीजिए।`)}`}
+                href={`https://wa.me/91${whatsappNumber}?text=${encodeURIComponent(`नमस्ते राज सर, मैंने ${isDiscountApplied ? `कूपन कोड "${appliedCoupon}" लगाकर ₹${effectivePrice} (₹100 डिस्काउंट)` : `₹${effectivePrice}`} का न्यू क्रैश कोर्स पेमेंट कर दिया है। मेरी Gmail ID: ${studentEmail} है। कृपया एडमिन पैनल के 'न्यू क्रैश कोर्स रिकॉर्ड' से मेरा कोर्स अनलॉक कर दीजिए।`)}`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-black py-2.5 px-4 rounded-xl flex items-center justify-center gap-2 text-xs shadow-lg transition-all"
@@ -286,6 +378,36 @@ export function CrashCoursePaywallModal({ onClose, onSuccess }: CrashCoursePaywa
         ) : (
           /* Form View */
           <div className="overflow-y-auto space-y-4 pr-1 text-xs relative z-10 scrollbar-thin">
+
+            {/* Existing Payment Status Banner if already submitted */}
+            {existingRequest && (
+              <div className="bg-stone-950 border border-amber-500/40 rounded-2xl p-3 space-y-2 shadow-xs">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-black text-amber-400 flex items-center gap-1.5">
+                    <Clock className="w-4 h-4 text-yellow-400 animate-spin" />
+                    <span>आपका पिछला पेमेंट स्टेटस (Status):</span>
+                  </span>
+                  <span className={`text-[10px] font-black px-2 py-0.5 rounded-full ${
+                    existingRequest.status === 'approved' 
+                      ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40' 
+                      : existingRequest.status === 'rejected'
+                        ? 'bg-red-500/20 text-red-300 border border-red-500/40'
+                        : 'bg-yellow-400/20 text-yellow-300 border border-yellow-400/40'
+                  }`}>
+                    {existingRequest.status === 'approved' ? 'सक्रिय / अनलॉक्ड' : existingRequest.status === 'rejected' ? 'अस्वीकृत' : '⏳ पेंडिंग सत्यापन'}
+                  </span>
+                </div>
+                <div className="flex justify-between items-center text-[11px] text-stone-300">
+                  <span>भेजी गई राशि: <b className="text-emerald-400 font-black">₹{existingRequest.amount}</b> {existingRequest.discountCode ? `(कोड: ${existingRequest.discountCode})` : ''}</span>
+                  <span className="text-[10px] text-stone-400 font-mono">UTR: {existingRequest.utr || 'N/A'}</span>
+                </div>
+                {existingRequest.status === 'pending' && (
+                  <p className="text-[10px] text-stone-400 leading-snug">
+                    एडमिन द्वारा सत्यापन प्रगति पर है। यदि आप नया पेमेंट करना चाहते हैं या डिस्काउंट कोड लगाना चाहते हैं, तो नीचे दिए गए फॉर्म का उपयोग करें।
+                  </p>
+                )}
+              </div>
+            )}
             
             {/* Price Clarification Banner */}
             <div className="bg-gradient-to-r from-amber-500/15 via-red-500/15 to-stone-900 border border-amber-500/30 rounded-2xl p-3 text-stone-200 space-y-1.5">
@@ -294,12 +416,26 @@ export function CrashCoursePaywallModal({ onClose, onSuccess }: CrashCoursePaywa
                   <Sparkles className="w-3.5 h-3.5 text-amber-400" />
                   10वीं न्यू क्रैश कोर्स पैकेज
                 </span>
-                <span className="text-base font-black text-white bg-amber-500/20 px-2 py-0.5 rounded-lg border border-amber-400/30">
-                  मात्र ₹{crashCoursePrice}
-                </span>
+                <div className="flex items-center gap-1.5">
+                  {isDiscountApplied ? (
+                    <>
+                      <span className="text-xs line-through text-stone-400 font-bold">
+                        ₹{basePrice}
+                      </span>
+                      <span className="text-base font-black text-emerald-400 bg-emerald-500/20 px-2.5 py-0.5 rounded-lg border border-emerald-400/40 flex items-center gap-1 shadow-xs">
+                        <span>मात्र ₹{effectivePrice}</span>
+                        <span className="text-[9px] bg-emerald-500 text-stone-950 px-1 py-0.2 rounded font-black">₹100 छूट</span>
+                      </span>
+                    </>
+                  ) : (
+                    <span className="text-base font-black text-white bg-amber-500/20 px-2.5 py-0.5 rounded-lg border border-amber-400/30">
+                      मात्र ₹{basePrice}
+                    </span>
+                  )}
+                </div>
               </div>
               <p className="text-[11px] text-stone-300 leading-snug">
-                (नोट: फुल कोर्स की फीस ₹499 है, जबकि यह न्यू फास्ट-ट्रैक क्रैश कोर्स मात्र <strong className="text-white">₹299</strong> का है। इस पर रिक्वेस्ट भेजते ही एडमिन "न्यू क्रैश कोर्स रिकॉर्ड" से इसे आपके लिए अनलॉक करेंगे।)
+                (नोट: फुल कोर्स की फीस ₹499 है, जबकि यह फास्ट-ट्रैक क्रैश कोर्स मात्र <strong className="text-white">₹{effectivePrice}</strong> का है। इस पर रिक्वेस्ट भेजते ही एडमिन इसे आपके लिए अनलॉक कर देंगे।)
               </p>
               <div className="grid grid-cols-2 gap-1 text-[10px] text-amber-200/90 pt-0.5 font-semibold">
                 <span>✔ 6 विषय (151+ टेस्ट)</span>
@@ -309,14 +445,101 @@ export function CrashCoursePaywallModal({ onClose, onSuccess }: CrashCoursePaywa
               </div>
             </div>
 
+            {/* ENHANCED SECRET DISCOUNT COUPON CODE SECTION */}
+            <div className="bg-stone-950 border border-amber-500/40 rounded-2xl p-3 space-y-2.5 shadow-sm">
+              <div className="flex items-center justify-between">
+                <label className="font-black text-white text-xs flex items-center gap-1.5">
+                  <Ticket className="w-4 h-4 text-amber-400" />
+                  <span>गुप्त डिस्काउंट कूपन कोड (Discount Code):</span>
+                </label>
+                {isDiscountApplied && (
+                  <span className="text-[10px] bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 px-2 py-0.5 rounded-full font-black flex items-center gap-1">
+                    <CheckCircle2 className="w-3 h-3 text-emerald-400" /> ₹100 छूट लागू!
+                  </span>
+                )}
+              </div>
+
+              {!isDiscountApplied ? (
+                <div className="space-y-1.5">
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      value={couponInput}
+                      onChange={(e) => {
+                        setCouponInput(e.target.value.toUpperCase());
+                        setCouponError(null);
+                      }}
+                      placeholder="एडमिन द्वारा दिया गया गुप्त कोड यहाँ डालें..."
+                      className="flex-1 bg-stone-900 border border-stone-700 focus:border-amber-400 rounded-xl px-3 py-2 text-xs text-white uppercase font-mono font-black tracking-wider focus:outline-none placeholder:normal-case placeholder:font-normal placeholder:tracking-normal placeholder:text-stone-500"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => handleApplyCoupon()}
+                      className="bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-stone-950 font-black text-xs px-4 py-2 rounded-xl transition-all cursor-pointer shadow-md active:scale-95 shrink-0 flex items-center gap-1"
+                    >
+                      <Tag className="w-3.5 h-3.5 text-stone-950" />
+                      <span>लागू करें</span>
+                    </button>
+                  </div>
+                  <p className="text-[10.5px] text-stone-400">
+                    💡 यदि आपके पास एडमिन द्वारा दिया गया गुप्त कोड है, तो उसे यहाँ दर्ज करके ₹100 की छूट प्राप्त करें (फीस ₹199 हो जाएगी)।
+                  </p>
+                </div>
+              ) : (
+                <div className="bg-emerald-950/50 border border-emerald-500/40 rounded-xl p-3 flex items-center justify-between gap-2 animate-fade-in">
+                  <div className="space-y-0.5 min-w-0">
+                    <div className="flex items-center gap-2">
+                      <span className="font-mono text-xs font-black text-emerald-400 tracking-wider">
+                        🏷️ {appliedCoupon}
+                      </span>
+                      <span className="bg-emerald-500 text-stone-950 text-[10px] font-black px-2 py-0.5 rounded-full">
+                        -₹100 छूट एक्टिव
+                      </span>
+                    </div>
+                    <p className="text-[11px] text-emerald-300 font-medium">
+                      बधाई हो! अब आपको ₹299 के बदले मात्र <b className="text-white font-black text-xs">₹199</b> का भुगतान करना है।
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleRemoveCoupon}
+                    className="text-stone-400 hover:text-red-400 text-[11px] font-bold px-2.5 py-1 rounded-lg border border-stone-700 hover:border-red-500/50 transition-colors cursor-pointer shrink-0"
+                  >
+                    हटाएं (Remove)
+                  </button>
+                </div>
+              )}
+
+              {couponError && (
+                <div className="p-2 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-[11px] flex items-center gap-1.5 animate-shake">
+                  <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+                  <span>{couponError}</span>
+                </div>
+              )}
+
+              {couponSuccess && (
+                <div className="p-2 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-300 text-[11px] flex items-center gap-1.5 animate-fade-in font-medium">
+                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+                  <span>{couponSuccess}</span>
+                </div>
+              )}
+            </div>
+
             {/* STEP 1: UPI ID & QR Code */}
             <div className="bg-stone-950 border border-stone-800 rounded-2xl p-3 space-y-2.5">
               <div className="flex items-center justify-between">
                 <label className="font-black text-white text-[11px] flex items-center gap-1.5">
                   <span className="w-4 h-4 rounded-full bg-amber-500 text-stone-950 flex items-center justify-center text-[10px] font-black">1</span>
-                  <span>UPI ID पर ₹{crashCoursePrice} भेजें:</span>
+                  <span>UPI ID पर <b>₹{effectivePrice}</b> भेजें:</span>
                 </label>
-                <span className="text-[10px] text-emerald-400 font-bold">आधिकारिक UPI</span>
+                <div className="flex items-center gap-1">
+                  {isDiscountApplied && (
+                    <span className="text-[10px] bg-emerald-500 text-stone-950 px-1.5 py-0.2 rounded font-black">
+                      ₹199 छूट रेट
+                    </span>
+                  )}
+                  <span className="text-[10px] text-emerald-400 font-bold">आधिकारिक UPI</span>
+                </div>
               </div>
 
               {/* UPI ID Copy Box */}
@@ -352,22 +575,24 @@ export function CrashCoursePaywallModal({ onClose, onSuccess }: CrashCoursePaywa
 
               {/* QR Code preview */}
               <div className="flex items-center gap-3 bg-stone-900/60 p-2.5 rounded-xl border border-stone-800/80">
-                <div className="w-20 h-20 bg-white rounded-lg p-1 shrink-0 flex items-center justify-center">
+                <div className="w-20 h-20 bg-white rounded-lg p-1 shrink-0 flex items-center justify-center shadow-xs">
                   <img src={qrCodeApiUrl} alt="UPI QR Code" className="w-full h-full object-contain" />
                 </div>
                 <div className="flex-1 text-[10px] text-stone-400 space-y-2">
-                  <div className="space-y-1">
-                    <strong className="text-stone-200 block text-[11px]">QR कोड स्कैन करें</strong>
-                    <p>Google Pay, PhonePe, Paytm से स्कैन करें।</p>
+                  <div className="space-y-0.5">
+                    <strong className="text-stone-200 block text-[11px]">
+                      QR कोड स्कैन करें ({effectivePrice} रुपये)
+                    </strong>
+                    <p>PhonePe, Google Pay, Paytm से स्कैन करें।</p>
                   </div>
                   
                   {/* Direct Pay Button for Mobile */}
                   <a 
                     href={upiPayLink}
-                    className="flex items-center justify-center gap-1.5 bg-indigo-600 hover:bg-indigo-500 text-white py-1.5 px-3 rounded-lg font-black text-[10px] transition-all"
+                    className="flex items-center justify-center gap-1.5 bg-gradient-to-r from-indigo-600 to-indigo-500 hover:from-indigo-500 hover:to-indigo-400 text-white py-1.5 px-3 rounded-lg font-black text-[10px] transition-all shadow-xs"
                   >
                     <Smartphone className="w-3.5 h-3.5" />
-                    🚀 सीधे पेमेंट करें (Pay Now)
+                    <span>सीधे ₹{effectivePrice} पेमेंट करें (Pay Now)</span>
                   </a>
                 </div>
               </div>
@@ -380,7 +605,7 @@ export function CrashCoursePaywallModal({ onClose, onSuccess }: CrashCoursePaywa
                 <span className="text-[11px] text-stone-300 font-bold">सीधे स्क्रीनशॉट भी भेज सकते हैं:</span>
               </div>
               <a
-                href={`https://wa.me/91${whatsappNumber}?text=${encodeURIComponent(`नमस्ते राज सर, मैंने ₹${crashCoursePrice} का न्यू क्रैश कोर्स पेमेंट किया है। मेरा स्क्रीनशॉट ये रहा। मेरी Gmail: ${studentEmail || user?.email || ''}`)}`}
+                href={`https://wa.me/91${whatsappNumber}?text=${encodeURIComponent(`नमस्ते राज सर, मैंने ${isDiscountApplied ? `कूपन कोड "${appliedCoupon}" लगाकर ₹${effectivePrice} (₹100 डिस्काउंट)` : `₹${effectivePrice}`} का न्यू क्रैश कोर्स पेमेंट किया है। मेरा स्क्रीनशॉट ये रहा। मेरी Gmail: ${studentEmail || user?.email || ''}`)}`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="bg-emerald-600 hover:bg-emerald-500 text-white font-black px-3 py-1.5 rounded-xl text-[11px] flex items-center gap-1 shrink-0"
@@ -439,7 +664,12 @@ export function CrashCoursePaywallModal({ onClose, onSuccess }: CrashCoursePaywa
 
               {/* Screenshot Upload */}
               <div className="space-y-1">
-                <label className="text-[10px] text-stone-400 font-bold block">₹{crashCoursePrice} पेमेंट का स्क्रीनशॉट फोटो:</label>
+                <label className="text-[10px] text-stone-400 font-bold block flex items-center justify-between">
+                  <span>₹{effectivePrice} पेमेंट का स्क्रीनशॉट फोटो:</span>
+                  {isDiscountApplied && (
+                    <span className="text-[9px] text-emerald-400 font-bold">₹100 डिस्काउंट रसीद</span>
+                  )}
+                </label>
                 <input
                   type="file"
                   ref={fileInputRef}
@@ -502,7 +732,9 @@ export function CrashCoursePaywallModal({ onClose, onSuccess }: CrashCoursePaywa
                 ) : (
                   <>
                     <Zap className="w-4 h-4 fill-current" />
-                    <span>पेमेंट रिक्वेस्ट भेजें (अनलॉक के लिए सबमिट करें)</span>
+                    <span>
+                      {isDiscountApplied ? `₹${effectivePrice} पेमेंट रिक्वेस्ट भेजें (₹100 डिस्काउंट के साथ)` : `पेमेंट रिक्वेस्ट भेजें (₹${effectivePrice} में अनलॉक करें)`}
+                    </span>
                   </>
                 )}
               </button>

@@ -172,6 +172,9 @@ export interface AppConfig {
   apkUrl?: string;
   aabUrl?: string;
   appLogoUrl?: string;
+  crashCoursePrice?: number;
+  crashCourseDiscountCode?: string;
+  crashCourseDiscountAmount?: number;
 }
 
 export interface LiveWatchRecord {
@@ -231,6 +234,9 @@ export interface CrashCoursePaymentRequestItem {
   studentEmail: string;
   courseName: string;
   amount: number;
+  originalPrice?: number;
+  discountAmount?: number;
+  discountCode?: string;
   screenshotDataUrl: string;
   utr?: string;
   status: 'pending' | 'approved' | 'rejected';

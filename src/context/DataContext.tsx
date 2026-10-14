@@ -311,7 +311,10 @@ export const defaultAppConfig: AppConfig = {
   youtubeUrl: 'https://youtube.com',
   instagramUrl: 'https://instagram.com',
   whatsappGroupUrl: 'https://chat.whatsapp.com',
-  telegramUrl: 'https://t.me'
+  telegramUrl: 'https://t.me',
+  crashCoursePrice: 299,
+  crashCourseDiscountCode: 'BSEB100',
+  crashCourseDiscountAmount: 100
 };
 
 const defaultPyqs: PyqItem[] = [
@@ -800,7 +803,47 @@ export const DataProvider = ({ children }: any) => {
   const [routine, setRoutine] = useState<RoutineItem[]>(defaultRoutine);
   const [motivationalQuotes, setMotivationalQuotes] = useState<MotivationalQuote[]>(defaultQuotes);
   const [notifications, setNotifications] = useState<NotificationItem[]>(defaultNotifications);
-  const [appConfig, setAppConfig] = useState<AppConfig>(defaultAppConfig);
+  const [appConfig, setAppConfig] = useState<AppConfig>(() => {
+    try {
+      const cached = localStorage.getItem('bseb_app_config_cache');
+      if (cached) {
+        return { ...defaultAppConfig, ...JSON.parse(cached) };
+      }
+    } catch {}
+    return defaultAppConfig;
+  });
+
+  // Real-time synchronization for app_settings/payment_config
+  useEffect(() => {
+    try {
+      const unsub = onSnapshot(doc(db, 'app_settings', 'payment_config'), (docSnap) => {
+        if (docSnap.exists()) {
+          const data = docSnap.data();
+          setAppConfig((prev) => {
+            const updated: AppConfig = {
+              ...prev,
+              upiId: data.upiId || prev.upiId,
+              whatsappNumber: data.whatsappNumber || prev.whatsappNumber,
+              qrCodeDataUrl: data.qrCodeUrl !== undefined ? data.qrCodeUrl : prev.qrCodeDataUrl,
+              appLogoUrl: data.appLogoUrl !== undefined ? data.appLogoUrl : prev.appLogoUrl,
+              price1Year: data.price1Year || data.price || prev.price1Year,
+              helplineNumber: data.helplineNumber || prev.helplineNumber,
+              crashCoursePrice: data.crashCoursePrice || prev.crashCoursePrice || 299,
+              crashCourseDiscountCode: data.crashCourseDiscountCode || prev.crashCourseDiscountCode || 'BSEB100',
+              crashCourseDiscountAmount: data.crashCourseDiscountAmount !== undefined ? data.crashCourseDiscountAmount : (prev.crashCourseDiscountAmount || 100)
+            };
+            try {
+              localStorage.setItem('bseb_app_config_cache', JSON.stringify(updated));
+            } catch {}
+            return updated;
+          });
+        }
+      }, (err) => {
+        console.warn("payment_config snapshot notice:", err?.message);
+      });
+      return () => unsub();
+    } catch {}
+  }, []);
 
   const addDailyQuiz = async (quizData: Omit<DailyQuizItem, 'id'>): Promise<string> => {
     const id = 'quiz_' + Date.now();
@@ -864,6 +907,9 @@ export const DataProvider = ({ children }: any) => {
   const updateSettings = async (newConfig: AppConfig) => {
     setAppConfig(newConfig);
     try {
+      localStorage.setItem('bseb_app_config_cache', JSON.stringify(newConfig));
+    } catch {}
+    try {
       await safeSetDoc(doc(db, 'app_settings', 'payment_config'), {
         upiId: newConfig.upiId,
         whatsappNumber: newConfig.whatsappNumber || '9241511070',
@@ -871,7 +917,10 @@ export const DataProvider = ({ children }: any) => {
         appLogoUrl: newConfig.appLogoUrl,
         price: newConfig.price1Year || 299,
         price1Year: newConfig.price1Year || 299,
-        helplineNumber: newConfig.helplineNumber || '9241511070'
+        helplineNumber: newConfig.helplineNumber || '9241511070',
+        crashCoursePrice: newConfig.crashCoursePrice || 299,
+        crashCourseDiscountCode: (newConfig.crashCourseDiscountCode || 'BSEB100').trim().toUpperCase(),
+        crashCourseDiscountAmount: newConfig.crashCourseDiscountAmount !== undefined ? newConfig.crashCourseDiscountAmount : 100
       }, { merge: true }, 5000, true);
     } catch (e: any) {
       console.warn("Firestore payment_config update notice:", e?.message);

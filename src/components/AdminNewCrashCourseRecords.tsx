@@ -30,11 +30,16 @@ import {
   MessageCircle,
   Lock,
   Unlock,
-  AlertCircle
+  AlertCircle,
+  Ticket,
+  Save,
+  Tag
 } from 'lucide-react';
+import { useData } from '../context/DataContext';
 import { CrashCoursePaymentRequestItem } from '../types';
 
 export function AdminNewCrashCourseRecords() {
+  const { appConfig, updateSettings } = useData();
   const [requests, setRequests] = useState<CrashCoursePaymentRequestItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<'all' | 'pending' | 'approved' | 'rejected'>('all');
@@ -44,6 +49,21 @@ export function AdminNewCrashCourseRecords() {
   const [copiedEmail, setCopiedEmail] = useState<string | null>(null);
   const [processingId, setProcessingId] = useState<string | null>(null);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+
+  // Quick Secret Code Editing Modal
+  const [showCodeEditModal, setShowCodeEditModal] = useState(false);
+  const [editingCode, setEditingCode] = useState(appConfig.crashCourseDiscountCode || 'BSEB100');
+  const [editingDiscountAmount, setEditingDiscountAmount] = useState((appConfig.crashCourseDiscountAmount || 100).toString());
+  const [savingCode, setSavingCode] = useState(false);
+
+  useEffect(() => {
+    if (appConfig.crashCourseDiscountCode) {
+      setEditingCode(appConfig.crashCourseDiscountCode);
+    }
+    if (appConfig.crashCourseDiscountAmount) {
+      setEditingDiscountAmount(appConfig.crashCourseDiscountAmount.toString());
+    }
+  }, [appConfig.crashCourseDiscountCode, appConfig.crashCourseDiscountAmount]);
 
   const whatsappNumber = "9241511070";
 
@@ -56,13 +76,17 @@ export function AdminNewCrashCourseRecords() {
 
       docs.forEach((d) => {
         const data = d.data();
+        const amt = Number(data.amount) || 299;
         itemsMap.set(d.id, {
           id: d.id,
           userId: data.userId || data.uid || '',
           studentName: data.studentName || data.userName || 'विद्यार्थी',
           studentEmail: (data.studentEmail || data.userEmail || data.email || '').trim().toLowerCase(),
           courseName: data.courseName || 'न्यू क्रैश कोर्स (Class 10th)',
-          amount: Number(data.amount) || 299,
+          amount: amt,
+          originalPrice: data.originalPrice || 299,
+          discountAmount: data.discountAmount || (amt === 199 ? 100 : 0),
+          discountCode: data.discountCode || (amt === 199 ? (data.couponCode || 'BSEB100') : undefined),
           screenshotDataUrl: data.screenshotDataUrl || data.screenshotBase64 || data.screenshotUrl || '',
           utr: data.utr || data.upiRef || '',
           status: data.status || 'pending',
@@ -76,13 +100,17 @@ export function AdminNewCrashCourseRecords() {
         const localItems = JSON.parse(localStorage.getItem('bseb_crash_course_requests') || '[]');
         localItems.forEach((loc: any) => {
           if (!itemsMap.has(loc.id)) {
+            const locAmt = Number(loc.amount) || 299;
             itemsMap.set(loc.id, {
               id: loc.id,
               userId: loc.userId || '',
               studentName: loc.studentName || loc.userName || 'विद्यार्थी',
               studentEmail: (loc.studentEmail || loc.userEmail || '').trim().toLowerCase(),
               courseName: loc.courseName || 'न्यू क्रैश कोर्स (Class 10th)',
-              amount: Number(loc.amount) || 299,
+              amount: locAmt,
+              originalPrice: loc.originalPrice || 299,
+              discountAmount: loc.discountAmount || (locAmt === 199 ? 100 : 0),
+              discountCode: loc.discountCode || (locAmt === 199 ? (loc.couponCode || 'BSEB100') : undefined),
               screenshotDataUrl: loc.screenshotDataUrl || loc.screenshotBase64 || '',
               utr: loc.utr || loc.upiRef || '',
               status: loc.status || 'pending',
@@ -120,10 +148,29 @@ export function AdminNewCrashCourseRecords() {
     }
   }, []);
 
-  const handleCopy = (email: string) => {
-    navigator.clipboard?.writeText(email);
-    setCopiedEmail(email);
-    setTimeout(() => setCopiedEmail(null), 2000);
+  const handleSaveCouponCode = async () => {
+    if (!editingCode.trim()) return;
+    setSavingCode(true);
+    const cleanCode = editingCode.trim().toUpperCase();
+    const cleanAmount = parseInt(editingDiscountAmount) || 100;
+    try {
+      await updateSettings({
+        ...appConfig,
+        crashCourseDiscountCode: cleanCode,
+        crashCourseDiscountAmount: cleanAmount
+      });
+      try {
+        localStorage.setItem('bseb_crash_course_discount_code', cleanCode);
+        localStorage.setItem('bseb_crash_course_discount_amount', cleanAmount.toString());
+      } catch {}
+      setToastMessage(`✅ गुप्त कूपन कोड "${cleanCode}" (-₹${cleanAmount} छूट) सफलतापूर्वक अपडेट हो गया!`);
+      setShowCodeEditModal(false);
+      setTimeout(() => setToastMessage(null), 4000);
+    } catch (e: any) {
+      alert("कोड सेव करने में समस्या: " + (e?.message || String(e)));
+    } finally {
+      setSavingCode(false);
+    }
   };
 
   // UNLOCK Crash Course for student
@@ -298,7 +345,33 @@ export function AdminNewCrashCourseRecords() {
 
   const pendingCount = requests.filter(r => r.status === 'pending').length;
   const approvedCount = requests.filter(r => r.status === 'approved').length;
-  const totalAmountReceived = approvedCount * 299;
+  const totalAmountReceived = requests
+    .filter(r => r.status === 'approved')
+    .reduce((sum, r) => sum + (Number(r.amount) || 299), 0);
+
+  const handleCopy = async (text: string) => {
+    try {
+      if (navigator.clipboard && window.isSecureContext) {
+        await navigator.clipboard.writeText(text);
+        setCopiedEmail(text);
+        setTimeout(() => setCopiedEmail(null), 2500);
+        return;
+      }
+    } catch {}
+    try {
+      const ta = document.createElement('textarea');
+      ta.value = text;
+      ta.style.position = 'fixed';
+      ta.style.opacity = '0';
+      document.body.appendChild(ta);
+      ta.focus();
+      ta.select();
+      document.execCommand('copy');
+      document.body.removeChild(ta);
+      setCopiedEmail(text);
+      setTimeout(() => setCopiedEmail(null), 2500);
+    } catch {}
+  };
 
   return (
     <div className="space-y-6 font-sans">
@@ -377,6 +450,133 @@ export function AdminNewCrashCourseRecords() {
           </div>
         </div>
       </div>
+
+      {/* Active Secret Discount Code Quick Control Strip */}
+      <div className="bg-gradient-to-r from-stone-900 via-stone-850 to-stone-900 border-2 border-amber-500/40 rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-md">
+        <div className="flex items-center gap-3">
+          <div className="w-11 h-11 rounded-2xl bg-amber-500/20 text-amber-400 flex items-center justify-center font-black shrink-0 border border-amber-500/30 shadow-xs">
+            <Ticket className="w-6 h-6 text-amber-400" />
+          </div>
+          <div className="space-y-0.5">
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="text-xs font-black text-white">सक्रिय ₹100 डिस्काउंट कूपन कोड:</span>
+              <span className="font-mono text-xs font-black bg-amber-400 text-stone-950 px-2.5 py-0.5 rounded-md tracking-wider shadow-xs">
+                {appConfig.crashCourseDiscountCode || 'BSEB100'}
+              </span>
+              <span className="text-[10px] bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 px-2 py-0.5 rounded-full font-black flex items-center gap-1">
+                <Tag className="w-3 h-3 text-emerald-400" /> ₹{appConfig.crashCourseDiscountAmount || 100} छूट (छात्र को देय: ₹199)
+              </span>
+            </div>
+            <p className="text-[11px] text-stone-400">
+              यह कोड केवल आप जानते हैं। जब आप किसी बच्चे को यह कोड देंगे तो उसे ₹299 के बदले मात्र <b>₹199</b> का भुगतान करना पड़ेगा।
+            </p>
+          </div>
+        </div>
+
+        <button
+          type="button"
+          onClick={() => {
+            setEditingCode(appConfig.crashCourseDiscountCode || 'BSEB100');
+            setEditingDiscountAmount((appConfig.crashCourseDiscountAmount || 100).toString());
+            setShowCodeEditModal(true);
+          }}
+          className="bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-stone-950 font-black text-xs px-4 py-2.5 rounded-xl transition-all cursor-pointer flex items-center gap-1.5 shadow-md active:scale-95 shrink-0 self-start sm:self-center"
+        >
+          <Lock className="w-3.5 h-3.5 text-stone-950" />
+          <span>कोड बदलें (Change Secret Code)</span>
+        </button>
+      </div>
+
+      {/* Code Edit Modal */}
+      {showCodeEditModal && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-fade-in font-sans">
+          <div className="bg-stone-900 border border-amber-500/40 rounded-3xl p-5 sm:p-6 max-w-sm w-full space-y-4 shadow-2xl relative">
+            <div className="flex items-center justify-between border-b border-stone-800 pb-3">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-xl bg-amber-500/20 text-amber-400 flex items-center justify-center font-bold">
+                  <Ticket className="w-4 h-4 text-amber-400" />
+                </div>
+                <h4 className="text-sm font-black text-white">डिस्काउंट कूपन कोड बदलें</h4>
+              </div>
+              <button
+                onClick={() => setShowCodeEditModal(false)}
+                className="w-7 h-7 rounded-full bg-stone-800 text-stone-400 hover:text-white flex items-center justify-center transition-colors cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="space-y-3 text-xs">
+              <div className="space-y-1">
+                <label className="text-stone-300 font-bold block">नया गुप्त कूपन कोड (Coupon Code):</label>
+                <input
+                  type="text"
+                  required
+                  value={editingCode}
+                  onChange={(e) => setEditingCode(e.target.value.toUpperCase())}
+                  placeholder="BSEB100"
+                  className="w-full bg-stone-950 border-2 border-amber-400/80 rounded-xl px-3 py-2.5 text-xs text-amber-300 font-mono font-black uppercase tracking-wider focus:outline-none"
+                />
+                <span className="text-[10px] text-stone-500">उदा: BSEB100, RAJ100, SPECIAL100</span>
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-stone-300 font-bold block">छूट राशि (Discount Amount in ₹):</label>
+                <input
+                  type="number"
+                  required
+                  value={editingDiscountAmount}
+                  onChange={(e) => setEditingDiscountAmount(e.target.value)}
+                  placeholder="100"
+                  className="w-full bg-stone-950 border border-stone-700 rounded-xl px-3 py-2 text-xs text-white font-bold focus:outline-none focus:border-amber-500"
+                />
+                <span className="text-[10px] text-stone-500">डिफ़ॉल्ट ₹100 छूट (छात्र को देय: ₹199)</span>
+              </div>
+
+              <div className="bg-stone-950 p-3 rounded-xl border border-stone-800 text-[11px] text-stone-400 space-y-1">
+                <div className="flex justify-between">
+                  <span>सामान्य क्रैश कोर्स फीस:</span>
+                  <span className="text-white font-bold">₹299</span>
+                </div>
+                <div className="flex justify-between text-emerald-400">
+                  <span>कूपन छूट:</span>
+                  <span className="font-bold">-₹{editingDiscountAmount || 100}</span>
+                </div>
+                <div className="flex justify-between text-white font-black border-t border-stone-800 pt-1 text-xs">
+                  <span>छात्र द्वारा भुगतान राशि:</span>
+                  <span className="text-emerald-400 font-mono">₹{Math.max(0, 299 - (parseInt(editingDiscountAmount) || 100))}</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex gap-2 pt-2">
+              <button
+                type="button"
+                onClick={() => setShowCodeEditModal(false)}
+                className="flex-1 bg-stone-800 hover:bg-stone-700 text-stone-300 font-bold py-2.5 rounded-xl text-xs transition-colors cursor-pointer"
+              >
+                रद्द करें
+              </button>
+              <button
+                type="button"
+                onClick={handleSaveCouponCode}
+                disabled={savingCode}
+                className="flex-1 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-stone-950 font-black py-2.5 rounded-xl text-xs transition-all shadow-md active:scale-95 cursor-pointer disabled:opacity-50 flex items-center justify-center gap-1.5"
+              >
+                <Save className="w-3.5 h-3.5 text-stone-950" />
+                <span>{savingCode ? 'सेव हो रहा है...' : 'कोड सेव करें'}</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {toastMessage && (
+        <div className="p-3.5 rounded-2xl bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 text-xs font-black flex items-center gap-2 shadow-lg animate-fade-in">
+          <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+          <span>{toastMessage}</span>
+        </div>
+      )}
 
       {actionMsg && (
         <div className="p-3.5 rounded-2xl bg-amber-500/15 border border-amber-500/30 text-amber-300 text-xs font-bold flex items-center gap-2">
@@ -523,9 +723,13 @@ export function AdminNewCrashCourseRecords() {
 
                       {/* Status Badges */}
                       {isPending && (
-                        <span className="bg-yellow-400/20 text-yellow-300 border border-yellow-400/40 text-[10px] font-black px-2 py-0.5 rounded-full flex items-center gap-1">
+                        <span className={`text-[10px] font-black px-2 py-0.5 rounded-full flex items-center gap-1 ${
+                          req.amount === 199 
+                            ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40' 
+                            : 'bg-yellow-400/20 text-yellow-300 border border-yellow-400/40'
+                        }`}>
                           <Clock className="w-3 h-3" />
-                          <span>पेंडिंग सत्यापन (₹299)</span>
+                          <span>पेंडिंग सत्यापन (₹{req.amount})</span>
                         </span>
                       )}
                       {isApproved && (
@@ -538,6 +742,13 @@ export function AdminNewCrashCourseRecords() {
                         <span className="bg-red-500/20 text-red-400 border border-red-500/30 text-[10px] font-black px-2 py-0.5 rounded-full flex items-center gap-1">
                           <XCircle className="w-3 h-3" />
                           <span>अस्वीकृत</span>
+                        </span>
+                      )}
+
+                      {(req.discountCode || req.amount === 199) && (
+                        <span className="bg-emerald-950/60 text-emerald-300 border border-emerald-500/40 text-[10px] font-black px-2 py-0.5 rounded-full flex items-center gap-1 shadow-xs">
+                          <Ticket className="w-3 h-3 text-emerald-400" />
+                          <span>🏷️ कोड लागू: {req.discountCode || 'BSEB100'} (-₹{req.discountAmount || 100} छूट)</span>
                         </span>
                       )}
                     </div>
@@ -573,8 +784,8 @@ export function AdminNewCrashCourseRecords() {
                           minute: '2-digit'
                         })}
                       </span>
-                      <span className="text-emerald-400 font-black">
-                        फीस: ₹{req.amount}
+                      <span className={`font-black ${req.amount === 199 ? 'text-emerald-400 font-mono' : 'text-amber-300'}`}>
+                        फीस: ₹{req.amount} {req.amount === 199 ? '(₹100 छूट)' : ''}
                       </span>
                     </div>
                   </div>

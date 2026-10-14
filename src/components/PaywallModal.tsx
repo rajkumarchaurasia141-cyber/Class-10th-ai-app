@@ -15,7 +15,9 @@ import {
   FileText,
   Mail,
   Smartphone,
-  MessageCircle
+  MessageCircle,
+  Ticket,
+  Tag
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { db } from '../lib/firebase';
@@ -37,14 +39,21 @@ export function PaywallModal({
     upiId: "9241511070@ybl",
     whatsappNumber: "9241511070",
     price: defaultPrice,
-    qrCodeUrl: ""
+    qrCodeUrl: "",
+    crashCourseDiscountCode: "BSEB100",
+    crashCourseDiscountAmount: 100
   });
 
-  const activePrice = courseType === 'crash_course' 
-    ? 299 
-    : (config.price && config.price !== 299 ? config.price : 499);
+  const [couponInput, setCouponInput] = useState('');
+  const [appliedCoupon, setAppliedCoupon] = useState<string | null>(null);
+  const [couponError, setCouponError] = useState<string | null>(null);
+  const [couponSuccess, setCouponSuccess] = useState<string | null>(null);
 
-  const upiPayLink = `upi://pay?pa=${encodeURIComponent(config.upiId)}&pn=${encodeURIComponent(courseType === 'crash_course' ? 'BiharBoardCrashCourse' : 'BiharBoardTopperBatch')}&am=${activePrice}&cu=INR&tn=${encodeURIComponent(courseType === 'crash_course' ? 'BSEB 10th Crash Course' : 'BSEB 10th Topper Batch')}`;
+  const isDiscountApplied = courseType === 'crash_course' && !!appliedCoupon;
+  const basePrice = courseType === 'crash_course' ? 299 : (config.price && config.price !== 299 ? config.price : 499);
+  const effectivePrice = isDiscountApplied ? Math.max(0, basePrice - (config.crashCourseDiscountAmount || 100)) : basePrice;
+
+  const upiPayLink = `upi://pay?pa=${encodeURIComponent(config.upiId)}&pn=${encodeURIComponent(courseType === 'crash_course' ? 'BiharBoardCrashCourse' : 'BiharBoardTopperBatch')}&am=${effectivePrice}&cu=INR&tn=${encodeURIComponent(courseType === 'crash_course' ? (isDiscountApplied ? `BSEB 10th Crash Course Disc ${appliedCoupon}` : 'BSEB 10th Crash Course') : 'BSEB 10th Topper Batch')}`;
 
   const [copiedUpi, setCopiedUpi] = useState(false);
   const [studentEmailInput, setStudentEmailInput] = useState(user?.email || '');
@@ -78,11 +87,13 @@ export function PaywallModal({
           upiId: data.upiId || "9241511070@ybl",
           whatsappNumber: finalWa,
           price: courseType === 'crash_course' ? 299 : (finalPrice === 299 ? 499 : finalPrice),
-          qrCodeUrl: data.qrCodeUrl || ""
+          qrCodeUrl: data.qrCodeUrl || "",
+          crashCourseDiscountCode: data.crashCourseDiscountCode || "BSEB100",
+          crashCourseDiscountAmount: data.crashCourseDiscountAmount || 100
         });
       } else {
         try {
-          setDoc(docRef, { price: defaultPrice, price1Year: 499, upiId: "9241511070@ybl", whatsappNumber: "9241511070" }, { merge: true }).catch(() => {});
+          setDoc(docRef, { price: defaultPrice, price1Year: 499, upiId: "9241511070@ybl", whatsappNumber: "9241511070", crashCourseDiscountCode: "BSEB100", crashCourseDiscountAmount: 100 }, { merge: true }).catch(() => {});
         } catch {}
       }
     }, (err) => {
@@ -90,6 +101,33 @@ export function PaywallModal({
     });
     return () => unsub();
   }, []);
+
+  const handleApplyCoupon = (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    const clean = couponInput.trim().toUpperCase();
+    if (!clean) {
+      setCouponError('कृपया कूपन कोड दर्ज करें।');
+      setCouponSuccess(null);
+      return;
+    }
+
+    const adminCode = (config.crashCourseDiscountCode || 'BSEB100').trim().toUpperCase();
+    if (clean === adminCode) {
+      setAppliedCoupon(clean);
+      setCouponSuccess(`🎉 बधाई हो! कूपन कोड "${clean}" लागू हो गया! ₹${config.crashCourseDiscountAmount || 100} की छूट मिली है।`);
+      setCouponError(null);
+    } else {
+      setCouponError('अमान्य डिस्काउंट कोड! कृपया एडमिन द्वारा दिया गया सही कोड दर्ज करें।');
+      setCouponSuccess(null);
+    }
+  };
+
+  const handleRemoveCoupon = () => {
+    setAppliedCoupon(null);
+    setCouponInput('');
+    setCouponError(null);
+    setCouponSuccess(null);
+  };
 
   const handleCopyUpi = async () => {
     try {
@@ -210,7 +248,10 @@ export function PaywallModal({
         userName: finalStudentName,
         courseName: courseType === 'crash_course' ? "न्यू क्रैश कोर्स (Class 10th)" : "Topper Batch (फुल कोर्स)",
         courseType: courseType,
-        amount: activePrice,
+        amount: effectivePrice,
+        originalPrice: basePrice,
+        discountAmount: isDiscountApplied ? (config.crashCourseDiscountAmount || 100) : 0,
+        discountCode: isDiscountApplied ? appliedCoupon : null,
         upiRef: utrNumber.trim() || "N/A",
         screenshotBase64: screenshotBase64,
         status: "pending",
@@ -230,7 +271,10 @@ export function PaywallModal({
             studentName: finalStudentName,
             studentEmail: emailForPayload,
             courseName: "न्यू क्रैश कोर्स (Class 10th)",
-            amount: activePrice,
+            amount: effectivePrice,
+            originalPrice: basePrice,
+            discountAmount: isDiscountApplied ? (config.crashCourseDiscountAmount || 100) : 0,
+            discountCode: isDiscountApplied ? appliedCoupon : null,
             screenshotDataUrl: screenshotBase64,
             utr: utrNumber.trim() || 'N/A',
             status: 'pending',
@@ -249,7 +293,7 @@ export function PaywallModal({
           body: JSON.stringify({
             studentName: finalStudentName,
             studentEmail: emailForPayload,
-            amount: activePrice,
+            amount: effectivePrice,
             screenshotUrl: screenshotBase64,
             requestId: requestId
           })
@@ -309,7 +353,9 @@ export function PaywallModal({
           {/* Main Hero Header */}
           <div className="text-center bg-stone-50 rounded-2xl p-4 border border-stone-100 relative">
             <h2 className="text-lg sm:text-xl font-black text-stone-900">
-              {courseType === 'crash_course' ? `न्यू क्रैश कोर्स अनलॉक करें - मात्र ₹${activePrice}` : `टॉपर बैच (फुल कोर्स) अनलॉक करें - मात्र ₹${activePrice}`}
+              {courseType === 'crash_course' 
+                ? (isDiscountApplied ? `🎉 क्रैश कोर्स - मात्र ₹${effectivePrice} (₹100 डिस्काउंट लागू)` : `न्यू क्रैश कोर्स अनलॉक करें - मात्र ₹${effectivePrice}`)
+                : `टॉपर बैच (फुल कोर्स) अनलॉक करें - मात्र ₹${effectivePrice}`}
             </h2>
             <p className="text-[11px] text-stone-600 mt-1 font-semibold leading-relaxed">
               {courseType === 'crash_course' 
@@ -320,6 +366,88 @@ export function PaywallModal({
               <Sparkles className="w-4 h-4 text-amber-500" />
             </div>
           </div>
+
+          {/* Crash Course Coupon Input Section */}
+          {courseType === 'crash_course' && (
+            <div className="bg-amber-500/10 border border-amber-500/30 rounded-2xl p-3 space-y-2 text-stone-900">
+              <div className="flex items-center justify-between">
+                <label className="text-xs font-black text-stone-900 flex items-center gap-1.5">
+                  <Ticket className="w-4 h-4 text-amber-600" />
+                  <span>गुप्त डिस्काउंट कूपन कोड (₹100 छूट):</span>
+                </label>
+                {isDiscountApplied && (
+                  <span className="text-[10px] bg-emerald-100 text-emerald-800 border border-emerald-300 px-2 py-0.5 rounded-full font-black flex items-center gap-1">
+                    <CheckCircle2 className="w-3 h-3 text-emerald-600" /> ₹100 छूट लागू!
+                  </span>
+                )}
+              </div>
+
+              {!isDiscountApplied ? (
+                <div className="space-y-1.5">
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      value={couponInput}
+                      onChange={(e) => {
+                        setCouponInput(e.target.value.toUpperCase());
+                        setCouponError(null);
+                      }}
+                      placeholder="एडमिन द्वारा दिया गया गुप्त कोड यहाँ डालें..."
+                      className="flex-1 bg-white border border-stone-300 focus:border-amber-500 rounded-xl px-3 py-2 text-xs text-stone-900 uppercase font-mono font-black tracking-wider focus:outline-none placeholder:normal-case placeholder:font-normal placeholder:tracking-normal placeholder:text-stone-400"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => handleApplyCoupon()}
+                      className="bg-amber-500 hover:bg-amber-600 active:scale-95 text-stone-950 font-black text-xs px-4 py-2 rounded-xl transition-all cursor-pointer shadow-xs shrink-0 flex items-center gap-1"
+                    >
+                      <Tag className="w-3.5 h-3.5" />
+                      <span>लागू करें</span>
+                    </button>
+                  </div>
+                  <p className="text-[10.5px] text-stone-500">
+                    💡 यदि आपके पास एडमिन द्वारा दिया गया गुप्त कोड है, तो उसे यहाँ दर्ज करके ₹100 की छूट प्राप्त करें (फीस ₹199 हो जाएगी)।
+                  </p>
+                </div>
+              ) : (
+                <div className="bg-emerald-50 border border-emerald-300 rounded-xl p-2.5 flex items-center justify-between gap-2">
+                  <div className="space-y-0.5">
+                    <div className="flex items-center gap-2">
+                      <span className="font-mono text-xs font-black text-emerald-800 tracking-wider">
+                        🏷️ {appliedCoupon}
+                      </span>
+                      <span className="bg-emerald-600 text-white text-[10px] font-black px-2 py-0.5 rounded-full">
+                        -₹100 छूट एक्टिव
+                      </span>
+                    </div>
+                    <p className="text-[11px] text-emerald-700 font-bold">
+                      बधाई हो! अब आपको ₹299 के बदले मात्र <b>₹199</b> का भुगतान करना है।
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleRemoveCoupon}
+                    className="text-stone-500 hover:text-red-600 text-[11px] font-bold px-2 py-1 rounded-lg border border-stone-300 hover:border-red-400 transition-colors cursor-pointer shrink-0"
+                  >
+                    हटाएं
+                  </button>
+                </div>
+              )}
+
+              {couponError && (
+                <div className="p-2 rounded-xl bg-red-100 border border-red-300 text-red-700 text-[11px] flex items-center gap-1.5">
+                  <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+                  <span>{couponError}</span>
+                </div>
+              )}
+
+              {couponSuccess && (
+                <div className="p-2 rounded-xl bg-emerald-100 border border-emerald-300 text-emerald-800 text-[11px] flex items-center gap-1.5">
+                  <CheckCircle2 className="w-3.5 h-3.5 shrink-0" />
+                  <span>{couponSuccess}</span>
+                </div>
+              )}
+            </div>
+          )}
 
           {/* QR Code and Scanner Section */}
           <div className="bg-stone-50 border border-stone-200 rounded-2xl p-3 text-center space-y-3">
@@ -352,7 +480,7 @@ export function PaywallModal({
                 className="w-full flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white py-2.5 rounded-xl font-black text-xs transition-all shadow-md active:scale-95"
               >
                 <Smartphone className="w-4 h-4" />
-                <span>🚀 सीधे पेमेंट करें (Direct Pay)</span>
+                <span>🚀 सीधे पेमेंट करें (Direct Pay ₹{effectivePrice})</span>
               </a>
               <p className="text-[9px] text-stone-400 mt-1.5 font-bold">GPay, PhonePe, Paytm, या अन्य किसी भी UPI ऐप से भुगतान करें</p>
             </div>
@@ -365,7 +493,7 @@ export function PaywallModal({
             <div className="space-y-1.5">
               <label className="text-[11px] font-black text-stone-700 flex items-center gap-1">
                 <span className="w-4 h-4 rounded-full bg-red-600 text-white flex items-center justify-center text-[9px] font-black">1</span>
-                QR कोड स्कैन करके या UPI ID पर ₹{activePrice} भेजें:
+                QR कोड स्कैन करके या UPI ID पर ₹{effectivePrice} भेजें:
               </label>
 
               <div className="bg-stone-50 border border-stone-200 rounded-xl p-2.5 flex items-center justify-between gap-2 shadow-xs">
@@ -423,7 +551,7 @@ export function PaywallModal({
                 </div>
 
                 <a
-                  href={`https://wa.me/91${config.whatsappNumber || '9241511070'}?text=${encodeURIComponent(`नमस्ते राज सर, मैंने ₹${activePrice} का ${courseType === 'crash_course' ? 'न्यू क्रैश कोर्स (₹299)' : 'फुल कोर्स - टॉपर बैच (₹499)'} पेमेंट कर दिया है। यह रहा मेरा पेमेंट स्क्रीनशॉट। कृपया मेरा कोर्स तुरंत अनलॉक कर दीजिए। (Gmail: ${studentEmailInput || user?.email || ''})`)}`}
+                  href={`https://wa.me/91${config.whatsappNumber || '9241511070'}?text=${encodeURIComponent(`नमस्ते राज सर, मैंने ₹${effectivePrice} का ${courseType === 'crash_course' ? (isDiscountApplied ? `न्यू क्रैश कोर्स (कोड ${appliedCoupon} से ₹199)` : 'न्यू क्रैश कोर्स (₹299)') : 'फुल कोर्स - टॉपर बैच (₹499)'} पेमेंट कर दिया है। यह रहा मेरा पेमेंट स्क्रीनशॉट। कृपया मेरा कोर्स तुरंत अनलॉक कर दीजिए। (Gmail: ${studentEmailInput || user?.email || ''})`)}`}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="w-full bg-white hover:bg-emerald-50 active:scale-95 text-emerald-800 font-black py-2.5 px-3 rounded-xl flex items-center justify-center gap-2 text-xs shadow-sm transition-all cursor-pointer border border-emerald-200"
@@ -570,7 +698,7 @@ export function PaywallModal({
 
             {/* Direct WhatsApp Option */}
             <a
-              href={`https://wa.me/91${config.whatsappNumber}?text=${encodeURIComponent(`नमस्ते सर, मैंने ₹${activePrice} का क्रैश कोर्स पेमेंट किया है। कृपया मेरा कोर्स अनलॉक करें। मेरी जीमेल: ${studentEmailInput || user?.email || ''}`)}`}
+              href={`https://wa.me/91${config.whatsappNumber}?text=${encodeURIComponent(`नमस्ते सर, मैंने ₹${effectivePrice} का ${courseType === 'crash_course' ? (isDiscountApplied ? `क्रैश कोर्स (कोड ${appliedCoupon} से ₹199)` : 'क्रैश कोर्स (₹299)') : 'फुल कोर्स (₹499)'} पेमेंट किया है। कृपया मेरा कोर्स अनलॉक करें। मेरी जीमेल: ${studentEmailInput || user?.email || ''}`)}`}
               target="_blank"
               rel="noopener noreferrer"
               className="w-full bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 font-bold py-2 px-4 rounded-xl flex items-center justify-center gap-2 text-xs transition-all cursor-pointer text-center"

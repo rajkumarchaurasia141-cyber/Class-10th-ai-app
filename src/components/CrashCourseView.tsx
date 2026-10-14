@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   FileText, 
   Download, 
@@ -11,18 +11,23 @@ import {
   BookOpen, 
   Award, 
   CheckCircle, 
-  CheckCircle2,
-  XCircle,
+  CheckCircle2, 
+  XCircle, 
   HelpCircle, 
   ChevronRight, 
-  Zap,
-  Timer,
-  RefreshCw,
-  Trophy,
-  Filter,
-  Check,
-  X
+  Zap, 
+  Timer, 
+  RefreshCw, 
+  Trophy, 
+  Filter, 
+  Check, 
+  X,
+  Clock,
+  Ticket,
+  Tag
 } from 'lucide-react';
+import { db } from '../lib/firebase';
+import { collection, onSnapshot } from 'firebase/firestore';
 import { useData } from '../context/DataContext';
 import { useAuth } from '../context/AuthContext';
 import { CrashCoursePdf } from '../types';
@@ -43,9 +48,38 @@ interface CrashCourseViewProps {
 
 export function CrashCourseView({ onBack, onOpenVip }: CrashCourseViewProps) {
   const { crashCoursePdfs } = useData();
-  const { isVIP, isAdmin, hasCrashCourse } = useAuth();
+  const { user, isVIP, isAdmin, hasCrashCourse } = useAuth();
   const isCrashCourseUnlocked = isAdmin || hasCrashCourse;
   const [showCrashCourseModal, setShowCrashCourseModal] = useState(false);
+  const [existingRequest, setExistingRequest] = useState<any>(null);
+
+  useEffect(() => {
+    const studentEmail = (user?.email || '').trim().toLowerCase();
+    try {
+      const localItems = JSON.parse(localStorage.getItem('bseb_crash_course_requests') || '[]');
+      if (studentEmail) {
+        const found = localItems.find((r: any) => (r.studentEmail || '').toLowerCase() === studentEmail);
+        if (found) setExistingRequest(found);
+      } else if (localItems.length > 0) {
+        setExistingRequest(localItems[0]);
+      }
+    } catch {}
+
+    if (studentEmail) {
+      try {
+        const unsub = onSnapshot(collection(db, 'crash_course_requests'), (snapshot) => {
+          const found = snapshot.docs.find(d => {
+            const data = d.data();
+            return (data.studentEmail || data.userEmail || '').toLowerCase() === studentEmail;
+          });
+          if (found) {
+            setExistingRequest({ id: found.id, ...found.data() });
+          }
+        }, () => {});
+        return () => unsub();
+      } catch {}
+    }
+  }, [user?.email]);
 
   const [activeSection, setActiveSection] = useState<'pdfs' | 'tests'>('tests');
   const [selectedSubjectId, setSelectedSubjectId] = useState<string>('hindi');
@@ -249,7 +283,7 @@ export function CrashCourseView({ onBack, onOpenVip }: CrashCourseViewProps) {
             className="px-3.5 py-2 bg-gradient-to-r from-red-600 via-orange-600 to-amber-600 text-white rounded-xl text-xs font-black shadow-sm flex items-center gap-1.5 cursor-pointer hover:opacity-95 active:scale-95"
           >
             <Lock className="w-3.5 h-3.5 text-yellow-300" />
-            <span>क्रैश कोर्स अनलॉक (₹299)</span>
+            <span>क्रैश कोर्स अनलॉक (₹299 / कोड से ₹199)</span>
           </button>
         ) : (
           <div className="bg-emerald-100 text-emerald-800 border border-emerald-300 px-3 py-1.5 rounded-xl text-xs font-black flex items-center gap-1.5 shadow-2xs">
@@ -258,6 +292,62 @@ export function CrashCourseView({ onBack, onOpenVip }: CrashCourseViewProps) {
           </div>
         )}
       </div>
+
+      {/* Payment Status & Secret Discount Code Section (पेमेंट स्टेटस & कोड डिस्काउंट सेक्शन) */}
+      {!isCrashCourseUnlocked && (
+        <div className="bg-gradient-to-r from-stone-900 via-stone-850 to-stone-900 border-2 border-amber-500/50 rounded-3xl p-4 sm:p-5 shadow-lg space-y-3">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div className="flex items-start sm:items-center gap-3">
+              <div className="w-10 h-10 rounded-2xl bg-amber-500/20 text-amber-400 flex items-center justify-center font-black shrink-0 border border-amber-500/30">
+                {existingRequest ? <Clock className="w-5 h-5 text-amber-400 animate-spin" /> : <Ticket className="w-5 h-5 text-amber-400" />}
+              </div>
+              <div>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="text-xs font-black text-white">
+                    {existingRequest ? 'आपका क्रैश कोर्स पेमेंट स्टेटस (Payment Status):' : 'क्रैश कोर्स स्पेशल डिस्काउंट कोड ऑफर:'}
+                  </span>
+                  {existingRequest ? (
+                    <span className={`text-[10px] font-black px-2.5 py-0.5 rounded-full flex items-center gap-1 ${
+                      existingRequest.status === 'approved'
+                        ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40'
+                        : existingRequest.status === 'rejected'
+                          ? 'bg-red-500/20 text-red-300 border border-red-500/40'
+                          : 'bg-yellow-400/20 text-yellow-300 border border-yellow-400/40'
+                    }`}>
+                      {existingRequest.status === 'approved' ? 'सक्रिय / अनलॉक्ड' : existingRequest.status === 'rejected' ? 'अस्वीकृत' : '⏳ पेंडिंग सत्यापन'}
+                    </span>
+                  ) : (
+                    <span className="bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 text-[10px] font-black px-2 py-0.5 rounded-full">
+                      ₹100 की विशेष छूट
+                    </span>
+                  )}
+                </div>
+                <p className="text-[11px] text-stone-300 mt-0.5">
+                  {existingRequest ? (
+                    <span>
+                      भुगतान राशि: <strong className="text-emerald-400">₹{existingRequest.amount}</strong>
+                      {existingRequest.discountCode && <span className="ml-1.5 text-amber-300 font-bold">(गुप्त कूपन: {existingRequest.discountCode} लागू)</span>}
+                      {existingRequest.status === 'pending' && ' • एडमिन द्वारा सत्यापन प्रगति पर है।'}
+                    </span>
+                  ) : (
+                    <span>
+                      सामान्य फीस <b>₹299</b> है। यदि एडमिन द्वारा दिया गया गुप्त कोड है तो <b>₹100 डिस्काउंट</b> के साथ मात्र <b>₹199</b> में अनलॉक करें।
+                    </span>
+                  )}
+                </p>
+              </div>
+            </div>
+
+            <button
+              onClick={() => setShowCrashCourseModal(true)}
+              className="bg-gradient-to-r from-amber-500 via-orange-500 to-red-500 hover:from-amber-400 hover:to-orange-400 text-stone-950 font-black text-xs px-4 py-2.5 rounded-xl shadow-md transition-all cursor-pointer flex items-center justify-center gap-1.5 shrink-0 active:scale-95"
+            >
+              <Ticket className="w-4 h-4 text-stone-950" />
+              <span>{existingRequest ? 'पेमेंट स्टेटस देखें / कोड डालें' : 'कोड डालें & ₹199 में अनलॉक करें'}</span>
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Main Banner */}
       <div className="bg-gradient-to-r from-amber-600 via-orange-600 to-red-600 rounded-3xl p-6 sm:p-8 text-white shadow-xl relative overflow-hidden">
