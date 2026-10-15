@@ -813,44 +813,7 @@ export const DataProvider = ({ children }: any) => {
     return defaultAppConfig;
   });
 
-  // Real-time synchronization for app_settings/payment_config
-  useEffect(() => {
-    try {
-      const unsub = onSnapshot(doc(db, 'app_settings', 'payment_config'), (docSnap) => {
-        if (docSnap.exists()) {
-          const data = docSnap.data();
-          const remoteUpi = data.upiId;
-          const isOld = !remoteUpi || remoteUpi.includes('9708868515') || remoteUpi.includes('@ybl') || remoteUpi.includes('@paytm') || remoteUpi.includes('@gmail.com');
-          if (isOld) {
-            try {
-              setDoc(doc(db, 'app_settings', 'payment_config'), { upiId: '9241511070@fam' }, { merge: true }).catch(() => {});
-            } catch {}
-          }
-          setAppConfig((prev) => {
-            const updated: AppConfig = {
-              ...prev,
-              upiId: isOld ? '9241511070@fam' : remoteUpi,
-              whatsappNumber: data.whatsappNumber || prev.whatsappNumber,
-              qrCodeDataUrl: data.qrCodeUrl !== undefined ? data.qrCodeUrl : prev.qrCodeDataUrl,
-              appLogoUrl: data.appLogoUrl !== undefined ? data.appLogoUrl : prev.appLogoUrl,
-              price1Year: data.price1Year || data.price || prev.price1Year,
-              helplineNumber: data.helplineNumber || prev.helplineNumber,
-              crashCoursePrice: data.crashCoursePrice || prev.crashCoursePrice || 299,
-              crashCourseDiscountCode: data.crashCourseDiscountCode || prev.crashCourseDiscountCode || 'BSEB100',
-              crashCourseDiscountAmount: data.crashCourseDiscountAmount !== undefined ? data.crashCourseDiscountAmount : (prev.crashCourseDiscountAmount || 100)
-            };
-            try {
-              localStorage.setItem('bseb_app_config_cache', JSON.stringify(updated));
-            } catch {}
-            return updated;
-          });
-        }
-      }, (err) => {
-        console.warn("payment_config snapshot notice:", err?.message);
-      });
-      return () => unsub();
-    } catch {}
-  }, []);
+  // Zero Firebase reads/writes: payment config uses local default (9241511070@fam) and localStorage cache
 
   const addDailyQuiz = async (quizData: Omit<DailyQuizItem, 'id'>): Promise<string> => {
     const id = 'quiz_' + Date.now();

@@ -68,46 +68,18 @@ export function PaywallModal({
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Real-time listener to payment configuration settings
+  // Zero Firebase reads/writes: using local config default (9241511070@fam)
   useEffect(() => {
-    const docRef = doc(db, 'app_settings', 'payment_config');
-    const unsub = onSnapshot(docRef, (snap) => {
-      if (snap.exists()) {
-        const data = snap.data();
-        const rawWa = data.whatsappNumber;
-        const finalWa = (rawWa === '9507464117' || !rawWa) ? '9241511070' : rawWa;
-        const rawPrice = Number(data.price);
-        const finalPrice = (rawPrice === 600 || !rawPrice) ? 299 : rawPrice;
-        if (rawPrice === 600 || data.price1Year === 600 || !data.price) {
-          try {
-            setDoc(docRef, { price: 299, price1Year: 299, whatsappNumber: finalWa }, { merge: true }).catch(() => {});
-          } catch {}
-        }
-        const remoteUpi = data.upiId;
-        const isOldUpiId = !remoteUpi || remoteUpi.includes('9708868515') || remoteUpi.includes('@ybl') || remoteUpi.includes('@paytm') || remoteUpi.includes('@gmail.com');
-        if (isOldUpiId) {
-          try {
-            setDoc(docRef, { upiId: '9241511070@fam' }, { merge: true }).catch(() => {});
-          } catch {}
-        }
-        setConfig({
-          upiId: isOldUpiId ? "9241511070@fam" : remoteUpi,
-          whatsappNumber: finalWa,
-          price: courseType === 'crash_course' ? 299 : (finalPrice === 299 ? 499 : finalPrice),
-          qrCodeUrl: data.qrCodeUrl || "",
-          crashCourseDiscountCode: data.crashCourseDiscountCode || "BSEB100",
-          crashCourseDiscountAmount: data.crashCourseDiscountAmount || 100
-        });
-      } else {
-        try {
-          setDoc(docRef, { price: defaultPrice, price1Year: 499, upiId: "9241511070@fam", whatsappNumber: "9241511070", crashCourseDiscountCode: "BSEB100", crashCourseDiscountAmount: 100 }, { merge: true }).catch(() => {});
-        } catch {}
-      }
-    }, (err) => {
-      console.warn("Could not load remote payment configuration:", err);
+    // Zero-read local fallback config
+    setConfig({
+      upiId: "9241511070@fam",
+      whatsappNumber: "9241511070",
+      price: courseType === 'crash_course' ? 299 : 499,
+      qrCodeUrl: "",
+      crashCourseDiscountCode: "BSEB100",
+      crashCourseDiscountAmount: 100
     });
-    return () => unsub();
-  }, []);
+  }, [courseType]);
 
   const handleApplyCoupon = (e?: React.FormEvent) => {
     if (e) e.preventDefault();
