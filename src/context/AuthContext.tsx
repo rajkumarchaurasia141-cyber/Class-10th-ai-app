@@ -18,26 +18,42 @@ export const AuthProvider = ({ children }: any) => {
     return null;
   });
 
-  // 100% FREE FOR EVERYONE: All VIP features, Full Course, and Crash Course are permanently unlocked!
-  const isVIP = true;
-  const isPaid = true;
-  const hasCrashCourse = true;
-  const hasFullCourse = true;
+  const cleanUserEmail = user?.email?.trim().toLowerCase() || '';
+  const isAdmin = cleanUserEmail === 'rajkumarchaurasia143@gmail.com' || cleanUserEmail === 'rajkumarchaurasia141@gmail.com';
+
+  // Check unlock status from localStorage or if user is admin
+  const [unlockedCrashCourses, setUnlockedCrashCourses] = useState<Record<string, boolean>>(() => {
+    try {
+      return JSON.parse(localStorage.getItem('bseb_unlocked_crash_courses') || '{}');
+    } catch {
+      return {};
+    }
+  });
+
+  const [unlockedFullCourses, setUnlockedFullCourses] = useState<Record<string, boolean>>(() => {
+    try {
+      return JSON.parse(localStorage.getItem('bseb_unlocked_full_courses') || '{}');
+    } catch {
+      return {};
+    }
+  });
+
+  const hasCrashCourse = isAdmin || (cleanUserEmail ? !!unlockedCrashCourses[cleanUserEmail] : false);
+  const hasFullCourse = isAdmin || (cleanUserEmail ? !!unlockedFullCourses[cleanUserEmail] : false);
+  const isPaid = hasFullCourse;
+  const isVIP = hasFullCourse || hasCrashCourse;
 
   const vipDetails = {
-    isVip: true,
-    plan: 'lifetime_free',
-    planDurationText: 'VIP Full Access (100% Free)',
+    isVip: isVIP,
+    plan: isVIP ? 'premium_active' : 'free',
+    planDurationText: isVIP ? 'VIP Full Access (सक्रिय)' : 'फ्री वर्शन (कोर्स लॉक)',
     isExpired: false,
-    daysRemaining: 9999,
-    formattedExpiry: 'सक्रिय (निःशुल्क)'
+    daysRemaining: isVIP ? 365 : 0,
+    formattedExpiry: isVIP ? 'सक्रिय' : 'अपूर्ण'
   };
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  const cleanUserEmail = user?.email?.trim().toLowerCase() || '';
-  const isAdmin = cleanUserEmail === 'rajkumarchaurasia143@gmail.com' || cleanUserEmail === 'rajkumarchaurasia141@gmail.com' || true; // Everyone can access admin or app features fully free
 
   useEffect(() => {
     try {
@@ -52,12 +68,34 @@ export const AuthProvider = ({ children }: any) => {
     setLoading(false);
   }, []);
 
-  const unlockUserCrashCourse = (_cleanEmail: string) => {
-    // Already unlocked for everyone
+  const unlockUserCrashCourse = (email: string) => {
+    const clean = email.trim().toLowerCase();
+    if (!clean) return;
+    const updated = { ...unlockedCrashCourses, [clean]: true };
+    setUnlockedCrashCourses(updated);
+    try {
+      localStorage.setItem('bseb_unlocked_crash_courses', JSON.stringify(updated));
+    } catch {}
   };
 
-  const lockUserCrashCourse = (_cleanEmail: string) => {
-    // Cannot lock - app is 100% free
+  const unlockUserFullCourse = (email: string) => {
+    const clean = email.trim().toLowerCase();
+    if (!clean) return;
+    const updated = { ...unlockedFullCourses, [clean]: true };
+    setUnlockedFullCourses(updated);
+    try {
+      localStorage.setItem('bseb_unlocked_full_courses', JSON.stringify(updated));
+    } catch {}
+  };
+
+  const lockUserCrashCourse = (email: string) => {
+    const clean = email.trim().toLowerCase();
+    if (!clean) return;
+    const updated = { ...unlockedCrashCourses, [clean]: false };
+    setUnlockedCrashCourses(updated);
+    try {
+      localStorage.setItem('bseb_unlocked_crash_courses', JSON.stringify(updated));
+    } catch {}
   };
 
   const login = async (name: string, email: string) => {
@@ -109,11 +147,12 @@ export const AuthProvider = ({ children }: any) => {
       user, 
       fbUser: null, 
       isAdmin, 
-      isVIP: true, 
-      isPaid: true, 
-      hasCrashCourse: true, 
-      hasFullCourse: true, 
+      isVIP, 
+      isPaid, 
+      hasCrashCourse, 
+      hasFullCourse, 
       unlockUserCrashCourse, 
+      unlockUserFullCourse,
       lockUserCrashCourse, 
       vipDetails, 
       loading, 

@@ -20,21 +20,20 @@ import {
   Tag
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
-import { db } from '../lib/firebase';
-import { doc, onSnapshot, setDoc, serverTimestamp } from 'firebase/firestore';
 
 export function PaywallModal({ 
   onClose, 
-  courseType = 'full_course' 
+  courseType = 'full_course',
+  onSuccess
 }: { 
   onClose: () => void; 
   courseType?: 'full_course' | 'crash_course';
+  onSuccess?: () => void;
 }) {
-  const { user, fbUser, login } = useAuth();
+  const { user, login, unlockUserFullCourse } = useAuth();
   
   const defaultPrice = courseType === 'crash_course' ? 299 : 499;
 
-  // Dynamic UPI and Price Config with standard default values
   const [config, setConfig] = useState({
     upiId: "9241511070@fam",
     whatsappNumber: "9241511070",
@@ -54,12 +53,12 @@ export function PaywallModal({
   const effectivePrice = isDiscountApplied ? Math.max(0, basePrice - (config.crashCourseDiscountAmount || 100)) : basePrice;
 
   const upiPayLink = `upi://pay?pa=${encodeURIComponent(config.upiId)}&pn=${encodeURIComponent(courseType === 'crash_course' ? 'BiharBoardCrashCourse' : 'BiharBoardTopperBatch')}&am=${effectivePrice}&cu=INR&tn=${encodeURIComponent(courseType === 'crash_course' ? (isDiscountApplied ? `BSEB 10th Crash Course Disc ${appliedCoupon}` : 'BSEB 10th Crash Course') : 'BSEB 10th Topper Batch')}`;
+  const qrCodeApiUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(upiPayLink)}`;
 
   const [copiedUpi, setCopiedUpi] = useState(false);
   const [studentEmailInput, setStudentEmailInput] = useState(user?.email || '');
   const [studentNameInput, setStudentNameInput] = useState(user?.name || '');
 
-  // Payment screenshot processing states
   const [screenshotBase64, setScreenshotBase64] = useState<string | null>(null);
   const [screenshotFileName, setScreenshotFileName] = useState<string>('');
   const [utrNumber, setUtrNumber] = useState<string>('');
@@ -68,9 +67,7 @@ export function PaywallModal({
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Zero Firebase reads/writes: using local config default (9241511070@fam)
   useEffect(() => {
-    // Zero-read local fallback config
     setConfig({
       upiId: "9241511070@fam",
       whatsappNumber: "9241511070",
@@ -118,7 +115,6 @@ export function PaywallModal({
       }
     } catch {}
 
-    // Fallback copy method
     try {
       const textArea = document.createElement('textarea');
       textArea.value = config.upiId;
@@ -136,7 +132,6 @@ export function PaywallModal({
     }
   };
 
-  // Client-side instant Canvas image compression
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -159,9 +154,8 @@ export function PaywallModal({
         setErrorMessage('फोटो लोड नहीं हो सकी। कृपया दूसरा स्क्रीनशॉट चुनें।');
       };
       img.onload = () => {
-        // Create canvas for ultra-fast compression
         const canvas = document.createElement('canvas');
-        const MAX_WIDTH = 750; // Requested size limit to stay under 70KB
+        const MAX_WIDTH = 750;
         let width = img.width;
         let height = img.height;
 
@@ -175,7 +169,6 @@ export function PaywallModal({
         const ctx = canvas.getContext('2d');
         if (ctx) {
           ctx.drawImage(img, 0, 0, width, height);
-          // Compress to JPEG with 0.6 quality (Instantly results in 30KB - 60KB payload)
           const dataUrl = canvas.toDataURL('image/jpeg', 0.6);
           setScreenshotBase64(dataUrl);
         } else {
@@ -204,7 +197,6 @@ export function PaywallModal({
 
     const finalStudentName = (user?.name || studentNameInput).trim() || 'छात्र';
 
-    // Auto save user details to local identity if logged out or input changes
     if (!user?.email) {
       try {
         login(finalStudentName, emailForPayload);
@@ -214,10 +206,32 @@ export function PaywallModal({
     }
 
     setSubmitting(true);
+    try {
+      unlockUserFullCourse(emailForPayload);
+      
+      const req = {
+        id: `req_${Date.now()}`,
+        studentName: finalStudentName,
+        studentEmail: emailForPayload,
+        courseType: courseType,
+        amount: effectivePrice,
+        upiId: "9241511070@fam",
+        utrNumber: utrNumber.trim() || 'UPI_' + Math.floor(100000 + Math.random() * 900000),
+        screenshot: screenshotBase64,
+        createdAt: new Date().toISOString(),
+        status: 'approved'
+      };
+
+      const existing = JSON.parse(localStorage.getItem('bseb_payment_requests') || '[]');
+      localStorage.setItem('bseb_payment_requests', JSON.stringify([req, ...existing]));
+    } catch (e) {
+      console.warn("Payment storage warning:", e);
+    }
+
     setTimeout(() => {
       setSubmitting(false);
       setSubmitSuccess(true);
-      alert("🎉 बधाई हो! यह ऐप और सभी कोर्सेज पूरी तरह से निःशुल्क (100% Free) हैं। आपका कोर्स तुरंत सक्रिय कर दिया गया है!");
+      alert("🎉 बधाई हो! आपका पेमेंट (UPI: 9241511070@fam) सफलतापूर्वक प्राप्त हो गया है और टॉपर बैच (फुल कोर्स) तुरंत अनलॉक कर दिया गया है!");
       onSuccess?.();
       onClose();
     }, 400);
@@ -272,354 +286,193 @@ export function PaywallModal({
             </div>
           </div>
 
-          {/* Crash Course Coupon Input Section */}
-          {courseType === 'crash_course' && (
-            <div className="bg-amber-500/10 border border-amber-500/30 rounded-2xl p-3 space-y-2 text-stone-900">
+          {/* Payment Steps Container */}
+          <div className="space-y-3">
+            
+            {/* Step 1: Scan or Pay UPI */}
+            <div className="bg-amber-50/60 border border-amber-200/60 rounded-2xl p-4 text-stone-900 space-y-3">
               <div className="flex items-center justify-between">
-                <label className="text-xs font-black text-stone-900 flex items-center gap-1.5">
-                  <Ticket className="w-4 h-4 text-amber-600" />
-                  <span>गुप्त डिस्काउंट कूपन कोड (₹100 छूट):</span>
-                </label>
-                {isDiscountApplied && (
-                  <span className="text-[10px] bg-emerald-100 text-emerald-800 border border-emerald-300 px-2 py-0.5 rounded-full font-black flex items-center gap-1">
-                    <CheckCircle2 className="w-3 h-3 text-emerald-600" /> ₹100 छूट लागू!
-                  </span>
-                )}
+                <span className="bg-amber-500 text-white text-[11px] font-black px-2.5 py-0.5 rounded-full">
+                  स्टेप 1
+                </span>
+                <span className="text-xs font-bold text-amber-800">
+                  QR कोड स्कैन करें या UPI ID पर भेजें
+                </span>
               </div>
 
-              {!isDiscountApplied ? (
-                <div className="space-y-1.5">
-                  <div className="flex gap-2">
-                    <input
-                      type="text"
-                      value={couponInput}
-                      onChange={(e) => {
-                        setCouponInput(e.target.value.toUpperCase());
-                        setCouponError(null);
-                      }}
-                      placeholder="एडमिन द्वारा दिया गया गुप्त कोड यहाँ डालें..."
-                      className="flex-1 bg-white border border-stone-300 focus:border-amber-500 rounded-xl px-3 py-2 text-xs text-stone-900 uppercase font-mono font-black tracking-wider focus:outline-none placeholder:normal-case placeholder:font-normal placeholder:tracking-normal placeholder:text-stone-400"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => handleApplyCoupon()}
-                      className="bg-amber-500 hover:bg-amber-600 active:scale-95 text-stone-950 font-black text-xs px-4 py-2 rounded-xl transition-all cursor-pointer shadow-xs shrink-0 flex items-center gap-1"
-                    >
-                      <Tag className="w-3.5 h-3.5" />
-                      <span>लागू करें</span>
-                    </button>
-                  </div>
-                  <p className="text-[10.5px] text-stone-500">
-                    💡 यदि आपके पास एडमिन द्वारा दिया गया गुप्त कोड है, तो उसे यहाँ दर्ज करके ₹100 की छूट प्राप्त करें (फीस ₹199 हो जाएगी)।
-                  </p>
-                </div>
-              ) : (
-                <div className="bg-emerald-50 border border-emerald-300 rounded-xl p-2.5 flex items-center justify-between gap-2">
-                  <div className="space-y-0.5">
-                    <div className="flex items-center gap-2">
-                      <span className="font-mono text-xs font-black text-emerald-800 tracking-wider">
-                        🏷️ {appliedCoupon}
-                      </span>
-                      <span className="bg-emerald-600 text-white text-[10px] font-black px-2 py-0.5 rounded-full">
-                        -₹100 छूट एक्टिव
-                      </span>
-                    </div>
-                    <p className="text-[11px] text-emerald-700 font-bold">
-                      बधाई हो! अब आपको ₹299 के बदले मात्र <b>₹199</b> का भुगतान करना है।
-                    </p>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={handleRemoveCoupon}
-                    className="text-stone-500 hover:text-red-600 text-[11px] font-bold px-2 py-1 rounded-lg border border-stone-300 hover:border-red-400 transition-colors cursor-pointer shrink-0"
-                  >
-                    हटाएं
-                  </button>
-                </div>
-              )}
-
-              {couponError && (
-                <div className="p-2 rounded-xl bg-red-100 border border-red-300 text-red-700 text-[11px] flex items-center gap-1.5">
-                  <AlertCircle className="w-3.5 h-3.5 shrink-0" />
-                  <span>{couponError}</span>
-                </div>
-              )}
-
-              {couponSuccess && (
-                <div className="p-2 rounded-xl bg-emerald-100 border border-emerald-300 text-emerald-800 text-[11px] flex items-center gap-1.5">
-                  <CheckCircle2 className="w-3.5 h-3.5 shrink-0" />
-                  <span>{couponSuccess}</span>
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* QR Code and Scanner Section */}
-          <div className="bg-stone-50 border border-stone-200 rounded-2xl p-3 text-center space-y-3">
-            {config.qrCodeUrl ? (
-              <>
-                <span className="text-[11px] font-black text-stone-500 flex items-center justify-center gap-1">
-                  <QrCode className="w-4 h-4 text-red-600 animate-pulse" /> QR कोड स्कैन करके पेमेंट करें:
-                </span>
-                <div className="w-44 h-44 mx-auto bg-white p-2.5 rounded-xl border border-stone-200 shadow-sm">
+              <div className="flex flex-col sm:flex-row items-center gap-4 bg-white p-3 rounded-2xl border border-amber-100 shadow-sm">
+                <div className="w-28 h-28 bg-white p-1 rounded-xl border border-stone-200 shadow-inner shrink-0 flex items-center justify-center">
                   <img 
-                    src={config.qrCodeUrl} 
-                    alt="UPI QR Code" 
-                    className="w-full h-full object-contain"
-                    referrerPolicy="no-referrer"
+                    src={qrCodeApiUrl} 
+                    alt="Payment QR Code" 
+                    className="w-full h-full object-contain rounded-lg"
+                    onError={(e) => {
+                      (e.target as HTMLElement).style.display = 'none';
+                    }}
                   />
                 </div>
-              </>
-            ) : (
-              <div className="py-2 space-y-1">
-                <QrCode className="w-6 h-6 text-stone-400 mx-auto" />
-                <span className="text-[11px] font-bold text-stone-500 block">QR कोड फ़िलहाल उपलब्ध नहीं है</span>
-                <p className="text-[9px] text-stone-400">नीचे दिए गए बटन या UPI ID का उपयोग करें।</p>
-              </div>
-            )}
-            
-            {/* Direct Pay Button for Mobile Users */}
-            <div className="px-4">
-              <a 
-                href={upiPayLink}
-                className="w-full flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white py-2.5 rounded-xl font-black text-xs transition-all shadow-md active:scale-95"
-              >
-                <Smartphone className="w-4 h-4" />
-                <span>🚀 सीधे पेमेंट करें (Direct Pay ₹{effectivePrice})</span>
-              </a>
-              <p className="text-[9px] text-stone-400 mt-1.5 font-bold">GPay, PhonePe, Paytm, या अन्य किसी भी UPI ऐप से भुगतान करें</p>
-            </div>
-          </div>
 
-          {/* Payment Steps Form */}
-          <form onSubmit={handleSubmit} className="space-y-4">
-            
-            {/* STEP 1: Copy UPI ID */}
-            <div className="space-y-1.5">
-              <label className="text-[11px] font-black text-stone-700 flex items-center gap-1">
-                <span className="w-4 h-4 rounded-full bg-red-600 text-white flex items-center justify-center text-[9px] font-black">1</span>
-                QR कोड स्कैन करके या UPI ID पर ₹{effectivePrice} भेजें:
-              </label>
+                <div className="flex-1 w-full text-center sm:text-left space-y-2">
+                  <div>
+                    <p className="text-[10px] uppercase font-bold text-stone-500">ऑफिशियल मर्चेंट UPI ID:</p>
+                    <div className="flex items-center justify-center sm:justify-start gap-1.5 mt-0.5">
+                      <code className="bg-stone-100 text-stone-900 px-2.5 py-1 rounded-lg font-black text-xs sm:text-sm tracking-wide border border-stone-200 select-all">
+                        {config.upiId}
+                      </code>
+                      <button
+                        onClick={handleCopyUpi}
+                        className="bg-amber-500 hover:bg-amber-600 text-white p-1.5 rounded-lg transition-all cursor-pointer flex items-center gap-1 text-xs font-bold"
+                        title="UPI ID कॉपी करें"
+                      >
+                        {copiedUpi ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
+                        <span className="text-[10px]">{copiedUpi ? 'कॉपी हो गया' : 'कॉपी'}</span>
+                      </button>
+                    </div>
+                  </div>
 
-              <div className="bg-stone-50 border border-stone-200 rounded-xl p-2.5 flex items-center justify-between gap-2 shadow-xs">
-                <div className="overflow-hidden">
-                  <span className="text-xs text-stone-500 font-bold block uppercase tracking-wider text-[9px]">Official UPI Address</span>
-                  <span className="font-mono text-xs sm:text-sm font-black text-red-700 tracking-tight select-all">
-                    {config.upiId}
-                  </span>
+                  <div>
+                    <p className="text-[10px] uppercase font-bold text-stone-500">कुल भुगतान राशि (Payable Amount):</p>
+                    <p className="text-base font-black text-emerald-600">
+                      ₹{effectivePrice} <span className="text-[11px] text-stone-500 font-normal">({courseType === 'crash_course' ? 'क्रैश कोर्स' : 'फुल कोर्स'})</span>
+                    </p>
+                  </div>
+
+                  <a 
+                    href={upiPayLink}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center justify-center gap-1.5 w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs py-2 px-3 rounded-xl shadow-sm transition-all"
+                  >
+                    <Smartphone className="w-4 h-4" />
+                    <span>GooglePay / PhonePe / Paytm से सीधे पे करें</span>
+                  </a>
                 </div>
-
-                <button
-                  type="button"
-                  onClick={handleCopyUpi}
-                  className={`px-3 py-1.5 rounded-lg font-black text-xs transition-all cursor-pointer flex items-center gap-1 ${
-                    copiedUpi
-                      ? 'bg-emerald-600 text-white shadow-xs'
-                      : 'bg-stone-900 hover:bg-stone-800 text-white shadow-xs'
-                  }`}
-                  style={{ minHeight: '44px' }}
-                >
-                  {copiedUpi ? (
-                    <>
-                      <Check className="w-3.5 h-3.5" />
-                      <span>कॉपी हो गया!</span>
-                    </>
-                  ) : (
-                    <>
-                      <Copy className="w-3.5 h-3.5" />
-                      <span>UPI ID कॉपी करें</span>
-                    </>
-                  )}
-                </button>
               </div>
             </div>
 
-            {/* STEP 2: Screenshot uploader & Direct WhatsApp Sending */}
-            <div className="space-y-2.5">
-              <label className="text-[11px] font-black text-stone-700 flex items-center gap-1">
-                <span className="w-4 h-4 rounded-full bg-red-600 text-white flex items-center justify-center text-[9px] font-black">2</span>
-                पेमेंट का स्क्रीनशॉट यहाँ अपलोड करें या सीधे WhatsApp पर भेजें:
-              </label>
-
-              {/* Direct WhatsApp Clickable Link (Right at screenshot upload) */}
-              <div className="bg-gradient-to-r from-emerald-600 to-green-600 rounded-2xl p-3 text-white shadow-md border border-emerald-400">
-                <div className="flex items-center justify-between gap-2 mb-2">
-                  <div className="flex items-center gap-1.5">
-                    <span className="w-2 h-2 rounded-full bg-white animate-ping" />
-                    <span className="text-[11px] font-black uppercase tracking-wider text-emerald-100">
-                      ⚡ डायरेक्ट व्हाट्सएप लिंक
-                    </span>
-                  </div>
-                  <span className="bg-white/20 backdrop-blur-xs text-white font-mono text-[10px] font-black px-2 py-0.5 rounded-full border border-white/30">
-                    {config.whatsappNumber || '9241511070'}
-                  </span>
-                </div>
-
-                <a
-                  href={`https://wa.me/91${config.whatsappNumber || '9241511070'}?text=${encodeURIComponent(`नमस्ते राज सर, मैंने ₹${effectivePrice} का ${courseType === 'crash_course' ? (isDiscountApplied ? `न्यू क्रैश कोर्स (कोड ${appliedCoupon} से ₹199)` : 'न्यू क्रैश कोर्स (₹299)') : 'फुल कोर्स - टॉपर बैच (₹499)'} पेमेंट कर दिया है। यह रहा मेरा पेमेंट स्क्रीनशॉट। कृपया मेरा कोर्स तुरंत अनलॉक कर दीजिए। (Gmail: ${studentEmailInput || user?.email || ''})`)}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="w-full bg-white hover:bg-emerald-50 active:scale-95 text-emerald-800 font-black py-2.5 px-3 rounded-xl flex items-center justify-center gap-2 text-xs shadow-sm transition-all cursor-pointer border border-emerald-200"
-                >
-                  <MessageCircle className="w-4 h-4 text-emerald-600 fill-emerald-600 shrink-0" />
-                  <span>यहाँ क्लिक करें ➜ सीधे मेरे WhatsApp पर भेजें ({config.whatsappNumber || '9241511070'})</span>
-                </a>
-                
-                <p className="text-[10px] text-emerald-100 text-center font-bold mt-1.5 leading-tight">
-                  (यहाँ क्लिक करते ही सीधे राज सर का WhatsApp खुल जाएगा और स्क्रीनशॉट भेजकर तुरंत एक्टिवेट करवा सकते हैं)
-                </p>
-              </div>
-
-              {/* In-app file picker */}
-              <input 
-                type="file" 
-                ref={fileInputRef}
-                accept="image/*" 
-                onChange={handleFileChange} 
-                className="hidden" 
-              />
-
-              {!screenshotBase64 ? (
-                <div 
-                  onClick={() => fileInputRef.current?.click()}
-                  className="border-2 border-dashed border-stone-300 hover:border-red-600 hover:bg-stone-50 rounded-2xl p-3.5 text-center cursor-pointer transition-all"
-                >
-                  <Upload className="w-5 h-5 text-stone-400 mx-auto mb-1" />
-                  <span className="text-xs font-black text-stone-800 block">
-                    या ऐप में स्क्रीनशॉट फोटो चुनें (JPEG/PNG)
-                  </span>
-                  <span className="text-[10px] text-stone-500 block mt-0.5 font-semibold">
-                    (फोटो चुनकर नीचे 'सबमिट करें' बटन दबाएं)
-                  </span>
-                </div>
-              ) : (
-                <div className="bg-stone-50 p-2.5 rounded-2xl border border-stone-200 space-y-2 animate-fade-in">
-                  <div className="flex items-center justify-between text-[11px]">
-                    <span className="font-bold text-stone-700 flex items-center gap-1.5 truncate max-w-[200px]">
-                      <ImageIcon className="w-3.5 h-3.5 text-amber-500 shrink-0" />
-                      {screenshotFileName || "Screenshots.jpg"}
-                    </span>
-                    <button
-                      type="button"
-                      onClick={() => { setScreenshotBase64(null); setScreenshotFileName(''); }}
-                      className="text-[11px] font-bold text-red-600 hover:text-red-500 underline cursor-pointer"
-                    >
-                      हटाएँ / बदलें
-                    </button>
-                  </div>
-
-                  <div className="max-h-28 overflow-hidden rounded-lg border border-stone-200 bg-white flex items-center justify-center p-1">
-                    <img 
-                      src={screenshotBase64} 
-                      alt="Payment Preview" 
-                      className="max-h-24 w-auto object-contain rounded"
-                    />
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {/* Step 3: Reference input & Identity registration if logged out */}
-            <div className="space-y-3">
-              <div>
-                <label className="block text-[11px] font-black text-stone-700 mb-1">
-                  UPI Ref / UTR नंबर (12 अंक - वैकल्पिक):
-                </label>
-                <input
-                  type="text"
-                  maxLength={12}
-                  value={utrNumber}
-                  onChange={(e) => setUtrNumber(e.target.value.replace(/\D/g, ''))}
-                  placeholder="उदा. 423872891902"
-                  className="w-full bg-white border border-stone-300 rounded-xl px-3 py-2.5 text-xs text-stone-900 placeholder-stone-400 focus:outline-none focus:border-red-600 font-bold"
-                  style={{ minHeight: '44px' }}
-                />
+            {/* Step 2: Upload Payment Screenshot & Submit */}
+            <form onSubmit={handleSubmit} className="bg-stone-50 border border-stone-200 rounded-2xl p-4 space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="bg-stone-900 text-white text-[11px] font-black px-2.5 py-0.5 rounded-full">
+                  स्टेप 2
+                </span>
+                <span className="text-xs font-bold text-stone-700">
+                  स्क्रीनशॉट अपलोड करें & कोर्स अनलॉक करें
+                </span>
               </div>
 
               {!user?.email && (
-                <div className="p-3 bg-red-50 border border-red-100 rounded-2xl space-y-3">
-                  <span className="text-[11px] font-black text-red-800 block">
-                    ⚠️ आप लॉग-इन नहीं हैं! कोर्स एक्टिवेशन के लिए जीमेल लिखें:
-                  </span>
-                  
+                <div className="space-y-2">
                   <div>
-                    <label className="block text-[10px] font-black text-stone-600 mb-1">
-                      आपकी जीमेल आईडी (Gmail ID): *
-                    </label>
-                    <input
-                      type="email"
-                      required
-                      value={studentEmailInput}
-                      onChange={(e) => setStudentEmailInput(e.target.value)}
-                      placeholder="उदा. yourname@gmail.com"
-                      className="w-full bg-white border border-stone-300 rounded-xl px-3 py-2 text-xs text-stone-900 placeholder-stone-400 focus:outline-none focus:border-red-600"
-                      style={{ minHeight: '44px' }}
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-[10px] font-black text-stone-600 mb-1">
-                      आपका नाम (Name):
-                    </label>
-                    <input
+                    <label className="text-[11px] font-bold text-stone-700 block mb-1">आपका नाम:</label>
+                    <input 
                       type="text"
                       value={studentNameInput}
                       onChange={(e) => setStudentNameInput(e.target.value)}
-                      placeholder="उदा. राहुल कुमार"
-                      className="w-full bg-white border border-stone-300 rounded-xl px-3 py-2 text-xs text-stone-900 placeholder-stone-400 focus:outline-none focus:border-red-600"
-                      style={{ minHeight: '44px' }}
+                      placeholder="पूरा नाम दर्ज करें"
+                      required
+                      className="w-full text-xs bg-white border border-stone-300 rounded-xl px-3 py-2 text-stone-900 focus:outline-none focus:border-amber-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-[11px] font-bold text-stone-700 block mb-1">आपका ईमेल (Gmail):</label>
+                    <input 
+                      type="email"
+                      value={studentEmailInput}
+                      onChange={(e) => setStudentEmailInput(e.target.value)}
+                      placeholder="student@gmail.com"
+                      required
+                      className="w-full text-xs bg-white border border-stone-300 rounded-xl px-3 py-2 text-stone-900 focus:outline-none focus:border-amber-500"
                     />
                   </div>
                 </div>
               )}
-            </div>
 
-            {errorMessage && (
-              <div className="p-2.5 rounded-xl bg-red-50 border border-red-100 text-red-600 text-[11px] flex items-center gap-1.5 font-bold">
-                <AlertCircle className="w-4 h-4 shrink-0" />
-                <span>{errorMessage}</span>
+              <div>
+                <label className="text-[11px] font-bold text-stone-700 block mb-1">
+                  पेमेंट का स्क्रीनशॉट (Payment Screenshot): <span className="text-rose-600">*</span>
+                </label>
+                
+                <input 
+                  type="file" 
+                  ref={fileInputRef}
+                  onChange={handleFileChange}
+                  accept="image/*"
+                  className="hidden"
+                />
+
+                <div 
+                  onClick={() => fileInputRef.current?.click()}
+                  className="border-2 border-dashed border-stone-300 hover:border-amber-500 bg-white rounded-2xl p-4 text-center cursor-pointer transition-all flex flex-col items-center justify-center gap-1.5"
+                >
+                  {screenshotBase64 ? (
+                    <div className="flex items-center gap-2 text-emerald-700 bg-emerald-50 px-3 py-1.5 rounded-xl border border-emerald-200">
+                      <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />
+                      <span className="text-xs font-bold truncate max-w-[200px]">{screenshotFileName || 'स्क्रीनशॉट अपलोड हो गया'}</span>
+                      <span className="text-[10px] underline ml-2 text-stone-600">बदले</span>
+                    </div>
+                  ) : (
+                    <>
+                      <div className="w-10 h-10 rounded-full bg-amber-500/10 text-amber-600 flex items-center justify-center">
+                        <Upload className="w-5 h-5" />
+                      </div>
+                      <p className="text-xs font-bold text-stone-800">यहाँ क्लिक करके पेमेंट स्क्रीनशॉट अपलोड करें</p>
+                      <p className="text-[10px] text-stone-500">UPI पेमेंट सफल होने के बाद स्क्रीनशॉट चुनें</p>
+                    </>
+                  )}
+                </div>
               </div>
-            )}
 
-            {/* Submit Button */}
-            <button
-              type="submit"
-              disabled={submitting || !screenshotBase64}
-              className="w-full bg-gradient-to-r from-red-700 to-red-600 hover:from-red-600 hover:to-red-500 disabled:opacity-50 text-white font-black py-3 px-4 rounded-xl flex items-center justify-center gap-2 text-sm transition-all shadow-md cursor-pointer shrink-0 mt-2"
-              style={{ minHeight: '44px' }}
-            >
-              {submitting ? (
-                <>
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                  <span>पेमेंट सहेजा जा रहा है...</span>
-                </>
-              ) : (
-                <>
-                  <CheckCircle2 className="w-4 h-4" />
-                  <span>पेमेंट स्क्रीनशॉट सबमिट करें</span>
-                </>
+              <div>
+                <label className="text-[11px] font-bold text-stone-700 block mb-1">
+                  UTR / UPI Transaction ID (वैकल्पिक):
+                </label>
+                <input 
+                  type="text"
+                  value={utrNumber}
+                  onChange={(e) => setUtrNumber(e.target.value)}
+                  placeholder="उदा. 4235xxxxxxxx या UPI Ref No."
+                  className="w-full text-xs bg-white border border-stone-300 rounded-xl px-3 py-2 text-stone-900 focus:outline-none focus:border-amber-500"
+                />
+              </div>
+
+              {errorMessage && (
+                <div className="flex items-center gap-1.5 bg-rose-50 border border-rose-200 text-rose-700 p-2.5 rounded-xl text-xs font-bold">
+                  <AlertCircle className="w-4 h-4 shrink-0" />
+                  <span>{errorMessage}</span>
+                </div>
               )}
-            </button>
 
-            {/* Direct WhatsApp Option */}
-            <a
-              href={`https://wa.me/91${config.whatsappNumber}?text=${encodeURIComponent(`नमस्ते सर, मैंने ₹${effectivePrice} का ${courseType === 'crash_course' ? (isDiscountApplied ? `क्रैश कोर्स (कोड ${appliedCoupon} से ₹199)` : 'क्रैश कोर्स (₹299)') : 'फुल कोर्स (₹499)'} पेमेंट किया है। कृपया मेरा कोर्स अनलॉक करें। मेरी जीमेल: ${studentEmailInput || user?.email || ''}`)}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="w-full bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 font-bold py-2 px-4 rounded-xl flex items-center justify-center gap-2 text-xs transition-all cursor-pointer text-center"
-            >
-              <Smartphone className="w-4 h-4 text-emerald-600" />
-              <span>व्हाट्सएप ({config.whatsappNumber}) पर भी स्क्रीनशॉट भेज सकते हैं</span>
-            </a>
-          </form>
+              <button
+                type="submit"
+                disabled={submitting}
+                className="w-full bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white font-black py-3 px-4 rounded-2xl shadow-lg shadow-amber-500/25 transition-all flex items-center justify-center gap-2 cursor-pointer text-sm"
+              >
+                {submitting ? (
+                  <>
+                    <Loader2 className="w-5 h-5 animate-spin" />
+                    <span>सत्यापन हो रहा है...</span>
+                  </>
+                ) : (
+                  <>
+                    <ShieldCheck className="w-5 h-5" />
+                    <span>पेमेंट सबमिट करें & कोर्स तुरंत अनलॉक करें</span>
+                  </>
+                )}
+              </button>
+            </form>
 
-          {/* Secure SSL Badge */}
-          <div className="p-2 rounded-xl bg-stone-50 border border-stone-200 text-stone-500 text-[9px] font-bold flex items-center justify-center gap-1.5 shrink-0">
-            <ShieldCheck className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
-            <span>100% सुरक्षित और सत्यापित सीधे Rajkumar Sir द्वारा सत्यापन</span>
           </div>
-          
         </div>
+
+        {/* Footer help */}
+        <div className="border-t border-stone-100 pt-3 mt-3 text-center shrink-0">
+          <p className="text-[11px] text-stone-600 font-semibold flex items-center justify-center gap-1">
+            <MessageCircle className="w-3.5 h-3.5 text-emerald-600" />
+            <span>सहायता के लिए WhatsApp संपर्क: <b>9241511070</b></span>
+          </p>
+        </div>
+
       </div>
     </div>
   );

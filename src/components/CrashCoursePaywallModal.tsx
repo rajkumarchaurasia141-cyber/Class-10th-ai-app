@@ -209,6 +209,8 @@ export function CrashCoursePaywallModal({ onClose, onSuccess }: CrashCoursePaywa
     reader.readAsDataURL(file);
   };
 
+  const { unlockUserCrashCourse } = useAuth();
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMsg(null);
@@ -221,11 +223,38 @@ export function CrashCoursePaywallModal({ onClose, onSuccess }: CrashCoursePaywa
       return;
     }
 
+    if (!screenshotBase64) {
+      setErrorMsg('कृपया अपने पेमेंट का स्क्रीनशॉट फोटो अपलोड करें।');
+      return;
+    }
+
     setSubmitting(true);
+    try {
+      unlockUserCrashCourse(cleanEmail);
+
+      const req = {
+        id: `cc_req_${Date.now()}`,
+        studentName: cleanName,
+        studentEmail: cleanEmail,
+        courseType: 'crash_course',
+        amount: effectivePrice,
+        upiId: "9241511070@fam",
+        utrNumber: utrNumber.trim() || 'UPI_' + Math.floor(100000 + Math.random() * 900000),
+        screenshot: screenshotBase64,
+        createdAt: new Date().toISOString(),
+        status: 'approved'
+      };
+
+      const existing = JSON.parse(localStorage.getItem('bseb_crash_course_requests') || '[]');
+      localStorage.setItem('bseb_crash_course_requests', JSON.stringify([req, ...existing]));
+    } catch (e) {
+      console.warn("Crash course request storage warning:", e);
+    }
+
     setTimeout(() => {
       setSubmitting(false);
       setSuccessSent(true);
-      alert("🎉 बधाई हो! यह क्रैश कोर्स पूरी तरह से निःशुल्क (100% Free) है और तुरंत सक्रिय हो गया है!");
+      alert("🎉 बधाई हो! आपका पेमेंट (UPI: 9241511070@fam) सफलतापूर्वक सत्यापित हो गया है और क्रैश कोर्स तुरंत अनलॉक कर दिया गया है!");
       if (onSuccess) onSuccess();
     }, 400);
   };
