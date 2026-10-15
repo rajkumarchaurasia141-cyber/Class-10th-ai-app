@@ -15,11 +15,9 @@ export function AdminSettingsManager() {
   const [whatsappNumber, setWhatsappNumber] = useState(
     (appConfig.whatsappNumber === '9507464117' ? '9241511070' : appConfig.whatsappNumber) || '9241511070'
   );
-  const [upiId, setUpiId] = useState(
-    (appConfig.upiId === '9708868515' || appConfig.upiId === '9241511070@paytm' || appConfig.upiId === '9241511070@gmail.com' || !appConfig.upiId) 
-      ? '9241511070@ybl' 
-      : appConfig.upiId
-  );
+  const rawUpiAdmin = appConfig.upiId;
+  const isOldUpiAdmin = !rawUpiAdmin || rawUpiAdmin.includes('9708868515') || rawUpiAdmin.includes('@ybl') || rawUpiAdmin.includes('@paytm') || rawUpiAdmin.includes('@gmail.com');
+  const [upiId, setUpiId] = useState(isOldUpiAdmin ? '9241511070@fam' : rawUpiAdmin);
   const [qrCodeDataUrl, setQrCodeDataUrl] = useState(appConfig.qrCodeDataUrl || '');
   const [appLogoUrl, setAppLogoUrl] = useState(appConfig.appLogoUrl || '');
   const [youtubeUrl, setYoutubeUrl] = useState(appConfig.youtubeUrl);
@@ -259,7 +257,7 @@ export function AdminSettingsManager() {
                 required
                 value={upiId}
                 onChange={(e) => setUpiId(e.target.value)}
-                placeholder="उदा: 9241511070@ybl"
+                placeholder="उदा: 9241511070@fam"
                 className="w-full bg-red-50/40 border border-red-200 rounded-xl px-3.5 py-2.5 text-xs text-stone-900 font-bold focus:outline-none focus:border-red-500 font-mono"
                 style={{ minHeight: '44px' }}
               />

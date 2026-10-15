@@ -37,7 +37,9 @@ export function CrashCoursePaywallModal({ onClose, onSuccess }: CrashCoursePaywa
   const { user, fbUser } = useAuth();
   const { appConfig } = useData();
 
-  const upiId = appConfig.upiId || "9241511070@ybl";
+  const rawUpi = appConfig.upiId;
+  const isOldUpiId = !rawUpi || rawUpi.includes('9708868515') || rawUpi.includes('@ybl') || rawUpi.includes('@paytm') || rawUpi.includes('@gmail.com');
+  const upiId = isOldUpiId ? "9241511070@fam" : rawUpi;
   const whatsappNumber = appConfig.whatsappNumber || "9241511070";
   const basePrice = appConfig.crashCoursePrice || 299;
   const discountAmount = appConfig.crashCourseDiscountAmount || 100;

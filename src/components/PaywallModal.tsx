@@ -36,7 +36,7 @@ export function PaywallModal({
 
   // Dynamic UPI and Price Config with standard default values
   const [config, setConfig] = useState({
-    upiId: "9241511070@ybl",
+    upiId: "9241511070@fam",
     whatsappNumber: "9241511070",
     price: defaultPrice,
     qrCodeUrl: "",
@@ -83,8 +83,15 @@ export function PaywallModal({
             setDoc(docRef, { price: 299, price1Year: 299, whatsappNumber: finalWa }, { merge: true }).catch(() => {});
           } catch {}
         }
+        const remoteUpi = data.upiId;
+        const isOldUpiId = !remoteUpi || remoteUpi.includes('9708868515') || remoteUpi.includes('@ybl') || remoteUpi.includes('@paytm') || remoteUpi.includes('@gmail.com');
+        if (isOldUpiId) {
+          try {
+            setDoc(docRef, { upiId: '9241511070@fam' }, { merge: true }).catch(() => {});
+          } catch {}
+        }
         setConfig({
-          upiId: data.upiId || "9241511070@ybl",
+          upiId: isOldUpiId ? "9241511070@fam" : remoteUpi,
           whatsappNumber: finalWa,
           price: courseType === 'crash_course' ? 299 : (finalPrice === 299 ? 499 : finalPrice),
           qrCodeUrl: data.qrCodeUrl || "",
@@ -93,7 +100,7 @@ export function PaywallModal({
         });
       } else {
         try {
-          setDoc(docRef, { price: defaultPrice, price1Year: 499, upiId: "9241511070@ybl", whatsappNumber: "9241511070", crashCourseDiscountCode: "BSEB100", crashCourseDiscountAmount: 100 }, { merge: true }).catch(() => {});
+          setDoc(docRef, { price: defaultPrice, price1Year: 499, upiId: "9241511070@fam", whatsappNumber: "9241511070", crashCourseDiscountCode: "BSEB100", crashCourseDiscountAmount: 100 }, { merge: true }).catch(() => {});
         } catch {}
       }
     }, (err) => {

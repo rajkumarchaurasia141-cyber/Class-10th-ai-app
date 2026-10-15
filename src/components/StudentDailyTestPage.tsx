@@ -86,7 +86,7 @@ export function StudentDailyTestPage({ onBack, onNavigateToAdmin }: StudentDaily
     loadTest();
 
     const key = getTodayDateKey();
-    const unsub = onSnapshot(doc(db, 'daily_tests', key), (snap) => {
+    const unsubKey = onSnapshot(doc(db, 'daily_tests', key), (snap) => {
       if (snap.exists() && Array.isArray(snap.data()?.questions) && snap.data()?.questions.length > 0) {
         setQuestions(snap.data()?.questions);
         if (snap.data()?.formattedDate) setTestDateFormatted(snap.data()?.formattedDate);
@@ -94,10 +94,24 @@ export function StudentDailyTestPage({ onBack, onNavigateToAdmin }: StudentDaily
         setLoading(false);
       }
     }, (err) => {
-      console.warn('Daily test realtime subscription error:', err);
+      console.warn('Daily test realtime subscription error (key):', err);
     });
 
-    return () => unsub();
+    const unsubLatest = onSnapshot(doc(db, 'daily_tests', 'latest'), (snap) => {
+      if (snap.exists() && Array.isArray(snap.data()?.questions) && snap.data()?.questions.length > 0) {
+        setQuestions(snap.data()?.questions);
+        if (snap.data()?.formattedDate) setTestDateFormatted(snap.data()?.formattedDate);
+        if (snap.data()?.title) setTestTitle(snap.data()?.title);
+        setLoading(false);
+      }
+    }, (err) => {
+      console.warn('Daily test realtime subscription error (latest):', err);
+    });
+
+    return () => {
+      unsubKey();
+      unsubLatest();
+    };
   }, []);
 
   // Compute score

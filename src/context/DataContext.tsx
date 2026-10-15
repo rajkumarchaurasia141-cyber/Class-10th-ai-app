@@ -301,7 +301,7 @@ export const defaultNotifications: NotificationItem[] = [
 ];
 
 export const defaultAppConfig: AppConfig = {
-  upiId: '9241511070@ybl',
+  upiId: '9241511070@fam',
   whatsappNumber: '9241511070',
   qrCodeDataUrl: '',
   appLogoUrl: '',
@@ -819,10 +819,17 @@ export const DataProvider = ({ children }: any) => {
       const unsub = onSnapshot(doc(db, 'app_settings', 'payment_config'), (docSnap) => {
         if (docSnap.exists()) {
           const data = docSnap.data();
+          const remoteUpi = data.upiId;
+          const isOld = !remoteUpi || remoteUpi.includes('9708868515') || remoteUpi.includes('@ybl') || remoteUpi.includes('@paytm') || remoteUpi.includes('@gmail.com');
+          if (isOld) {
+            try {
+              setDoc(doc(db, 'app_settings', 'payment_config'), { upiId: '9241511070@fam' }, { merge: true }).catch(() => {});
+            } catch {}
+          }
           setAppConfig((prev) => {
             const updated: AppConfig = {
               ...prev,
-              upiId: data.upiId || prev.upiId,
+              upiId: isOld ? '9241511070@fam' : remoteUpi,
               whatsappNumber: data.whatsappNumber || prev.whatsappNumber,
               qrCodeDataUrl: data.qrCodeUrl !== undefined ? data.qrCodeUrl : prev.qrCodeDataUrl,
               appLogoUrl: data.appLogoUrl !== undefined ? data.appLogoUrl : prev.appLogoUrl,

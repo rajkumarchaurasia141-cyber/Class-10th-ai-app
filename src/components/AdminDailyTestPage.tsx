@@ -48,36 +48,72 @@ export function getTodayDateKey(date = new Date()): string {
 export function parseDailyTestText(text: string): DailyTestQuestion[] {
   if (!text || !text.trim()) return [];
 
-  // Normalize line breaks and remove invisible Unicode characters
+  // Normalize line endings, non-breaking spaces (\u00A0), zero-width characters
   const clean = text
     .replace(/\r\n/g, '\n')
     .replace(/\r/g, '\n')
+    .replace(/[\u00A0\u1680\u2000-\u200A\u2028\u2029\u202F\u205F\u3000]/g, ' ')
     .replace(/[\u200B-\u200D\uFEFF]/g, '')
     .trim();
 
-  const isOptionNonA = (line: string): boolean => {
+  // Helper: check if a line is an explicit answer line
+  const isAnswerLine = (line: string): boolean => {
     const l = line.trim();
-    if (/^[(\[]?\s*(?:B|b|C|c|D|d|ख|ग|घ)\s*[)\].,:-]/i.test(l)) return true;
-    if (/^[(\[]?\s*(?:2|3|4|२|३|४)\s*[)\].,:-]/i.test(l)) return true;
+    return /^(?:Ans(?:wer)?|उत्तर|सही\s*उत्तर|Right\s*Answer|Correct(?:\s*Option)?|Opt(?:ion)?|हल|Solution|उ०|उ[.])[\s:=-]+(.*)/i.test(l) ||
+      /^[(\[]\s*(?:Ans(?:wer)?|उत्तर|सही\s*उत्तर|Right\s*Answer|हल)[\s:=-]+.*[)\]]/i.test(l);
+  };
+
+  // Helper: extract raw answer from an answer line
+  const extractAnsFromLine = (line: string): string => {
+    const l = line.trim();
+    const bracketMatch = l.match(/[(\[]\s*(?:Ans(?:wer)?|उत्तर|सही\s*उत्तर|Right\s*Answer|हल)[\s:=-]+([^\])]+)[)\]]/i);
+    if (bracketMatch) return bracketMatch[1].trim();
+
+    return l.replace(/^(?:Ans(?:wer)?|उत्तर|सही\s*उत्तर|Right\s*Answer|Correct(?:\s*Option)?|Opt(?:ion)?|हल|Solution|उ०|उ[.])[\s:=-]+/i, '').trim();
+  };
+
+  // Helper: check if line starts with an option prefix (e.g. A., (A), B., etc.)
+  const isOptionPrefix = (line: string): boolean => {
+    const l = line.trim();
+    if (/^[(\[{]?\s*(?:A|B|C|D|a|b|c|d|क|ख|ग|घ|1|2|3|4|१|२|३|४)\s*[)\]}:.-]/i.test(l)) return true;
     return false;
   };
 
-  const isAnswerLine = (line: string): boolean => {
+  // Helper: check if line starts with a non-A option (B, C, D / ख, ग, घ / 2, 3, 4)
+  const isNonAOptionPrefix = (line: string): boolean => {
     const l = line.trim();
-    return /^(?:Ans(?:wer)?|उत्तर|सही\s*उत्तर|Right\s*Answer|Correct|Opt(?:ion)?|हल|Solution)[\s:.-]+/i.test(l) ||
-      /(?:\[\s*(?:Ans|उत्तर)[:.-]|(?:\(\s*(?:Ans|उत्तर)[:.-]))/i.test(l);
+    if (/^[(\[{]?\s*(?:B|C|D|b|c|d|ख|ग|घ|2|3|4|२|३|४)\s*[)\]}:.-]/i.test(l)) return true;
+    return false;
   };
 
-  const isQuestionHeader = (line: string): boolean => {
+  // Helper: check if line is definitely a question header
+  const isQuestionHeaderLine = (line: string): boolean => {
     const l = line.trim();
     if (!l) return false;
-    if (isOptionNonA(l) || isAnswerLine(l)) return false;
+    if (isAnswerLine(l)) return false;
 
-    if (/^(?:Q(?:uestion)?\s*[\d.]*[:.-]?|प्रश्न\s*[\d.]*[:.-]?|प्र[०.]?\s*[\d.]*[:.-]?)/i.test(l)) {
+    // A line starting with B, C, D, ख, ग, घ, or numbers 2, 3, 4 with option punctuation is NEVER a question header!
+    if (/^[(\[{]?\s*(?:B|C|D|b|c|d|ख|ग|घ|2|3|4|२|३|४)\s*[)\]}:.-]/i.test(l)) {
+      return false;
+    }
+
+    // Explicit question markers: Q1, Question 1, प्रश्न 1, प्र. 1, etc.
+    if (/^(?:Q(?:uestion)?[\s.:#№-]*\d{1,3}|प्रश्न[\s.:#№-]*\d{1,3}|प्र[०.][\s.:#№-]*\d{1,3})/i.test(l)) {
       return true;
     }
 
-    if (/^(?:\[?\s*\d{1,3}\s*[.)\]:-]|(?:\(\s*\d{1,3}\s*\))|[१२३४५६७८९०]{1,3}\s*[.)\]:-])\s*\S/i.test(l)) {
+    // Numbered headers: 5., 6., 7., ... 100. are ALWAYS question headers! (Since options are only 1-4)
+    if (/^(?:\[?\s*(?:[5-9]|\d{2,3})\s*[.)\]:-]|(?:\(\s*(?:[5-9]|\d{2,3})\s*\))|[५-९][.)\]:-]|[१२३४५६७८९०]{2,3}[.)\]:-])/i.test(l)) {
+      return true;
+    }
+
+    // For numbers 1-4: check if it has question-like punctuation or number
+    if (/^(?:\[?\s*[1-4]\s*[.)\]:-]|(?:\(\s*[1-4]\s*\))|[१-४]\s*[.)\]:-])\s*\S/i.test(l)) {
+      return true;
+    }
+
+    // Plain number followed by text (e.g. "1 प्रकाश के परावर्तन के...")
+    if (/^\d{1,3}\s+[\u0900-\u097F\w]{2,}/i.test(l) && !isOptionPrefix(l)) {
       return true;
     }
 
@@ -89,20 +125,20 @@ export function parseDailyTestText(text: string): DailyTestQuestion[] {
     if (!ansStr || !ansStr.trim()) return -1;
     const cleanAns = ansStr.trim();
 
-    // Check for explicit letter tokens:
-    // Option B / ख / 2
-    if (/(?:\(|\[|\b|\s|^)(?:B|b|ख|2|२)(?:\)|\]|\b|\s|[.:-]|$)/.test(cleanAns)) return 1;
-    // Option C / ग / 3
-    if (/(?:\(|\[|\b|\s|^)(?:C|c|ग|3|३)(?:\)|\]|\b|\s|[.:-]|$)/.test(cleanAns)) return 2;
-    // Option D / घ / 4
-    if (/(?:\(|\[|\b|\s|^)(?:D|d|घ|4|४)(?:\)|\]|\b|\s|[.:-]|$)/.test(cleanAns)) return 3;
-    // Option A / क / 1
-    if (/(?:\(|\[|\b|\s|^)(?:A|a|क|1|१)(?:\)|\]|\b|\s|[.:-]|$)/.test(cleanAns)) return 0;
+    // Check for explicit letter/number tokens in answer
+    // B / b / ख / 2 / २
+    if (/(?:^|[(\[\s.,:-])(?:B|b|ख|2|२)(?:$|[)\]\s.,:-])/i.test(cleanAns)) return 1;
+    // C / c / ग / 3 / ३
+    if (/(?:^|[(\[\s.,:-])(?:C|c|ग|3|३)(?:$|[)\]\s.,:-])/i.test(cleanAns)) return 2;
+    // D / d / घ / 4 / ४
+    if (/(?:^|[(\[\s.,:-])(?:D|d|घ|4|४)(?:$|[)\]\s.,:-])/i.test(cleanAns)) return 3;
+    // A / a / क / 1 / १
+    if (/(?:^|[(\[\s.,:-])(?:A|a|क|1|१)(?:$|[)\]\s.,:-])/i.test(cleanAns)) return 0;
 
-    // Fallback: Check if answer text contains or matches option text directly
-    const lowerClean = cleanAns.toLowerCase();
+    // Direct text matching with options (e.g. answer is "समतल दर्पण")
+    const lowerClean = cleanAns.toLowerCase().replace(/[()[\]:.-]/g, '').trim();
     for (let i = 0; i < options.length; i++) {
-      const opt = options[i].trim().toLowerCase();
+      const opt = options[i].trim().toLowerCase().replace(/[()[\]:.-]/g, '').trim();
       if (opt.length >= 2 && (lowerClean.includes(opt) || opt.includes(lowerClean))) {
         return i;
       }
@@ -111,76 +147,82 @@ export function parseDailyTestText(text: string): DailyTestQuestion[] {
     return -1;
   };
 
-  // Step 1: Chunk into question blocks
-  const rawBlocks = clean.split(/\n\s*\n+/);
-  const questionBlocks: string[] = [];
+  // Step 1: Split raw text into intelligent question chunks
+  const allLines = clean.split('\n').map(l => l.trim()).filter(Boolean);
+  const questionBlocks: string[][] = [];
+  let currentBlock: string[] = [];
+  let seenOptionsInBlock = 0;
+  let seenAnsInBlock = false;
 
-  for (const block of rawBlocks) {
-    const lines = block.split('\n').map(l => l.trim()).filter(Boolean);
-    if (lines.length === 0) continue;
+  for (let i = 0; i < allLines.length; i++) {
+    const line = allLines[i];
+    const isQHeader = isQuestionHeaderLine(line);
+    const isAns = isAnswerLine(line);
+    const isOpt = isOptionPrefix(line);
 
-    const headerIndices: number[] = [];
-    let waitingForNewQuestion = true;
-    let seenOptionD = false;
+    // Should we start a new question block?
+    let startNewBlock = false;
 
-    for (let i = 0; i < lines.length; i++) {
-      const line = lines[i];
-      const isAns = isAnswerLine(line);
-      const isD = /^[(\[]?\s*(?:D|d|घ|4|४)\s*[)\].,:-]/i.test(line);
-
-      if (waitingForNewQuestion) {
-        if (!isOptionNonA(line) && !isAns) {
-          headerIndices.push(i);
-          waitingForNewQuestion = false;
-          seenOptionD = false;
+    if (currentBlock.length > 0) {
+      if (isQHeader) {
+        // Check if this line is actually Option 1 (A) of the current question
+        const isOptA = /^[(\[{]?\s*(?:A|a|क|1|१)\s*[)\]}:.-]/i.test(line);
+        if (isOptA && seenOptionsInBlock === 0 && !seenAnsInBlock) {
+          // This is option A/1 of the current question, NOT a new question
+          startNewBlock = false;
+        } else {
+          startNewBlock = true;
         }
-      } else {
-        if (isAns) {
-          waitingForNewQuestion = true;
-        } else if (seenOptionD && isQuestionHeader(line)) {
-          headerIndices.push(i);
-          seenOptionD = false;
-        } else if (isD) {
-          seenOptionD = true;
-        }
+      } else if (seenAnsInBlock && !isNonAOptionPrefix(line)) {
+        // If previous line was an answer, and current line is not an option B/C/D, it's the next question!
+        startNewBlock = true;
+      } else if (seenOptionsInBlock >= 4 && !isAns && !isNonAOptionPrefix(line)) {
+        // If we already have 4 options and this is not an answer line or B/C/D option, it's a new question
+        startNewBlock = true;
       }
     }
 
-    if (headerIndices.length > 1) {
-      for (let h = 0; h < headerIndices.length; h++) {
-        const start = headerIndices[h];
-        const end = h + 1 < headerIndices.length ? headerIndices[h + 1] : lines.length;
-        const subChunk = lines.slice(start, end).join('\n');
-        if (subChunk.trim()) questionBlocks.push(subChunk.trim());
+    if (startNewBlock) {
+      if (currentBlock.length > 0) {
+        questionBlocks.push(currentBlock);
       }
-    } else {
-      questionBlocks.push(block.trim());
+      currentBlock = [];
+      seenOptionsInBlock = 0;
+      seenAnsInBlock = false;
     }
+
+    currentBlock.push(line);
+    if (isOpt) seenOptionsInBlock++;
+    if (isAns) seenAnsInBlock = true;
+  }
+
+  if (currentBlock.length > 0) {
+    questionBlocks.push(currentBlock);
   }
 
   const results: DailyTestQuestion[] = [];
 
   // Step 2: Parse each question block
-  for (const block of questionBlocks) {
-    const rawLines = block.split('\n').map(l => l.trim()).filter(Boolean);
-    if (rawLines.length === 0) continue;
+  for (const blockLines of questionBlocks) {
+    if (blockLines.length === 0) continue;
 
     let ansRaw = '';
     const nonAnsLines: string[] = [];
 
-    // Extract Answer line if present
-    for (const line of rawLines) {
-      if (/^(?:Ans(?:wer)?|उत्तर|सही\s*उत्तर|Right\s*Answer|Correct|Opt(?:ion)?|हल|Solution)[\s:.-]+(.*)/i.test(line)) {
-        ansRaw = line.replace(/^(?:Ans(?:wer)?|उत्तर|सही\s*उत्तर|Right\s*Answer|Correct|Opt(?:ion)?|हल|Solution)[\s:.-]+/i, '').trim();
-      } else if (/(?:\[\s*(?:Ans|उत्तर)[:.-]|(?:\(\s*(?:Ans|उत्तर)[:.-]))/i.test(line)) {
-        const m = line.match(/(?:\[|\()\s*(?:Ans|उत्तर)[:.-]\s*([^\])]+)[\])]/i);
-        if (m) {
-          ansRaw = m[1].trim();
+    // Separate answer line if present
+    for (const line of blockLines) {
+      if (isAnswerLine(line)) {
+        ansRaw = extractAnsFromLine(line);
+      } else {
+        // Check if line has inline answer at the end e.g. "Q. प्रकाश के नियम? (Ans: B)"
+        const inlineAnsMatch = line.match(/(?:\[|\()\s*(?:Ans(?:wer)?|उत्तर|सही\s*उत्तर|Right\s*Answer|हल)[\s:=-]*([^\])]+)[\])]/i);
+        if (inlineAnsMatch) {
+          ansRaw = inlineAnsMatch[1].trim();
+          const cleanedLine = line.replace(/(?:\[|\()\s*(?:Ans(?:wer)?|उत्तर|सही\s*उत्तर|Right\s*Answer|हल)[\s:=-]*([^\])]+)[\])]/i, '').trim();
+          if (cleanedLine) nonAnsLines.push(cleanedLine);
         } else {
           nonAnsLines.push(line);
         }
-      } else {
-        nonAnsLines.push(line);
       }
     }
 
@@ -191,84 +233,129 @@ export function parseDailyTestText(text: string): DailyTestQuestion[] {
     let optB = '';
     let optC = '';
     let optD = '';
+    let optionsParsed = false;
 
-    // Check for inline options on a single line:
-    // e.g. (A) ... (B) ... (C) ... (D) ...
-    // or (क) ... (ख) ... (ग) ... (घ) ...
-    // or A) ... B) ... C) ... D) ...
-    let foundInline = false;
+    // 2A. Check for all 4 inline options on a single line:
+    // (A) ... (B) ... (C) ... (D) ...
     for (let li = 0; li < nonAnsLines.length; li++) {
       const line = nonAnsLines[li];
-      
-      // Inline pattern 1: A, B, C, D
-      const mEn = line.match(/[(\[]?\s*A\s*[)\].,:-]\s*(.*?)\s+[(\[]?\s*B\s*[)\].,:-]\s*(.*?)\s+[(\[]?\s*C\s*[)\].,:-]\s*(.*?)\s+[(\[]?\s*D\s*[)\].,:-]\s*(.*)/i);
+
+      // A, B, C, D inline
+      const mEn = line.match(/[(\[{]?\s*A\s*[)\]}:.-]\s*(.*?)\s+[(\[{]?\s*B\s*[)\]}:.-]\s*(.*?)\s+[(\[{]?\s*C\s*[)\]}:.-]\s*(.*?)\s+[(\[{]?\s*D\s*[)\]}:.-]\s*(.*)/i);
       if (mEn) {
         optA = mEn[1].trim();
         optB = mEn[2].trim();
         optC = mEn[3].trim();
         optD = mEn[4].trim();
         qText = nonAnsLines.slice(0, li).join(' ').trim();
-        foundInline = true;
+        optionsParsed = true;
         break;
       }
 
-      // Inline pattern 2: क, ख, ग, घ
-      const mHi = line.match(/[(\[]?\s*क\s*[)\].,:-]\s*(.*?)\s+[(\[]?\s*ख\s*[)\].,:-]\s*(.*?)\s+[(\[]?\s*ग\s*[)\].,:-]\s*(.*?)\s+[(\[]?\s*घ\s*[)\].,:-]\s*(.*)/i);
+      // क, ख, ग, घ inline
+      const mHi = line.match(/[(\[{]?\s*क\s*[)\]}:.-]\s*(.*?)\s+[(\[{]?\s*ख\s*[)\]}:.-]\s*(.*?)\s+[(\[{]?\s*ग\s*[)\]}:.-]\s*(.*?)\s+[(\[{]?\s*घ\s*[)\]}:.-]\s*(.*)/i);
       if (mHi) {
         optA = mHi[1].trim();
         optB = mHi[2].trim();
         optC = mHi[3].trim();
         optD = mHi[4].trim();
         qText = nonAnsLines.slice(0, li).join(' ').trim();
-        foundInline = true;
+        optionsParsed = true;
         break;
       }
 
-      // Inline pattern 3: 1, 2, 3, 4
-      const mNum = line.match(/[(\[]?\s*1\s*[)\].,:-]\s*(.*?)\s+[(\[]?\s*2\s*[)\].,:-]\s*(.*?)\s+[(\[]?\s*3\s*[)\].,:-]\s*(.*?)\s+[(\[]?\s*4\s*[)\].,:-]\s*(.*)/i);
+      // 1, 2, 3, 4 inline
+      const mNum = line.match(/[(\[{]?\s*1\s*[)\]}:.-]\s*(.*?)\s+[(\[{]?\s*2\s*[)\]}:.-]\s*(.*?)\s+[(\[{]?\s*3\s*[)\]}:.-]\s*(.*?)\s+[(\[{]?\s*4\s*[)\]}:.-]\s*(.*)/i);
       if (mNum) {
         optA = mNum[1].trim();
         optB = mNum[2].trim();
         optC = mNum[3].trim();
         optD = mNum[4].trim();
         qText = nonAnsLines.slice(0, li).join(' ').trim();
-        foundInline = true;
+        optionsParsed = true;
         break;
       }
     }
 
-    // If not found as inline, parse line-by-line options
-    if (!foundInline) {
+    // 2B. Check for 2 options per line (2 lines total)
+    // Line 1: (A) ... (B) ...
+    // Line 2: (C) ... (D) ...
+    if (!optionsParsed) {
+      for (let li = 0; li < nonAnsLines.length - 1; li++) {
+        const line1 = nonAnsLines[li];
+        const line2 = nonAnsLines[li + 1];
+
+        // English pair: A & B on line 1, C & D on line 2
+        const mAB = line1.match(/[(\[{]?\s*A\s*[)\]}:.-]\s*(.*?)\s+[(\[{]?\s*B\s*[)\]}:.-]\s*(.*)/i);
+        const mCD = line2.match(/[(\[{]?\s*C\s*[)\]}:.-]\s*(.*?)\s+[(\[{]?\s*D\s*[)\]}:.-]\s*(.*)/i);
+        if (mAB && mCD) {
+          optA = mAB[1].trim();
+          optB = mAB[2].trim();
+          optC = mCD[1].trim();
+          optD = mCD[2].trim();
+          qText = nonAnsLines.slice(0, li).join(' ').trim();
+          optionsParsed = true;
+          break;
+        }
+
+        // Hindi pair: क & ख on line 1, ग & घ on line 2
+        const mHiAB = line1.match(/[(\[{]?\s*क\s*[)\]}:.-]\s*(.*?)\s+[(\[{]?\s*ख\s*[)\]}:.-]\s*(.*)/i);
+        const mHiCD = line2.match(/[(\[{]?\s*ग\s*[)\]}:.-]\s*(.*?)\s+[(\[{]?\s*घ\s*[)\]}:.-]\s*(.*)/i);
+        if (mHiAB && mHiCD) {
+          optA = mHiAB[1].trim();
+          optB = mHiAB[2].trim();
+          optC = mHiCD[1].trim();
+          optD = mHiCD[2].trim();
+          qText = nonAnsLines.slice(0, li).join(' ').trim();
+          optionsParsed = true;
+          break;
+        }
+
+        // Number pair: 1 & 2 on line 1, 3 & 4 on line 2
+        const mNum12 = line1.match(/[(\[{]?\s*1\s*[)\]}:.-]\s*(.*?)\s+[(\[{]?\s*2\s*[)\]}:.-]\s*(.*)/i);
+        const mNum34 = line2.match(/[(\[{]?\s*3\s*[)\]}:.-]\s*(.*?)\s+[(\[{]?\s*4\s*[)\]}:.-]\s*(.*)/i);
+        if (mNum12 && mNum34) {
+          optA = mNum12[1].trim();
+          optB = mNum12[2].trim();
+          optC = mNum34[1].trim();
+          optD = mNum34[2].trim();
+          qText = nonAnsLines.slice(0, li).join(' ').trim();
+          optionsParsed = true;
+          break;
+        }
+      }
+    }
+
+    // 2C. Line-by-line options parsing
+    if (!optionsParsed) {
       const questionLines: string[] = [];
       let currentOption = -1;
 
       for (const line of nonAnsLines) {
-        // Option A / क / 1
-        if (/^(?:[([{\s]*(?:A|a|क|1|१)[)\]}:.-]\s*|\b(?:A|a|क|1|१)\s*[)\]}:.-]\s*)(.*)/i.test(line)) {
+        // Option A / a / क / 1 / १
+        if (/^[(\[{]?\s*(?:A|a|क|1|१)\s*[)\]}:.-]\s*(.*)/i.test(line)) {
           currentOption = 0;
-          optA = line.replace(/^(?:[([{\s]*(?:A|a|क|1|१)[)\]}:.-]\s*|\b(?:A|a|क|1|१)\s*[)\]}:.-]\s*)/i, '').trim();
-        } 
-        // Option B / ख / 2
-        else if (/^(?:[([{\s]*(?:B|b|ख|2|२)[)\]}:.-]\s*|\b(?:B|b|ख|2|२)\s*[)\]}:.-]\s*)(.*)/i.test(line)) {
+          optA = line.replace(/^[(\[{]?\s*(?:A|a|क|1|१)\s*[)\]}:.-]\s*/i, '').trim();
+        }
+        // Option B / b / ख / 2 / २
+        else if (/^[(\[{]?\s*(?:B|b|ख|2|२)\s*[)\]}:.-]\s*(.*)/i.test(line)) {
           currentOption = 1;
-          optB = line.replace(/^(?:[([{\s]*(?:B|b|ख|2|२)[)\]}:.-]\s*|\b(?:B|b|ख|2|२)\s*[)\]}:.-]\s*)/i, '').trim();
-        } 
-        // Option C / ग / 3
-        else if (/^(?:[([{\s]*(?:C|c|ग|3|३)[)\]}:.-]\s*|\b(?:C|c|ग|3|३)\s*[)\]}:.-]\s*)(.*)/i.test(line)) {
+          optB = line.replace(/^[(\[{]?\s*(?:B|b|ख|2|२)\s*[)\]}:.-]\s*/i, '').trim();
+        }
+        // Option C / c / ग / 3 / ३
+        else if (/^[(\[{]?\s*(?:C|c|ग|3|३)\s*[)\]}:.-]\s*(.*)/i.test(line)) {
           currentOption = 2;
-          optC = line.replace(/^(?:[([{\s]*(?:C|c|ग|3|३)[)\]}:.-]\s*|\b(?:C|c|ग|3|३)\s*[)\]}:.-]\s*)/i, '').trim();
-        } 
-        // Option D / घ / 4
-        else if (/^(?:[([{\s]*(?:D|d|घ|4|४)[)\]}:.-]\s*|\b(?:D|d|घ|4|४)\s*[)\]}:.-]\s*)(.*)/i.test(line)) {
+          optC = line.replace(/^[(\[{]?\s*(?:C|c|ग|3|३)\s*[)\]}:.-]\s*/i, '').trim();
+        }
+        // Option D / d / घ / 4 / ४
+        else if (/^[(\[{]?\s*(?:D|d|घ|4|४)\s*[)\]}:.-]\s*(.*)/i.test(line)) {
           currentOption = 3;
-          optD = line.replace(/^(?:[([{\s]*(?:D|d|घ|4|४)[)\]}:.-]\s*|\b(?:D|d|घ|4|४)\s*[)\]}:.-]\s*)/i, '').trim();
-        } 
+          optD = line.replace(/^[(\[{]?\s*(?:D|d|घ|4|४)\s*[)\]}:.-]\s*/i, '').trim();
+        }
         else {
-          // If no option has started yet, this is part of the question text
           if (currentOption === -1) {
             questionLines.push(line);
           } else {
-            // Continuation of the current option text
             if (currentOption === 0) optA += ' ' + line;
             else if (currentOption === 1) optB += ' ' + line;
             else if (currentOption === 2) optC += ' ' + line;
@@ -280,47 +367,44 @@ export function parseDailyTestText(text: string): DailyTestQuestion[] {
       qText = questionLines.join(' ').trim();
     }
 
+    // 2D. Fallback for unlabelled 4 lines
+    if (!optA && nonAnsLines.length >= 5) {
+      qText = nonAnsLines.slice(0, nonAnsLines.length - 4).join(' ').trim();
+      optA = nonAnsLines[nonAnsLines.length - 4].trim();
+      optB = nonAnsLines[nonAnsLines.length - 3].trim();
+      optC = nonAnsLines[nonAnsLines.length - 2].trim();
+      optD = nonAnsLines[nonAnsLines.length - 1].trim();
+    }
+
     // Clean question text of leading prefixes (e.g. Q:, 1., प्रश्न 1:, etc.)
-    qText = qText.replace(/^(?:Q(?:uestion)?\s*[\d.]*[:.-]?|प्रश्न\s*[\d.]*[:.-]?|प्र[०.]?\s*[\d.]*[:.-]?|\[?\s*\d{1,3}\s*[.)\]:-]|\(\s*\d{1,3}\s*\)|[१२३४५६८९०]{1,3}\s*[.)\]:-])\s*/i, '').trim();
+    qText = qText.replace(/^(?:Q(?:uestion)?[\s.:#№-]*\d{1,3}|प्रश्न[\s.:#№-]*\d{1,3}|प्र[०.][\s.:#№-]*\d{1,3}|\[?\s*\d{1,3}\s*[.)\]:-]|\(\s*\d{1,3}\s*\)|[१२३४५६७८९०]{1,3}\s*[.)\]:-])\s*/i, '').trim();
 
-    // Fallbacks if only 2 or 3 options were detected
-    if (!optA && nonAnsLines.length >= 2) {
-      optA = nonAnsLines[1] || '';
-    }
-    if (!optB && nonAnsLines.length >= 3) {
-      optB = nonAnsLines[2] || '';
-    }
-    if (!optC && nonAnsLines.length >= 4) {
-      optC = nonAnsLines[3] || 'इनमें से कोई नहीं';
-    } else if (!optC) {
-      optC = 'इनमें से कोई नहीं';
-    }
-    if (!optD && nonAnsLines.length >= 5) {
-      optD = nonAnsLines[4] || 'इनमें से सभी';
-    } else if (!optD) {
-      optD = 'इनमें से कोई नहीं';
-    }
-
-    // Final clean of options
-    optA = optA.trim();
-    optB = optB.trim();
-    optC = optC.trim();
-    optD = optD.trim();
-
-    // If no question text was identified, use first line
+    // If still empty question text, pick the first line
     if (!qText && nonAnsLines.length > 0) {
-      qText = nonAnsLines[0];
+      qText = nonAnsLines[0].replace(/^(?:Q(?:uestion)?[\s.:#№-]*\d{1,3}|प्रश्न[\s.:#№-]*\d{1,3}|प्र[०.][\s.:#№-]*\d{1,3}|\[?\s*\d{1,3}\s*[.)\]:-]|\(\s*\d{1,3}\s*\)|[१२३४५६७८९०]{1,3}\s*[.)\]:-])\s*/i, '').trim();
     }
 
     if (!qText) continue;
 
+    // Default missing options so questions never crash
+    if (!optA) optA = 'हाँ';
+    if (!optB) optB = 'नहीं';
+    if (!optC) optC = 'इनमें से कोई नहीं';
+    if (!optD) optD = 'इनमें से सभी';
+
+    const options: [string, string, string, string] = [
+      optA.trim(),
+      optB.trim(),
+      optC.trim(),
+      optD.trim()
+    ];
+
     // Determine correct index
-    const options: [string, string, string, string] = [optA, optB, optC, optD];
     let correctIndex = extractAnswerIndex(ansRaw, options);
     let isGuessed = false;
 
     if (correctIndex < 0 || correctIndex > 3) {
-      correctIndex = 0; // Default to Option A so the question is preserved
+      correctIndex = 0; // Default to Option A so question is preserved
       isGuessed = true;
     }
 
