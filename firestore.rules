@@ -100,6 +100,11 @@ service cloud.firestore {
     match /crash_course_pdfs/{pdfId} {
       allow read, write: if true;
     }
+
+    // Allow read/write to daily_tests (admin publishes, all students take tests)
+    match /daily_tests/{testId} {
+      allow read, write: if true;
+    }
   }
 }
 
