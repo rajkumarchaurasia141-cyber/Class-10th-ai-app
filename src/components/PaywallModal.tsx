@@ -214,87 +214,13 @@ export function PaywallModal({
     }
 
     setSubmitting(true);
-
-    const timestamp = Date.now();
-    const uid = fbUser?.uid || `simulated_${emailForPayload.replace(/[^a-zA-Z0-9]/g, '_')}`;
-    const requestId = `req_${uid}_${timestamp}`;
-
-    try {
-      // Create document payload as requested by user
-      const payload = {
-        userId: uid,
-        userEmail: emailForPayload,
-        userName: finalStudentName,
-        courseName: courseType === 'crash_course' ? "न्यू क्रैश कोर्स (Class 10th)" : "Topper Batch (फुल कोर्स)",
-        courseType: courseType,
-        amount: effectivePrice,
-        originalPrice: basePrice,
-        discountAmount: isDiscountApplied ? (config.crashCourseDiscountAmount || 100) : 0,
-        discountCode: isDiscountApplied ? appliedCoupon : null,
-        upiRef: utrNumber.trim() || "N/A",
-        screenshotBase64: screenshotBase64,
-        status: "pending",
-        createdAt: serverTimestamp()
-      };
-
-      // Add to "payment_requests" collection
-      const requestDocRef = doc(db, 'payment_requests', requestId);
-      await setDoc(requestDocRef, payload);
-
-      // If crash course, also write to crash_course_requests
-      if (courseType === 'crash_course') {
-        try {
-          await setDoc(doc(db, 'crash_course_requests', requestId), {
-            id: requestId,
-            userId: uid,
-            studentName: finalStudentName,
-            studentEmail: emailForPayload,
-            courseName: "न्यू क्रैश कोर्स (Class 10th)",
-            amount: effectivePrice,
-            originalPrice: basePrice,
-            discountAmount: isDiscountApplied ? (config.crashCourseDiscountAmount || 100) : 0,
-            discountCode: isDiscountApplied ? appliedCoupon : null,
-            screenshotDataUrl: screenshotBase64,
-            utr: utrNumber.trim() || 'N/A',
-            status: 'pending',
-            submittedAt: new Date().toISOString()
-          }, { merge: true });
-        } catch (e) {
-          console.warn("Crash course requests doc save notice:", e);
-        }
-      }
-
-      // Trigger email notification
-      try {
-        await fetch('/api/send-payment-notification', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            studentName: finalStudentName,
-            studentEmail: emailForPayload,
-            amount: effectivePrice,
-            screenshotUrl: screenshotBase64,
-            requestId: requestId
-          })
-        });
-      } catch (emailErr) {
-        console.error("Failed to trigger email notification:", emailErr);
-      }
-
-      setSubmitSuccess(true);
-      alert("आपका पेमेंट रिक्वेस्ट एडमिन के पास चला गया है। एडमिन द्वारा एक्सेप्ट करते ही आपका कोर्स अनलॉक हो जाएगा। अगर 5 मिनट के अंदर नहीं खुलता है तो WhatsApp (9241511070) पर मैसेज करें।");
-      onClose();
-    } catch (err: any) {
-      console.error("Payment submission failed:", err);
-      const isQuota = err?.code === 'resource-exhausted' || err?.message?.includes('Quota') || err?.message?.includes('resource-exhausted');
-      if (isQuota) {
-        setErrorMessage(`⚠️ सर्वर दैनिक लिमिट समाप्त (Daily Quota Reached): हमारे डेटाबेस की आज की अपलोड सीमा समाप्त हो गई है। आप चिंता न करें - कृपया सीधे एडमिन के व्हाट्सएप (${config.whatsappNumber}) पर पेमेंट स्क्रीनशॉट भेजकर अपना कोर्स तुरंत अनलॉक करवा लें!`);
-      } else {
-        setErrorMessage(err?.message || 'कनेक्शन एरर। कृपया दोबारा सबमिट करने का प्रयास करें।');
-      }
-    } finally {
+    setTimeout(() => {
       setSubmitting(false);
-    }
+      setSubmitSuccess(true);
+      alert("🎉 बधाई हो! यह ऐप और सभी कोर्सेज पूरी तरह से निःशुल्क (100% Free) हैं। आपका कोर्स तुरंत सक्रिय कर दिया गया है!");
+      onSuccess?.();
+      onClose();
+    }, 400);
   };
 
   return (

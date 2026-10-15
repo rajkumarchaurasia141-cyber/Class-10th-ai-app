@@ -221,67 +221,13 @@ export function CrashCoursePaywallModal({ onClose, onSuccess }: CrashCoursePaywa
       return;
     }
 
-    if (!screenshotBase64) {
-      setErrorMsg(`कृपया ₹${effectivePrice} पेमेंट का स्क्रीनशॉट अवश्य चुनें!`);
-      return;
-    }
-
     setSubmitting(true);
-    const timestamp = Date.now();
-    const uid = fbUser?.uid || `simulated_${cleanEmail.replace(/[^a-zA-Z0-9]/g, '_')}`;
-    const requestId = `crash_req_${cleanEmail.replace(/[^a-zA-Z0-9]/g, '_')}_${timestamp}`;
-
-    const requestPayload = {
-      id: requestId,
-      userId: uid,
-      studentName: cleanName,
-      studentEmail: cleanEmail,
-      courseName: "न्यू क्रैश कोर्स (Class 10th)",
-      amount: effectivePrice, // 199 if coupon applied, else 299
-      originalPrice: basePrice,
-      discountAmount: isDiscountApplied ? discountAmount : 0,
-      discountCode: isDiscountApplied ? appliedCoupon : null,
-      screenshotDataUrl: screenshotBase64,
-      screenshotBase64: screenshotBase64,
-      utr: utrNumber.trim() || 'N/A',
-      status: 'pending',
-      submittedAt: new Date().toISOString()
-    };
-
-    try {
-      // 1. Save to dedicated crash_course_requests in Firestore
-      await safeSetDoc(doc(db, 'crash_course_requests', requestId), requestPayload, { merge: true }, 5000, true);
-
-      // 2. Also save to payment_requests for synchronized backward compatibility
-      await safeSetDoc(doc(db, 'payment_requests', requestId), {
-        ...requestPayload,
-        courseType: 'crash_course',
-        userName: cleanName,
-        userEmail: cleanEmail,
-        upiRef: utrNumber.trim() || 'N/A',
-        createdAt: serverTimestamp()
-      }, { merge: true }, 5000, true);
-
-      // 3. LocalStorage caching for instant zero-latency admin reflection
-      try {
-        const localList = JSON.parse(localStorage.getItem('bseb_crash_course_requests') || '[]');
-        localStorage.setItem('bseb_crash_course_requests', JSON.stringify([requestPayload, ...localList]));
-      } catch {}
-
-      setSuccessSent(true);
-      if (onSuccess) onSuccess();
-    } catch (err: any) {
-      console.warn("Failed to upload request to cloud, stored locally:", err);
-      try {
-        const localList = JSON.parse(localStorage.getItem('bseb_crash_course_requests') || '[]');
-        localStorage.setItem('bseb_crash_course_requests', JSON.stringify([requestPayload, ...localList]));
-        setSuccessSent(true);
-      } catch {
-        setErrorMsg('अनुरोध सबमिट करने में समस्या: ' + (err?.message || 'पुनः प्रयास करें'));
-      }
-    } finally {
+    setTimeout(() => {
       setSubmitting(false);
-    }
+      setSuccessSent(true);
+      alert("🎉 बधाई हो! यह क्रैश कोर्स पूरी तरह से निःशुल्क (100% Free) है और तुरंत सक्रिय हो गया है!");
+      if (onSuccess) onSuccess();
+    }, 400);
   };
 
   return (
