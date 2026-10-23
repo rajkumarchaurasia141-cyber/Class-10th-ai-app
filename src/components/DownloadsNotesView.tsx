@@ -47,20 +47,11 @@ export function DownloadsNotesView({ onOpenSubject, onOpenVip, initialFilter = '
   });
 
   const handleOpenPdf = (note: PaidPdfNote) => {
-    if (isVIP || note.id === 'sanskrit-ch1-mangalam-pdf' || !note.isPaid) {
-      setActivePdfNote(note);
-    } else {
-      onOpenVip();
-    }
+    setActivePdfNote(note);
   };
 
   const handleDownload = (note: PaidPdfNote, e: React.MouseEvent) => {
     e.stopPropagation();
-    if (!isVIP && note.id !== 'sanskrit-ch1-mangalam-pdf') {
-      onOpenVip();
-      return;
-    }
-
     if (note.pdfUrl.startsWith('data:')) {
       const link = document.createElement('a');
       link.href = note.pdfUrl;
@@ -81,44 +72,32 @@ export function DownloadsNotesView({ onOpenSubject, onOpenVip, initialFilter = '
           <div className="flex items-center gap-2">
             <DownloadCloud className="w-6 h-6 text-amber-300" />
             <h3 className="font-black text-base sm:text-lg text-white">
-              डिजिटल नोट्स & पीडीएफ लाइब्रेरी
+              Test & PDFs (टेस्ट सामग्री, प्रश्न पत्र व नोट्स)
             </h3>
           </div>
-          {isVIP && (
-            <span className="bg-amber-400/20 text-amber-300 border border-amber-400/30 text-[10px] font-black px-2.5 py-0.5 rounded-full flex items-center gap-1">
-              <Crown className="w-3 h-3 text-amber-400" /> VIP एक्टिव
-            </span>
-          )}
+          <span className="bg-emerald-500 text-white text-[10px] font-black px-2.5 py-0.5 rounded-full flex items-center gap-1">
+            <CheckCircle2 className="w-3 h-3" /> 100% FREE
+          </span>
         </div>
         <p className="text-xs text-stone-200">
-          कक्षा 10वीं फुल सिलेबस टॉपर बैच के सभी 6 विषयों के सम्पूर्ण हस्तलिखित व प्रिंटेबल पीडीएफ नोट्स।
+          कक्षा 10वीं बिहार बोर्ड टेस्ट सामग्री, प्रैक्टिस टेस्ट, प्रश्न पत्र, क्रैश कोर्स टेस्ट व डाउनलोड करने योग्य पीडीएफ नोट्स।
         </p>
       </div>
 
-      {/* Locked Alert for Free Users */}
-      {!isVIP && (
-        <div className="bg-gradient-to-r from-amber-500/15 via-red-500/10 to-amber-500/15 border border-amber-400/40 rounded-2xl p-3.5 flex items-center justify-between gap-3">
-          <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-xl bg-amber-500/20 text-amber-700 flex items-center justify-center shrink-0">
-              <Lock className="w-4 h-4" />
-            </div>
-            <div>
-              <h4 className="font-bold text-stone-900 text-xs">
-                प्रीमियम पीडीएफ नोट्स लॉक हैं
-              </h4>
-              <p className="text-[11px] text-stone-600">
-                टॉपर बैच जॉइन करके सभी विषयों के सम्पूर्ण नोट्स व प्रश्नोत्तर डाउनलोड करें।
-              </p>
-            </div>
-          </div>
-          <button
-            onClick={onOpenVip}
-            className="bg-red-700 hover:bg-red-800 text-white font-extrabold text-xs px-3.5 py-1.5 rounded-xl shrink-0 shadow cursor-pointer"
-          >
-            अनलॉक करें
-          </button>
+      {/* 100% Free Access Banner */}
+      <div className="bg-emerald-50 border border-emerald-200 rounded-2xl p-3 flex items-center gap-3">
+        <div className="w-8 h-8 rounded-xl bg-emerald-600 text-white flex items-center justify-center shrink-0">
+          <CheckCircle2 className="w-5 h-5" />
         </div>
-      )}
+        <div>
+          <h4 className="font-extrabold text-emerald-900 text-xs">
+            सभी टेस्ट और पीडीएफ 100% मुफ़्त हैं (All Tests & PDFs Free)
+          </h4>
+          <p className="text-[11px] text-emerald-700">
+            सभी परीक्षा सामग्री, गेस पेपर और प्रश्न पत्र बिना किसी शुल्क के उपलब्ध हैं।
+          </p>
+        </div>
+      </div>
 
       {/* Search & Subject Filters */}
       <div className="space-y-2">

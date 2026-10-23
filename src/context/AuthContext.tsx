@@ -38,10 +38,10 @@ export const AuthProvider = ({ children }: any) => {
     }
   });
 
-  const hasCrashCourse = isAdmin || (cleanUserEmail ? !!unlockedCrashCourses[cleanUserEmail] : false);
-  const hasFullCourse = isAdmin || (cleanUserEmail ? !!unlockedFullCourses[cleanUserEmail] : false);
-  const isPaid = hasFullCourse;
-  const isVIP = hasFullCourse || hasCrashCourse;
+  const hasCrashCourse = true;
+  const hasFullCourse = true;
+  const isPaid = true;
+  const isVIP = true;
 
   const vipDetails = {
     isVip: isVIP,

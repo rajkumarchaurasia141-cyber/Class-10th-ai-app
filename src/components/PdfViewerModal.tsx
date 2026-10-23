@@ -179,8 +179,15 @@ export function PdfViewerModal({ note, onClose }: PdfViewerModalProps) {
             /* Smart High-Fidelity Study Material Document Reader */
             <div 
               style={{ fontSize: `${zoomLevel}%` }}
-              className="w-full max-w-3xl bg-white text-stone-900 rounded-2xl shadow-xl p-6 sm:p-8 space-y-6 border border-slate-200 transition-all select-text"
+              className="w-full max-w-3xl bg-white text-stone-900 rounded-2xl shadow-xl p-6 sm:p-8 space-y-6 border border-slate-200 transition-all select-text relative overflow-hidden"
             >
+              {/* Background App Watermark */}
+              <div className="absolute inset-0 flex items-center justify-center pointer-events-none select-none overflow-hidden opacity-[0.05] z-0">
+                <span className="text-3xl sm:text-5xl font-black uppercase tracking-widest text-stone-900 transform -rotate-45 whitespace-nowrap">
+                  BIHAR BOARD SOLUTION CLASSES
+                </span>
+              </div>
+
               {/* Document Header with Official Watermark */}
               <div className="border-b-2 border-red-700 pb-4 flex items-center justify-between">
                 <div>

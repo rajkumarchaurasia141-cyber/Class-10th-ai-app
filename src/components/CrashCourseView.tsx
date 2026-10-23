@@ -355,13 +355,13 @@ export function CrashCourseView({ onBack, onOpenVip }: CrashCourseViewProps) {
         <div className="relative z-10 space-y-2">
           <div className="inline-flex items-center gap-1.5 bg-white/20 text-white text-[10px] font-black px-3 py-1 rounded-full uppercase tracking-wider backdrop-blur-xs">
             <Zap className="w-3 h-3 text-yellow-300 fill-current" />
-            BSEB 10वीं फास्ट-ट्रैक क्रैश कोर्स • सम्पूर्ण विषय
+            BSEB 10वीं ऑनलाइन टेस्ट हब • Test (केवल टेस्ट सेक्शन)
           </div>
           <h1 className="text-2xl sm:text-3xl font-black tracking-tight">
-            Crash Course (Class 10th)
+            Test (ऑनलाइन टेस्ट हब)
           </h1>
           <p className="text-amber-100 text-xs sm:text-sm font-medium max-w-xl leading-relaxed">
-            कम समय में 450+ टॉपर अंक की सम्पूर्ण तैयारी! सभी 6 विषयों — हिन्दी (35 Ch), संस्कृत (18 Ch), विज्ञान (20 Ch), गणित (20 Ch), सामाजिक विज्ञान (30 Ch) व अंग्रेजी (28 Ch) के 30-30 VVI ऑब्जेक्टिव प्रश्न सेट्स और तुरंत लाइव मूल्यांकन!
+            बिहार बोर्ड परीक्षा की तैयारी के लिए सभी 6 विषयों — हिन्दी (35 Ch), संस्कृत (18 Ch), विज्ञान (20 Ch), गणित (20 Ch), सामाजिक विज्ञान (30 Ch) व अंग्रेजी (28 Ch) के 30-30 VVI ऑब्जेक्टिव प्रश्न सेट्स और तुरंत लाइव मूल्यांकन!
           </p>
 
           <div className="flex items-center gap-2 pt-2 text-[11px] font-bold text-amber-200 flex-wrap">
@@ -375,164 +375,8 @@ export function CrashCourseView({ onBack, onOpenVip }: CrashCourseViewProps) {
         </div>
       </div>
 
-      {/* Section Switcher: 1. PDF Section (English) | 2. 30 VVI Chapter Test */}
-      <div className="flex bg-stone-200/80 p-1 rounded-2xl max-w-md mx-auto shadow-inner">
-        <button
-          onClick={() => { setActiveSection('pdfs'); setTestActive(false); }}
-          className={`flex-1 py-2.5 rounded-xl font-black text-xs transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
-            activeSection === 'pdfs'
-              ? 'bg-white text-stone-900 shadow-md'
-              : 'text-stone-600 hover:text-stone-900'
-          }`}
-        >
-          <FileText className="w-4 h-4 text-amber-600" />
-          <span>📑 PDF Section {crashCoursePdfs.length > 0 ? `(${crashCoursePdfs.length})` : ''}</span>
-        </button>
-
-        <button
-          onClick={() => setActiveSection('tests')}
-          className={`flex-1 py-2.5 rounded-xl font-black text-xs transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
-            activeSection === 'tests'
-              ? 'bg-white text-stone-900 shadow-md'
-              : 'text-stone-600 hover:text-stone-900'
-          }`}
-        >
-          <Award className="w-4 h-4 text-red-600" />
-          <span>🎯 30 VVI Chapter Test</span>
-        </button>
-      </div>
-
-      {/* -------------------- SECTION 1: PDF SECTION -------------------- */}
-      {activeSection === 'pdfs' && (
-        <div className="space-y-5">
-          {/* Header Note */}
-          <div className="flex items-center justify-between px-1">
-            <h3 className="text-sm font-black text-stone-900 flex items-center gap-2">
-              <span className="w-2 h-4 rounded-full bg-amber-500 inline-block"></span>
-              <span>PDF Section (Class 10th Special Notes)</span>
-            </h3>
-            <span className="text-[10px] text-stone-500 font-bold">
-              {crashCoursePdfs.length} पीडीएफ उपलब्ध
-            </span>
-          </div>
-
-          {/* PDF Cards Grid or Clean Empty State */}
-          {filteredPdfs.length === 0 ? (
-            <div className="bg-white border border-stone-200 rounded-3xl p-10 sm:p-14 text-center space-y-4 shadow-sm">
-              <div className="w-16 h-16 rounded-3xl bg-amber-50 border border-amber-200 flex items-center justify-center mx-auto text-amber-600 shadow-xs">
-                <FileText className="w-8 h-8" />
-              </div>
-              <div className="space-y-1">
-                <h4 className="font-black text-base text-stone-900">PDF Section is Empty</h4>
-                <p className="text-xs text-stone-500 max-w-md mx-auto leading-relaxed">
-                  यहाँ अभी कोई पीडीएफ अपलोड नहीं है। एडमिन पैनल से जब आप क्रैश कोर्स के नए पीडीएफ नोट्स जोड़ेंगे, वे स्वतः यहाँ छात्रों के लिए प्रदर्शित होने लगेंगे।
-                </p>
-              </div>
-              <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-stone-100 rounded-full text-[11px] font-bold text-stone-600">
-                <span>एडमिन कंट्रोल पैनल ➔ क्रैश कोर्स से PDF अपलोड करें</span>
-              </div>
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {filteredPdfs.map(item => {
-                const isLocked = item.isVip && !isCrashCourseUnlocked;
-
-                return (
-                  <div 
-                    key={item.id}
-                    className={`bg-white rounded-2xl p-4 border-2 transition-all relative overflow-hidden flex flex-col justify-between ${
-                      isLocked 
-                        ? 'border-stone-200 hover:border-amber-300' 
-                        : 'border-amber-200 hover:border-amber-500 shadow-sm hover:shadow-md'
-                    }`}
-                  >
-                    <div className="space-y-2.5">
-                      <div className="flex items-center justify-between gap-2">
-                        <div className="flex items-center gap-1.5 flex-wrap">
-                          <span className="text-[10px] font-black px-2 py-0.5 rounded-md bg-amber-100 text-amber-900 border border-amber-200">
-                            {item.subjectName}
-                          </span>
-                          <span className="text-[10px] font-black px-2 py-0.5 rounded-md bg-blue-100 text-blue-900 border border-blue-200">
-                            अध्याय {item.chapterNo}
-                          </span>
-                        </div>
-
-                        {item.isVip ? (
-                          isCrashCourseUnlocked ? (
-                            <span className="text-[9px] font-black px-2 py-0.5 rounded-md bg-emerald-100 text-emerald-800 flex items-center gap-1">
-                              <Unlock className="w-3 h-3" />
-                              <span>अनलॉक</span>
-                            </span>
-                          ) : (
-                            <span className="text-[9px] font-black px-2 py-0.5 rounded-md bg-red-100 text-red-700 flex items-center gap-1">
-                              <Lock className="w-3 h-3" />
-                              <span>VIP ₹299</span>
-                            </span>
-                          )
-                        ) : (
-                          <span className="text-[9px] font-black px-2 py-0.5 rounded-md bg-emerald-100 text-emerald-700">
-                            FREE
-                          </span>
-                        )}
-                      </div>
-
-                      <div>
-                        <h3 className="text-xs sm:text-sm font-black text-stone-900 leading-snug">
-                          {item.title}
-                        </h3>
-                        <p className="text-[11px] text-stone-500 font-semibold mt-1">
-                          पाठ: {item.chapterName}
-                        </p>
-                      </div>
-
-                      <div className="flex items-center gap-3 text-[10px] text-stone-500 font-bold pt-1">
-                        <span>📄 {item.totalPages || 8} पृष्ठ</span>
-                        <span>📦 {item.fileSize || '1.4 MB'}</span>
-                        <span>📅 {item.uploadedAt || 'अपडेटेड'}</span>
-                      </div>
-                    </div>
-
-                    <div className="pt-3 mt-3 border-t border-stone-100 flex items-center gap-2">
-                      {isLocked ? (
-                        <button
-                          onClick={() => setShowCrashCourseModal(true)}
-                          className="w-full py-2 bg-gradient-to-r from-red-600 to-amber-600 hover:opacity-95 text-white font-black text-xs rounded-xl shadow-xs flex items-center justify-center gap-1.5 cursor-pointer"
-                        >
-                          <Lock className="w-3.5 h-3.5" />
-                          <span>क्रैश कोर्स अनलॉक करें (₹299)</span>
-                        </button>
-                      ) : (
-                        <>
-                          <button
-                            onClick={() => setReadingPdf(item)}
-                            className="flex-1 py-2 bg-amber-500 hover:bg-amber-400 text-stone-950 font-black text-xs rounded-xl shadow-xs flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
-                          >
-                            <Eye className="w-3.5 h-3.5" />
-                            <span>नोट्स पढ़ें (Read)</span>
-                          </button>
-
-                          <a
-                            href={item.pdfUrl}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="p-2 bg-stone-100 hover:bg-stone-200 text-stone-700 rounded-xl transition-colors cursor-pointer shrink-0"
-                            title="डाउनलोड करें"
-                          >
-                            <Download className="w-4 h-4" />
-                          </a>
-                        </>
-                      )}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* -------------------- SECTION 2: 30 VVI CHAPTER TESTS -------------------- */}
-      {activeSection === 'tests' && !testActive && (
+      {/* -------------------- 30 VVI CHAPTER TESTS SECTION -------------------- */}
+      {!testActive && (
         <div className="space-y-4">
           {/* Subject Switcher Row */}
           <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none bg-white p-2.5 rounded-2xl border border-stone-200 shadow-2xs">
