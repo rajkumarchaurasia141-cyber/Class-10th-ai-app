@@ -40,6 +40,7 @@ import { MATH_ALL_CHAPTERS_LIST, MathChapterMeta } from '../data/mathCrashCourse
 import { SST_ALL_CHAPTERS_LIST, SstChapterMeta } from '../data/sstCrashCourseQuestions';
 import { ENGLISH_ALL_CHAPTERS_LIST, EnglishChapterMeta } from '../data/englishCrashCourseQuestions';
 import { CrashCoursePaywallModal } from './CrashCoursePaywallModal';
+import { playSound } from '../utils/audio';
 
 interface CrashCourseViewProps {
   onBack: () => void;
@@ -255,6 +256,12 @@ export function CrashCourseView({ onBack, onOpenVip }: CrashCourseViewProps) {
 
     const currentQ = testQuestions[currentQuestionIdx];
     const isCorrect = optIdx === currentQ.correctAnswer;
+
+    if (isCorrect) {
+      playSound('right');
+    } else {
+      playSound('wrong');
+    }
 
     setAnsweredState(prev => ({
       ...prev,
