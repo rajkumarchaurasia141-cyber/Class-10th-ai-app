@@ -15,6 +15,7 @@ import { FeatureGrid } from './FeatureGrid';
 import { ClassRoutineModal } from './ClassRoutineModal';
 import { NcertBooksModal } from './NcertBooksModal';
 import { SocialMediaModal } from './SocialMediaModal';
+import { AdsterraBanner } from './AdsterraBanner';
 
 interface HomeScreenProps {
   onSelect?: (subjectId: string) => void;
@@ -232,6 +233,9 @@ export function HomeScreen({ onSelect, onOpenSubject, onNavigateTab, onOpenVip }
           </div>
         </div>
       </div>
+
+      {/* Adsterra 300x250 Banner Ad (Centered at Bottom) */}
+      <AdsterraBanner />
 
       {/* Modals */}
       {showRoutine && <ClassRoutineModal onClose={() => setShowRoutine(false)} />}
