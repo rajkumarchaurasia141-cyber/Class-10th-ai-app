@@ -33,6 +33,7 @@ import { CrashCourseView } from './components/CrashCourseView';
 import { LoginScreen } from './components/LoginScreen';
 import { AdminDailyTestPage } from './components/AdminDailyTestPage';
 import { StudentDailyTestPage } from './components/StudentDailyTestPage';
+import { triggerAd } from './utils/adManager';
 
 // Password check logic function as requested
 function checkAdminSecret(enteredPass: string): boolean {
@@ -126,6 +127,9 @@ function MainApp() {
   }, [activeTab, selectedSubject]);
 
   const handleTabChange = (tab: string) => {
+    if (tab === 'live') {
+      triggerAd();
+    }
     if (tab === activeTab) {
       // If clicking current active tab, smoothly scroll back to top of screen
       mainScrollRef.current?.scrollTo({ top: 0, behavior: 'smooth' });

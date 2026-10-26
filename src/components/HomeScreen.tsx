@@ -16,6 +16,7 @@ import { ClassRoutineModal } from './ClassRoutineModal';
 import { NcertBooksModal } from './NcertBooksModal';
 import { SocialMediaModal } from './SocialMediaModal';
 import { AdsterraBanner } from './AdsterraBanner';
+import { triggerAd } from '../utils/adManager';
 
 interface HomeScreenProps {
   onSelect?: (subjectId: string) => void;
@@ -34,6 +35,9 @@ export function HomeScreen({ onSelect, onOpenSubject, onNavigateTab, onOpenVip }
   const [showSocial, setShowSocial] = useState(false);
 
   const handleFeatureNavigate = (id: string) => {
+    // Trigger ad when navigating away
+    triggerAd();
+
     switch (id) {
       case 'course':
         if (onNavigateTab) {

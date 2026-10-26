@@ -15,6 +15,8 @@ import {
   BookMarked 
 } from 'lucide-react';
 
+import { triggerAd } from '../utils/adManager';
+
 export function SubjectsExplorer({ subjectId, onBack }: any) {
   const { subjects } = useData();
   const { isPaid, isVIP } = useAuth();
@@ -22,6 +24,27 @@ export function SubjectsExplorer({ subjectId, onBack }: any) {
   const [showPaywall, setShowPaywall] = useState(false);
   const [showPaidTest, setShowPaidTest] = useState(false);
   const [activeTab, setActiveTab] = useState<'intro' | 'notes' | 'tips' | 'qna' | 'mcq'>('intro');
+
+  // Course section ad timers: Timer 1 at 90s (1-2 min), Timer 2 at 360s (5-10 min)
+  React.useEffect(() => {
+    const timer1 = setTimeout(() => {
+      triggerAd();
+    }, 90000); // 1.5 minutes
+
+    const timer2 = setTimeout(() => {
+      triggerAd();
+    }, 360000); // 6 minutes
+
+    return () => {
+      clearTimeout(timer1);
+      clearTimeout(timer2);
+    };
+  }, [subjectId, selectedCh]);
+
+  const handleBack = () => {
+    triggerAd();
+    if (onBack) onBack();
+  };
 
   const subject = subjects[subjectId] || 
     subjects[subjectId?.toLowerCase()] || 
@@ -48,7 +71,7 @@ export function SubjectsExplorer({ subjectId, onBack }: any) {
   return (
     <div className="max-w-lg mx-auto pb-8 p-2.5 sm:p-3 selection:bg-red-500/30">
       <button 
-        onClick={onBack} 
+        onClick={handleBack} 
         className="text-stone-700 bg-white border border-slate-200 hover:bg-slate-50 mb-4 px-3 py-1.5 rounded-xl flex items-center gap-1.5 text-xs font-bold shadow-xs transition-colors cursor-pointer"
       >
         <ArrowLeft className="w-4 h-4 text-red-700" /> 

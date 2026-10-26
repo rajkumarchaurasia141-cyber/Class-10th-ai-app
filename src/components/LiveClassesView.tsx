@@ -40,8 +40,9 @@ import {
   subscribeClassAttendance, 
   getAttendanceDocId, 
   formatWatchDuration, 
-  DEFAULT_BATCH_STUDENTS 
+  DEFAULT_BATCH_STUDENTS
 } from '../services/attendanceTracker';
+import { AdsterraBanner } from './AdsterraBanner';
 
 interface LiveClassesViewProps {
   onOpenVip: () => void;
@@ -1197,6 +1198,13 @@ export function LiveClassesView({ onOpenVip }: LiveClassesViewProps) {
               </div>
             )}
 
+            {/* Banner Ad inside Live Video Player View */}
+            {!isFullscreen && (
+              <div className="p-2 bg-stone-900 border-t border-stone-800 flex justify-center">
+                <AdsterraBanner />
+              </div>
+            )}
+
           </div>
         </div>
       )}
@@ -1330,6 +1338,9 @@ export function LiveClassesView({ onOpenVip }: LiveClassesViewProps) {
           isAdmin={isAdmin}
         />
       )}
+
+      {/* Banner Ad at bottom of Live Classes page */}
+      <AdsterraBanner />
     </div>
   );
 }

@@ -1,4 +1,4 @@
-const CACHE_NAME = 'bseb-topper-v3';
+const CACHE_NAME = 'bseb-topper-v4';
 const PRECACHE_URLS = [
   '/',
   '/index.html',
@@ -31,6 +31,9 @@ self.addEventListener('activate', (event) => {
 
 self.addEventListener('fetch', (event) => {
   if (event.request.method !== 'GET') return;
+  // Never intercept third-party / external ad scripts or API calls
+  if (!event.request.url.startsWith(self.location.origin)) return;
+
   event.respondWith(
     fetch(event.request)
       .then((response) => {
