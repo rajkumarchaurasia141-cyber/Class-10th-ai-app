@@ -9,7 +9,8 @@ async function startServer() {
   const app = express();
   const PORT = parseInt(process.env.PORT || '3000');
 
-  app.use(express.json());
+  app.use(express.json({ limit: '50mb' }));
+  app.use('/uploads', express.static(path.join(process.cwd(), 'public', 'uploads')));
 
   // Lazy initialization for Google GenAI SDK
   let aiClient: GoogleGenAI | null = null;
@@ -223,13 +224,49 @@ Guidelines for Bihar Guru:
     }
   });
 
-  // Endpoint to permanently save Live Class to app_data.json
+  // Helper to validate media/playback URLs and prevent injection
+  function sanitizeMediaUrl(url: unknown): string {
+    if (typeof url !== 'string') return '';
+    const trimmed = url.trim();
+    if (!trimmed) return '';
+    if (trimmed === 'ai_studio_lecture' || trimmed.startsWith('/uploads/') || trimmed.startsWith('data:image/') || trimmed.startsWith('data:video/')) {
+      return trimmed;
+    }
+    try {
+      const parsed = new URL(trimmed);
+      if (parsed.protocol === 'http:' || parsed.protocol === 'https:') {
+        return trimmed;
+      }
+    } catch {
+      // Allow bare 11-char YouTube IDs if passed
+      if (/^[a-zA-Z0-9_-]{11}$/.test(trimmed)) {
+        return `https://www.youtube.com/watch?v=${trimmed}`;
+      }
+    }
+    return '';
+  }
+
+  // Endpoint to permanently save/upsert Live Class to app_data.json
   app.post('/api/save-live-class', (req: Request, res: Response) => {
     try {
-      const newClass = req.body;
-      if (!newClass || !newClass.id || !newClass.title) {
-        return res.status(400).json({ error: 'Invalid live class data' });
+      const rawClass = req.body;
+      if (!rawClass || !rawClass.id || !rawClass.title) {
+        return res.status(400).json({ error: 'Invalid live class data: id and title are required' });
       }
+
+      // Strip any sensitive stream ingest credentials so they are never stored in public feed JSON
+      const { streamIngestKey, streamSecret, ...safeClass } = rawClass;
+      const sanitizedClass = {
+        ...safeClass,
+        id: String(safeClass.id).trim(),
+        title: String(safeClass.title).trim(),
+        youtubeUrl: sanitizeMediaUrl(safeClass.youtubeUrl) || sanitizeMediaUrl(safeClass.playbackUrl) || 'ai_studio_lecture',
+        playbackUrl: sanitizeMediaUrl(safeClass.playbackUrl) || sanitizeMediaUrl(safeClass.youtubeUrl) || '',
+        thumbnailUrl: sanitizeMediaUrl(safeClass.thumbnailUrl) || '',
+        captionsUrl: sanitizeMediaUrl(safeClass.captionsUrl) || '',
+        publicationStatus: safeClass.publicationStatus || 'published',
+        streamStatus: safeClass.streamStatus || (safeClass.isLive ? 'live' : 'ended')
+      };
 
       const paths = [
         path.join(process.cwd(), 'public', 'app_data.json'),
@@ -244,11 +281,14 @@ Guidelines for Bihar Guru:
             if (!Array.isArray(data.live_classes)) {
               data.live_classes = [];
             }
-            const existingIdx = data.live_classes.findIndex((c: any) => c.id === newClass.id);
+            const existingIdx = data.live_classes.findIndex((c: any) => c.id === sanitizedClass.id);
             if (existingIdx >= 0) {
-              data.live_classes[existingIdx] = newClass;
+              data.live_classes[existingIdx] = {
+                ...data.live_classes[existingIdx],
+                ...sanitizedClass
+              };
             } else {
-              data.live_classes.unshift(newClass);
+              data.live_classes.unshift(sanitizedClass);
             }
             fs.writeFileSync(filePath, JSON.stringify(data, null, 2), 'utf-8');
           } catch (e) {
@@ -257,11 +297,175 @@ Guidelines for Bihar Guru:
         }
       }
 
-      res.json({ success: true, liveClass: newClass });
+      res.json({ success: true, liveClass: sanitizedClass });
     } catch (err: any) {
       console.error('Save live class error:', err);
       res.status(500).json({ error: err.message });
     }
+  });
+
+  // Endpoint to control real-time Live Stream status (Start Live / End Stream / Schedule)
+  app.post('/api/live-stream/status', (req: Request, res: Response) => {
+    try {
+      const { id, action, scheduledDateTime, scheduledAt, playbackUrl } = req.body;
+      if (!id || !action) {
+        return res.status(400).json({ error: 'Video ID and action are required' });
+      }
+
+      const nowIso = new Date().toISOString();
+      let updates: Record<string, any> = {};
+
+      if (action === 'start_live') {
+        updates = {
+          isLive: true,
+          streamStatus: 'live',
+          publishType: 'instant',
+          publicationStatus: 'published',
+          scheduledAt: '🔴 अभी लाइव (LIVE NOW)',
+          publishedAt: nowIso
+        };
+      } else if (action === 'end_live') {
+        updates = {
+          isLive: false,
+          streamStatus: 'ended',
+          contentType: 'recorded',
+          scheduledAt: 'रिकॉर्डेड क्लास (Recorded)'
+        };
+      } else if (action === 'schedule') {
+        updates = {
+          isLive: false,
+          streamStatus: 'scheduled',
+          publishType: 'scheduled',
+          scheduledDateTime: scheduledDateTime || nowIso,
+          scheduledAt: scheduledAt || 'शेड्यूल्ड लाइव'
+        };
+      } else if (action === 'offline') {
+        updates = {
+          isLive: false,
+          streamStatus: 'offline'
+        };
+      }
+
+      if (playbackUrl) {
+        const cleanPlayback = sanitizeMediaUrl(playbackUrl);
+        if (cleanPlayback) {
+          updates.playbackUrl = cleanPlayback;
+          updates.youtubeUrl = cleanPlayback;
+        }
+      }
+
+      const paths = [
+        path.join(process.cwd(), 'public', 'app_data.json'),
+        path.join(process.cwd(), 'dist', 'app_data.json')
+      ];
+
+      let updatedItem: any = null;
+      for (const filePath of paths) {
+        if (fs.existsSync(filePath)) {
+          try {
+            const raw = fs.readFileSync(filePath, 'utf-8');
+            const data = JSON.parse(raw);
+            if (Array.isArray(data.live_classes)) {
+              const idx = data.live_classes.findIndex((c: any) => c.id === id);
+              if (idx >= 0) {
+                data.live_classes[idx] = { ...data.live_classes[idx], ...updates };
+                updatedItem = data.live_classes[idx];
+                fs.writeFileSync(filePath, JSON.stringify(data, null, 2), 'utf-8');
+              }
+            }
+          } catch (e) {
+            console.error('Failed to update stream status in file:', filePath, e);
+          }
+        }
+      }
+
+      res.json({ success: true, updates, liveClass: updatedItem });
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  // Endpoint to upload video file or custom thumbnail from Admin Panel
+  app.post('/api/upload-video', (req: Request, res: Response) => {
+    try {
+      const { fileName, mimeType, base64Data, mediaKind = 'video' } = req.body;
+      if (!fileName || !base64Data) {
+        return res.status(400).json({ error: 'fileName and base64Data are required' });
+      }
+
+      const allowedVideoMimes = ['video/mp4', 'video/webm', 'video/ogg', 'application/x-mpegURL', 'application/vnd.apple.mpegurl'];
+      const allowedImageMimes = ['image/jpeg', 'image/png', 'image/webp', 'image/svg+xml'];
+      const allowedCaptionMimes = ['text/vtt', 'text/plain'];
+
+      if (
+        mediaKind === 'video' &&
+        mimeType &&
+        !allowedVideoMimes.includes(mimeType) &&
+        !fileName.match(/\.(mp4|webm|ogg|m3u8)$/i)
+      ) {
+        return res.status(400).json({ error: 'केवल MP4, WebM या HLS (.m3u8) वीडियो फ़ाइलें मान्य हैं।' });
+      }
+
+      if (mediaKind === 'thumbnail' && mimeType && !allowedImageMimes.includes(mimeType)) {
+        return res.status(400).json({ error: 'केवल JPG, PNG, WebP या SVG थंबनेल मान्य हैं।' });
+      }
+
+      if (mediaKind === 'captions' && mimeType && !allowedCaptionMimes.includes(mimeType) && !fileName.endsWith('.vtt')) {
+        return res.status(400).json({ error: 'केवल WebVTT (.vtt) सबटाइटल फ़ाइल मान्य है।' });
+      }
+
+      const cleanBase64 = String(base64Data).includes('base64,')
+        ? String(base64Data).split('base64,')[1]
+        : String(base64Data);
+
+      const buffer = Buffer.from(cleanBase64, 'base64');
+      const maxMb = parseInt(process.env.MAX_VIDEO_UPLOAD_SIZE_MB || '50', 10);
+      if (buffer.length > maxMb * 1024 * 1024) {
+        return res.status(413).json({ error: `फ़ाइल का आकार ${maxMb}MB की सीमा से अधिक है।` });
+      }
+
+      const safeExt = path.extname(fileName).replace(/[^a-zA-Z0-9.]/g, '') || (mediaKind === 'thumbnail' ? '.jpg' : '.mp4');
+      const uniqueName = `${mediaKind}_${Date.now()}_${Math.random().toString(36).substring(2, 7)}${safeExt}`;
+      const uploadDir = path.join(process.cwd(), 'public', 'uploads', 'live_media');
+
+      if (!fs.existsSync(uploadDir)) {
+        fs.mkdirSync(uploadDir, { recursive: true });
+      }
+
+      const filePath = path.join(uploadDir, uniqueName);
+      fs.writeFileSync(filePath, buffer);
+
+      // Also copy to dist/uploads/live_media if dist exists
+      const distDir = path.join(process.cwd(), 'dist', 'uploads', 'live_media');
+      if (fs.existsSync(path.join(process.cwd(), 'dist'))) {
+        try {
+          if (!fs.existsSync(distDir)) fs.mkdirSync(distDir, { recursive: true });
+          fs.writeFileSync(path.join(distDir, uniqueName), buffer);
+        } catch {}
+      }
+
+      const publicUrl = `/uploads/live_media/${uniqueName}`;
+      res.json({
+        success: true,
+        url: publicUrl,
+        sizeBytes: buffer.length,
+        fileName: uniqueName
+      });
+    } catch (err: any) {
+      console.error('Upload media error:', err);
+      res.status(500).json({ error: err.message || 'Failed to upload media' });
+    }
+  });
+
+  // Safe Admin endpoint to inspect streaming provider configuration (never exposes private keys to public users)
+  app.get('/api/live-stream/config', (_req: Request, res: Response) => {
+    res.json({
+      provider: process.env.STREAMING_PROVIDER || 'custom_hls',
+      ingestRtmpUrl: process.env.STREAM_INGEST_RTMP_URL || 'rtmp://live.padhegabihar.com/live',
+      hasStreamKeyConfigured: Boolean(process.env.STREAM_INGEST_KEY),
+      playbackBaseUrl: process.env.VITE_STREAM_PLAYBACK_BASE_URL || '',
+      maxUploadSizeMb: parseInt(process.env.MAX_VIDEO_UPLOAD_SIZE_MB || '50', 10)
+    });
   });
 
   // Endpoint to permanently delete Live Class from app_data.json

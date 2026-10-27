@@ -52,27 +52,51 @@ export const defaultLiveClasses: LiveClass[] = [
     id: 'live_vvi_1',
     title: '🔥 10th बोर्ड परीक्षा ऑल सब्जेक्ट 100 VVI ऑब्जेक्टिव रामबाण ट्रिक क्लास',
     youtubeUrl: 'ai_studio_lecture',
+    videoSourceType: 'ai_board',
+    contentType: 'live',
+    category: 'Live',
     subjectName: 'VVI & Trick Classes',
     playlistId: 'vvi_tricks',
     teacherName: 'राज सर',
     scheduledAt: 'आज शाम 7:00 बजे',
     isLive: true,
+    streamStatus: 'live',
+    publicationStatus: 'published',
+    featured: true,
+    displayOrder: 1,
+    duration: '52:15',
+    durationSeconds: 3135,
+    viewsCount: 4820,
+    likesCount: 945,
     isVip: false,
     description: 'बिहार बोर्ड परीक्षा 2026 में 100% पूछे जाने वाले ऑल सब्जेक्ट्स के VVI प्रश्न, तुक्का लगाने व बिना पेन उठाए सही उत्तर चुनने की जादुई ट्रिक्स।',
-    createdAt: new Date().toISOString()
+    createdAt: new Date(Date.now() - 3600000 * 2).toISOString(),
+    publishedAt: new Date(Date.now() - 3600000 * 2).toISOString()
   },
   {
     id: 'live_vvi_2',
     title: '🔥 गणित 50/50 MCQ हल करने की 5 जादुई ट्रिक्स (शॉर्टकट मेथड)',
     youtubeUrl: 'ai_studio_lecture',
+    videoSourceType: 'ai_board',
+    contentType: 'short',
+    category: 'Shorts',
     subjectName: 'VVI & Trick Classes',
     playlistId: 'vvi_tricks',
     teacherName: 'राज सर',
     scheduledAt: 'कल सुबह 10:00 बजे',
     isLive: false,
+    streamStatus: 'ended',
+    publicationStatus: 'published',
+    featured: true,
+    displayOrder: 2,
+    duration: '08:45',
+    durationSeconds: 525,
+    viewsCount: 6390,
+    likesCount: 1280,
     isVip: true,
     description: 'त्रिकोणमिति, द्विघात समीकरण एवं नियामक ज्यामिति के कठिन से कठिन सवालों को मात्र 5 सेकंड में हल करने की शॉर्टकट ट्रिक्स।',
-    createdAt: new Date().toISOString()
+    createdAt: new Date(Date.now() - 3600000 * 12).toISOString(),
+    publishedAt: new Date(Date.now() - 3600000 * 12).toISOString()
   },
 
   // 2. HINDI PLAYLIST (गोधूलि & वर्णिका)
@@ -80,27 +104,51 @@ export const defaultLiveClasses: LiveClass[] = [
     id: 'live_hindi_1',
     title: '📖 हिन्दी (गोधूलि) पाठ 1: श्रम विभाजन और जाति प्रथा - संपूर्ण व्याख्या एवं टॉप 50 VVI प्रश्न',
     youtubeUrl: 'ai_studio_lecture',
+    videoSourceType: 'ai_board',
+    contentType: 'live',
+    category: 'Live',
     subjectName: 'हिन्दी',
     playlistId: 'hindi',
     teacherName: 'राज सर',
     scheduledAt: 'आज दोपहर 3:00 बजे',
     isLive: true,
+    streamStatus: 'live',
+    publicationStatus: 'published',
+    featured: false,
+    displayOrder: 3,
+    duration: '46:30',
+    durationSeconds: 2790,
+    viewsCount: 3150,
+    likesCount: 610,
     isVip: false,
     description: 'डॉ. भीमराव आंबेडकर द्वारा लिखित श्रम विभाजन और जाति प्रथा का संपूर्ण भावार्थ, लेखक परिचय, पाठ सारांश तथा बोर्ड परीक्षा के महत्वपूर्ण वस्तुनिष्ठ प्रश्न।',
-    createdAt: new Date().toISOString()
+    createdAt: new Date(Date.now() - 3600000 * 5).toISOString(),
+    publishedAt: new Date(Date.now() - 3600000 * 5).toISOString()
   },
   {
     id: 'live_hindi_2',
     title: '📖 हिन्दी (वर्णिका) पाठ 1: दही वाली मंगम्मा - कहानी का सारांश, चरित्र चित्रण व प्रश्नोत्तर',
     youtubeUrl: 'ai_studio_lecture',
+    videoSourceType: 'ai_board',
+    contentType: 'recorded',
+    category: 'Classes',
     subjectName: 'हिन्दी',
     playlistId: 'hindi',
     teacherName: 'राज सर',
     scheduledAt: 'कल शाम 5:00 बजे',
     isLive: false,
+    streamStatus: 'ended',
+    publicationStatus: 'published',
+    featured: false,
+    displayOrder: 4,
+    duration: '34:10',
+    durationSeconds: 2050,
+    viewsCount: 2890,
+    likesCount: 540,
     isVip: false,
     description: 'श्रीनिवास जी द्वारा रचित कन्नड़ लोक कथा दही वाली मंगम्मा: मंगम्मा और उसकी बहू नजम्मा के पारिवारिक कलह का सजीव चित्रण।',
-    createdAt: new Date().toISOString()
+    createdAt: new Date(Date.now() - 3600000 * 24).toISOString(),
+    publishedAt: new Date(Date.now() - 3600000 * 24).toISOString()
   },
 
   // 3. MATH PLAYLIST (गणित)
@@ -108,27 +156,51 @@ export const defaultLiveClasses: LiveClass[] = [
     id: 'live_math_1',
     title: '📐 BSEB 10th गणित - वास्तविक संख्याएँ (Real Numbers) मैराथन क्लास',
     youtubeUrl: 'ai_studio_lecture',
+    videoSourceType: 'ai_board',
+    contentType: 'live',
+    category: 'Live',
     subjectName: 'गणित',
     playlistId: 'math',
     teacherName: 'राज सर',
     scheduledAt: 'आज शाम 8:00 बजे',
     isLive: true,
+    streamStatus: 'live',
+    publicationStatus: 'published',
+    featured: true,
+    displayOrder: 5,
+    duration: '58:40',
+    durationSeconds: 3520,
+    viewsCount: 5420,
+    likesCount: 1120,
     isVip: false,
     description: '【 प्रश्न 】 : यूक्लिड विभाजन एल्गोरिथम से HCF कैसे निकालते हैं?\n【 उत्तर 】 : a = bq + r, जहाँ 0 ≤ r < b होता है।\n★ मुख्य बिंदु: म.स. और ल.स. का गुणनफल = दोनों संख्याओं का गुणनफल होता है।',
-    createdAt: new Date().toISOString()
+    createdAt: new Date(Date.now() - 3600000 * 3).toISOString(),
+    publishedAt: new Date(Date.now() - 3600000 * 3).toISOString()
   },
   {
     id: 'live_math_2',
     title: '📐 गणित - त्रिकोणमिति (Trigonometry) के 5 नंबर वाले सभी सिद्ध करने वाले प्रश्न',
     youtubeUrl: 'ai_studio_lecture',
+    videoSourceType: 'ai_board',
+    contentType: 'crash_course',
+    category: 'Crash Course',
     subjectName: 'गणित',
     playlistId: 'math',
     teacherName: 'राज सर',
     scheduledAt: 'परसों शाम 7:30 बजे',
     isLive: false,
+    streamStatus: 'ended',
+    publicationStatus: 'published',
+    featured: false,
+    displayOrder: 6,
+    duration: '49:15',
+    durationSeconds: 2955,
+    viewsCount: 4190,
+    likesCount: 890,
     isVip: true,
     description: 'त्रिकोणमितीय सर्वसमिकाएं (sin²θ + cos²θ = 1) तथा 8.4 के सिद्ध करने वाले सभी महत्वपूर्ण दीर्घ उत्तरीय प्रश्न।',
-    createdAt: new Date().toISOString()
+    createdAt: new Date(Date.now() - 3600000 * 36).toISOString(),
+    publishedAt: new Date(Date.now() - 3600000 * 36).toISOString()
   },
 
   // 4. SCIENCE PLAYLIST (विज्ञान)
@@ -136,27 +208,51 @@ export const defaultLiveClasses: LiveClass[] = [
     id: 'live_science_1',
     title: '🔬 विज्ञान - प्रकाश का परावर्तन तथा अपवर्तन संपूर्ण महा-रिवीजन',
     youtubeUrl: 'ai_studio_lecture',
+    videoSourceType: 'ai_board',
+    contentType: 'crash_course',
+    category: 'Crash Course',
     subjectName: 'विज्ञान',
     playlistId: 'science',
     teacherName: 'के.के. मैम',
     scheduledAt: 'कल शाम 6:30 बजे',
     isLive: false,
+    streamStatus: 'ended',
+    publicationStatus: 'published',
+    featured: false,
+    displayOrder: 7,
+    duration: '44:20',
+    durationSeconds: 2660,
+    viewsCount: 3760,
+    likesCount: 730,
     isVip: false,
     description: 'गोलीय दर्पण, अवतल व उत्तल दर्पण के उपयोग, दर्पण सूत्र (1/f = 1/v + 1/u) तथा अपवर्तनांक के VVI आंकिक प्रश्न।',
-    createdAt: new Date().toISOString()
+    createdAt: new Date(Date.now() - 3600000 * 48).toISOString(),
+    publishedAt: new Date(Date.now() - 3600000 * 48).toISOString()
   },
   {
     id: 'live_science_2',
     title: '🔬 विज्ञान - रासायनिक अभिक्रियाएँ एवं समीकरण VVI वस्तुनिष्ठ प्रश्न',
     youtubeUrl: 'ai_studio_lecture',
+    videoSourceType: 'ai_board',
+    contentType: 'recorded',
+    category: 'Classes',
     subjectName: 'विज्ञान',
     playlistId: 'science',
     teacherName: 'के.के. मैम',
     scheduledAt: 'कल सुबह 9:00 बजे',
     isLive: false,
+    streamStatus: 'ended',
+    publicationStatus: 'published',
+    featured: false,
+    displayOrder: 8,
+    duration: '38:50',
+    durationSeconds: 2330,
+    viewsCount: 2940,
+    likesCount: 580,
     isVip: false,
     description: 'संयोजन, वियोजन, विस्थापन एवं द्विविस्थापन अभिक्रियाएं, ऑक्सीकरण एवं अपचयन के समीकरणों को संतुलित करने का नियम।',
-    createdAt: new Date().toISOString()
+    createdAt: new Date(Date.now() - 3600000 * 60).toISOString(),
+    publishedAt: new Date(Date.now() - 3600000 * 60).toISOString()
   },
 
   // 5. SANSKRIT PLAYLIST (संस्कृत)
@@ -164,14 +260,26 @@ export const defaultLiveClasses: LiveClass[] = [
     id: 'live_sanskrit_1',
     title: '🪔 संस्कृत (पीयूषम्) - मङ्गलम् पाठ सम्पूर्ण श्लोक अर्थ, अनुवाद एवं VVI प्रश्न',
     youtubeUrl: 'ai_studio_lecture',
+    videoSourceType: 'ai_board',
+    contentType: 'recorded',
+    category: 'Classes',
     subjectName: 'संस्कृत',
     playlistId: 'sanskrit',
     teacherName: 'पंडित जी सर',
     scheduledAt: 'आज शाम 6:00 बजे',
     isLive: false,
+    streamStatus: 'ended',
+    publicationStatus: 'published',
+    featured: false,
+    displayOrder: 9,
+    duration: '31:25',
+    durationSeconds: 1885,
+    viewsCount: 3310,
+    likesCount: 690,
     isVip: false,
     description: 'उपनिषद से संकलित मङ्गलम् पाठ के पांचों श्लोकों का सरल हिंदी अनुवाद, संधि विच्छेद एवं बिहार बोर्ड के वस्तुनिष्ठ प्रश्न।',
-    createdAt: new Date().toISOString()
+    createdAt: new Date(Date.now() - 3600000 * 72).toISOString(),
+    publishedAt: new Date(Date.now() - 3600000 * 72).toISOString()
   },
 
   // 6. SOCIAL SCIENCE PLAYLIST (सामाजिक विज्ञान)
@@ -179,14 +287,26 @@ export const defaultLiveClasses: LiveClass[] = [
     id: 'live_sst_1',
     title: '🏛️ सामाजिक विज्ञान - यूरोप में राष्ट्रवाद और भारत में राष्ट्रवाद महा-रिवीजन',
     youtubeUrl: 'ai_studio_lecture',
+    videoSourceType: 'ai_board',
+    contentType: 'crash_course',
+    category: 'Crash Course',
     subjectName: 'सामाजिक विज्ञान',
     playlistId: 'social_science',
     teacherName: 'वर्मा सर',
     scheduledAt: 'कल शाम 4:00 बजे',
     isLive: false,
+    streamStatus: 'ended',
+    publicationStatus: 'published',
+    featured: false,
+    displayOrder: 10,
+    duration: '47:10',
+    durationSeconds: 2830,
+    viewsCount: 4120,
+    likesCount: 840,
     isVip: false,
     description: 'मेजिनी, काउंट काबूर, गैरीबाल्डी और बिस्मार्क की भूमिका, जलियांवाला बाग हत्याकांड, असहयोग एवं सविनय अवज्ञा आंदोलन।',
-    createdAt: new Date().toISOString()
+    createdAt: new Date(Date.now() - 3600000 * 84).toISOString(),
+    publishedAt: new Date(Date.now() - 3600000 * 84).toISOString()
   }
 ];
 
@@ -761,13 +881,30 @@ export const DataProvider = ({ children }: any) => {
   };
 
   const updateLiveClass = async (id: string, updates: Partial<LiveClass>): Promise<void> => {
+    let mergedItem: LiveClass | null = null;
     setLiveClasses((prev) => {
-      const updated = prev.map((c) => (c.id === id ? { ...c, ...updates } : c));
+      const updated = prev.map((c) => {
+        if (c.id === id) {
+          mergedItem = { ...c, ...updates };
+          return mergedItem;
+        }
+        return c;
+      });
       try {
         localStorage.setItem('bseb_live_classes_cache', JSON.stringify(updated));
       } catch {}
       return updated;
     });
+
+    if (mergedItem) {
+      try {
+        fetch('/api/save-live-class', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(mergedItem)
+        }).catch(() => {});
+      } catch {}
+    }
 
     try {
       await safeSetDoc(doc(db, 'live_classes', id), updates, { merge: true }, 5000, true);

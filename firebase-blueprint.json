@@ -169,6 +169,10 @@
     },
     "/crash_course_pdfs/{pdfId}": {
       "description": "Crash course PDF study materials"
+    },
+    "/video_interactions/{interactionId}": {
+      "description": "User video likes, saved bookmarks, and resume playback progress"
     }
   }
 }
+

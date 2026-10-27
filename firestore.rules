@@ -105,6 +105,12 @@ service cloud.firestore {
     match /daily_tests/{testId} {
       allow read, write: if true;
     }
+
+    // Allow read/write to video_interactions (user likes, bookmarks, and playback progress)
+    match /video_interactions/{interactionId} {
+      allow read, write: if true;
+    }
   }
 }
+
 

@@ -71,3 +71,11 @@ export const getYouTubeDirectWatchUrl = (input: string): string => {
   }
   return input.startsWith('http') ? input : `https://www.youtube.com/watch?v=${input}`;
 };
+
+export const getYouTubeThumbnailUrl = (input?: string): string => {
+  if (!input || input === 'ai_studio_lecture' || input === 'dQw4w9WgXcQ') return '';
+  const videoId = extractYouTubeVideoId(input);
+  if (!videoId || videoId === 'dQw4w9WgXcQ') return '';
+  return `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`;
+};
+

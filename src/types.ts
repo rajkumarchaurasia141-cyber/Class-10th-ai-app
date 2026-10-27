@@ -61,23 +61,58 @@ export interface PaidPdfNote {
   isGuessPaper?: boolean;
 }
 
+export type VideoSourceType = 'youtube' | 'video_file' | 'hls_stream' | 'ai_board' | 'embed';
+export type VideoContentType = 'live' | 'recorded' | 'short' | 'crash_course';
+export type VideoPublicationStatus = 'published' | 'draft' | 'pending_approval' | 'rejected' | 'unpublished';
+export type LiveStreamStatus = 'offline' | 'scheduled' | 'live' | 'ended';
+export type VideoCategoryTab = 'All' | 'Live' | 'Classes' | 'Crash Course' | 'Shorts' | 'Recently Added';
+
 export interface LiveClass {
   id: string;
   title: string;
   youtubeUrl: string;
+  playbackUrl?: string; // Direct MP4/WebM URL, HLS .m3u8 URL, or YouTube URL
+  thumbnailUrl?: string; // Custom or generated 16:9 thumbnail URL
+  videoSourceType?: VideoSourceType;
+  contentType?: VideoContentType;
+  category?: string; // 'Live' | 'Classes' | 'Crash Course' | 'Shorts'
   subjectName: string;
   playlistId?: string;
   teacherName: string;
+  teacherAvatar?: string;
   scheduledAt: string;
   isLive: boolean;
   isVip?: boolean;
   description?: string;
   createdAt?: string;
+  publishedAt?: string;
+  createdBy?: string;
   publishType?: 'instant' | 'scheduled';
   scheduledDateTime?: string; // ISO string e.g. "2026-10-02T19:00:00"
   isUploaded?: boolean;
   language?: string;
+  duration?: string; // e.g. "45:20"
+  durationSeconds?: number;
+  publicationStatus?: VideoPublicationStatus;
+  streamStatus?: LiveStreamStatus;
+  featured?: boolean;
+  displayOrder?: number;
+  viewsCount?: number;
+  likesCount?: number;
+  captionsUrl?: string; // WebVTT (.vtt) subtitle track URL
 }
+
+export interface UserVideoInteraction {
+  videoId: string;
+  userId: string;
+  liked?: boolean;
+  saved?: boolean;
+  watchProgressSeconds?: number;
+  durationSeconds?: number;
+  completed?: boolean;
+  lastWatchedAt?: string;
+}
+
 
 export interface DailyQuizItem {
   id: string;
