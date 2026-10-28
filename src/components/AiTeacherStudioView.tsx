@@ -138,27 +138,10 @@ export function AiTeacherStudioView({ onBack }: AiTeacherStudioViewProps) {
       createdAt: new Date().toLocaleDateString()
     };
 
-    // Also publish to main Live Classes section!
-    try {
-      await addLiveClass({
-        title,
-        youtubeUrl: 'ai_studio_lecture', // Must be ai_studio_lecture so Smart Digital Board player opens instead of YouTube
-        subjectName,
-        teacherName: teacher === 'male' ? 'Raj Sir' : 'KK Mam',
-        scheduledAt,
-        isLive: type === 'live',
-        isVip,
-        description: script,
-        createdAt: new Date().toISOString()
-      });
-    } catch (e) {
-      console.warn("Published locally:", e);
-    }
-
     const updated = [newVideo, ...videos];
     setVideos(updated);
     setCurrentVideo(newVideo);
-    setMsg('✅ AI वीडियो जनरेट होकर लाइव क्लासेज सेक्शन में सफलतापूर्वक पब्लिश हो गया!');
+    setMsg('✅ AI वीडियो सफलतापूर्वक जनरेट हो गया!');
     setTimeout(() => setMsg(''), 4000);
     setActiveTab('player');
   };

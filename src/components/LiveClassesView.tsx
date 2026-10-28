@@ -42,7 +42,7 @@ import {
 import { db } from '../lib/firebase';
 import { doc } from 'firebase/firestore';
 import { safeSetDoc } from '../utils/firestoreSafe';
-import { useData } from '../context/DataContext';
+import { useData, isAiStudioLectureItem } from '../context/DataContext';
 import { useAuth } from '../context/AuthContext';
 import {
   LiveClass,
@@ -723,25 +723,10 @@ export function LiveClassesView({ onOpenVip }: LiveClassesViewProps) {
     return isVIP || isAdmin;
   };
 
-  // Determine playback mode for a video item
+  // Determine playback mode for a video item (Only Admin-added YouTube or direct video/HLS)
   const getPlaybackMode = useCallback(
     (cls: LiveClass): 'ai_board' | 'native_video' | 'youtube' => {
       const url = cls.playbackUrl || cls.youtubeUrl || '';
-      if (
-        cls.videoSourceType === 'ai_board' ||
-        url === 'ai_studio_lecture' ||
-        url.includes('ai_studio') ||
-        cls.youtubeUrl === 'dQw4w9WgXcQ' ||
-        (cls.description &&
-          cls.description.length > 10 &&
-          !url.includes('youtube.com') &&
-          !url.includes('youtu.be') &&
-          !cls.youtubePlaylistId &&
-          !url.match(/\.(mp4|webm|ogg|m3u8)$/i) &&
-          !url.startsWith('/uploads/'))
-      ) {
-        return 'ai_board';
-      }
       if (
         cls.videoSourceType === 'video_file' ||
         cls.videoSourceType === 'hls_stream' ||
@@ -894,11 +879,11 @@ export function LiveClassesView({ onOpenVip }: LiveClassesViewProps) {
     setTimeout(() => setSpeedToast(''), 2000);
   };
 
-  // Approved & published classes
+  // Approved & published classes (Strictly Admin-added YouTube / video items only)
   const publishedClasses = useMemo(() => {
     return (liveClasses || [])
       .filter((cls) => {
-        if (!cls || !cls.id) return false;
+        if (!cls || !cls.id || isAiStudioLectureItem(cls)) return false;
         const status = cls.publicationStatus || 'published';
         return status === 'published';
       })

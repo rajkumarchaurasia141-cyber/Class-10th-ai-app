@@ -46,345 +46,42 @@ export const defaultBanners: BannerItem[] = [
   }
 ];
 
-export const defaultLiveClasses: LiveClass[] = [
-  // 1. VVI & EXAM PREPARATION (परीक्षा की तैयारी & मॉडल पेपर)
-  {
-    id: 'live_vvi_1',
-    title: '🔥 10th बोर्ड परीक्षा ऑल सब्जेक्ट 100 VVI ऑब्जेक्टिव रामबाण ट्रिक क्लास',
-    youtubeUrl: 'ai_studio_lecture',
-    videoSourceType: 'ai_board',
-    contentType: 'live',
-    category: 'Live',
-    libraryCategory: 'Exam Preparation',
-    subjectName: 'VVI & Trick Classes',
-    chapterName: 'संपूर्ण बिहार बोर्ड परीक्षा 2026',
-    playlistId: 'vvi_tricks',
-    teacherName: 'राज सर',
-    scheduledAt: 'आज शाम 7:00 बजे',
-    isLive: true,
-    streamStatus: 'live',
-    publicationStatus: 'published',
-    featured: true,
-    displayOrder: 1,
-    duration: '52:15',
-    durationSeconds: 3135,
-    viewsCount: 4820,
-    likesCount: 945,
-    isVip: false,
-    description: 'बिहार बोर्ड परीक्षा 2026 में 100% पूछे जाने वाले ऑल सब्जेक्ट्स के VVI प्रश्न, तुक्का लगाने व बिना पेन उठाए सही उत्तर चुनने की जादुई ट्रिक्स।',
-    createdAt: new Date(Date.now() - 3600000 * 2).toISOString(),
-    publishedAt: new Date(Date.now() - 3600000 * 2).toISOString()
-  },
-  {
-    id: 'live_vvi_2',
-    title: '🔥 गणित 50/50 MCQ हल करने की 5 जादुई ट्रिक्स (शॉर्टकट मेथड)',
-    youtubeUrl: 'ai_studio_lecture',
-    videoSourceType: 'ai_board',
-    contentType: 'short',
-    category: 'Shorts',
-    libraryCategory: 'Objective & Subjective',
-    subjectName: 'गणित',
-    chapterName: 'त्रिकोणमिति का परिचय',
-    playlistId: 'vvi_tricks',
-    teacherName: 'राज सर',
-    scheduledAt: 'कल सुबह 10:00 बजे',
-    isLive: false,
-    streamStatus: 'ended',
-    publicationStatus: 'published',
-    featured: true,
-    displayOrder: 2,
-    duration: '08:45',
-    durationSeconds: 525,
-    viewsCount: 6390,
-    likesCount: 1280,
-    isVip: true,
-    description: 'त्रिकोणमिति, द्विघात समीकरण एवं नियामक ज्यामिति के कठिन से कठिन सवालों को मात्र 5 सेकंड में हल करने की शॉर्टकट ट्रिक्स।',
-    createdAt: new Date(Date.now() - 3600000 * 12).toISOString(),
-    publishedAt: new Date(Date.now() - 3600000 * 12).toISOString()
-  },
+const LEGACY_AI_STUDIO_IDS = new Set([
+  'live_vvi_1',
+  'live_vvi_2',
+  'live_hindi_1',
+  'live_hindi_2',
+  'live_math_1',
+  'live_math_2',
+  'live_science_1',
+  'live_science_2',
+  'live_sanskrit_1',
+  'live_sst_1',
+  'live_eng_1',
+  'live_eng_2'
+]);
 
-  // 2. HINDI LIBRARY (हिन्दी - गोधूलि & वर्णिका)
-  {
-    id: 'live_hindi_1',
-    title: '📖 हिन्दी (गोधूलि) पाठ 1: श्रम विभाजन और जाति प्रथा - संपूर्ण व्याख्या एवं टॉप 50 VVI प्रश्न',
-    youtubeUrl: 'ai_studio_lecture',
-    videoSourceType: 'ai_board',
-    contentType: 'live',
-    category: 'Live',
-    libraryCategory: 'Chapter-wise Lectures',
-    subjectName: 'हिन्दी',
-    chapterName: 'श्रम विभाजन और जाति प्रथा',
-    playlistId: 'hindi',
-    teacherName: 'राज सर',
-    scheduledAt: 'आज दोपहर 3:00 बजे',
-    isLive: true,
-    streamStatus: 'live',
-    publicationStatus: 'published',
-    featured: false,
-    displayOrder: 3,
-    duration: '46:30',
-    durationSeconds: 2790,
-    viewsCount: 3150,
-    likesCount: 610,
-    isVip: false,
-    description: 'डॉ. भीमराव आंबेडकर द्वारा लिखित श्रम विभाजन और जाति प्रथा का संपूर्ण भावार्थ, लेखक परिचय, पाठ सारांश तथा बोर्ड परीक्षा के महत्वपूर्ण वस्तुनिष्ठ प्रश्न।',
-    createdAt: new Date(Date.now() - 3600000 * 5).toISOString(),
-    publishedAt: new Date(Date.now() - 3600000 * 5).toISOString()
-  },
-  {
-    id: 'live_hindi_2',
-    title: '📖 हिन्दी (वर्णिका) पाठ 1: दही वाली मंगम्मा - कहानी का सारांश, चरित्र चित्रण व प्रश्नोत्तर',
-    youtubeUrl: 'ai_studio_lecture',
-    videoSourceType: 'ai_board',
-    contentType: 'recorded',
-    category: 'Classes',
-    libraryCategory: 'Objective & Subjective',
-    subjectName: 'हिन्दी',
-    chapterName: 'दही वाली मंगम्मा',
-    playlistId: 'hindi',
-    teacherName: 'राज सर',
-    scheduledAt: 'कल शाम 5:00 बजे',
-    isLive: false,
-    streamStatus: 'ended',
-    publicationStatus: 'published',
-    featured: false,
-    displayOrder: 4,
-    duration: '34:10',
-    durationSeconds: 2050,
-    viewsCount: 2890,
-    likesCount: 540,
-    isVip: false,
-    description: 'श्रीनिवास जी द्वारा रचित कन्नड़ लोक कथा दही वाली मंगम्मा: मंगम्मा और उसकी बहू नजम्मा के पारिवारिक कलह का सजीव चित्रण।',
-    createdAt: new Date(Date.now() - 3600000 * 24).toISOString(),
-    publishedAt: new Date(Date.now() - 3600000 * 24).toISOString()
-  },
-
-  // 3. MATHEMATICS LIBRARY (गणित)
-  {
-    id: 'live_math_1',
-    title: '📐 BSEB 10th गणित - वास्तविक संख्याएँ (Real Numbers) संपूर्ण कोर्स मैराथन',
-    youtubeUrl: 'ai_studio_lecture',
-    videoSourceType: 'ai_board',
-    contentType: 'live',
-    category: 'Live',
-    libraryCategory: 'Complete Courses',
-    subjectName: 'गणित',
-    chapterName: 'वास्तविक संख्याएँ',
-    playlistId: 'math',
-    teacherName: 'राज सर',
-    scheduledAt: 'आज शाम 8:00 बजे',
-    isLive: true,
-    streamStatus: 'live',
-    publicationStatus: 'published',
-    featured: true,
-    displayOrder: 5,
-    duration: '58:40',
-    durationSeconds: 3520,
-    viewsCount: 5420,
-    likesCount: 1120,
-    isVip: false,
-    description: '【 प्रश्न 】 : यूक्लिड विभाजन एल्गोरिथम से HCF कैसे निकालते हैं?\n【 उत्तर 】 : a = bq + r, जहाँ 0 ≤ r < b होता है।\n★ मुख्य बिंदु: म.स. और ल.स. का गुणनफल = दोनों संख्याओं का गुणनफल होता है।',
-    createdAt: new Date(Date.now() - 3600000 * 3).toISOString(),
-    publishedAt: new Date(Date.now() - 3600000 * 3).toISOString()
-  },
-  {
-    id: 'live_math_2',
-    title: '📐 गणित - त्रिकोणमिति (Trigonometry) के 5 नंबर वाले सभी सिद्ध करने वाले प्रश्न (PYQ 2018-2025)',
-    youtubeUrl: 'ai_studio_lecture',
-    videoSourceType: 'ai_board',
-    contentType: 'crash_course',
-    category: 'Crash Course',
-    libraryCategory: 'Previous-Year Questions',
-    subjectName: 'गणित',
-    chapterName: 'त्रिकोणमिति का परिचय',
-    playlistId: 'math',
-    teacherName: 'राज सर',
-    scheduledAt: 'परसों शाम 7:30 बजे',
-    isLive: false,
-    streamStatus: 'ended',
-    publicationStatus: 'published',
-    featured: false,
-    displayOrder: 6,
-    duration: '49:15',
-    durationSeconds: 2955,
-    viewsCount: 4190,
-    likesCount: 890,
-    isVip: true,
-    description: 'त्रिकोणमितीय सर्वसमिकाएं (sin²θ + cos²θ = 1) तथा 8.4 के सिद्ध करने वाले पिछले वर्षों के सभी महत्वपूर्ण दीर्घ उत्तरीय प्रश्न।',
-    createdAt: new Date(Date.now() - 3600000 * 36).toISOString(),
-    publishedAt: new Date(Date.now() - 3600000 * 36).toISOString()
-  },
-
-  // 4. SCIENCE LIBRARY (विज्ञान)
-  {
-    id: 'live_science_1',
-    title: '🔬 विज्ञान - प्रकाश का परावर्तन तथा अपवर्तन संपूर्ण महा-रिवीजन क्लास',
-    youtubeUrl: 'ai_studio_lecture',
-    videoSourceType: 'ai_board',
-    contentType: 'crash_course',
-    category: 'Crash Course',
-    libraryCategory: 'Revision Classes',
-    subjectName: 'विज्ञान',
-    chapterName: 'प्रकाश – परावर्तन तथा अपवर्तन',
-    playlistId: 'science',
-    teacherName: 'के.के. मैम',
-    scheduledAt: 'कल शाम 6:30 बजे',
-    isLive: false,
-    streamStatus: 'ended',
-    publicationStatus: 'published',
-    featured: false,
-    displayOrder: 7,
-    duration: '44:20',
-    durationSeconds: 2660,
-    viewsCount: 3760,
-    likesCount: 730,
-    isVip: false,
-    description: 'गोलीय दर्पण, अवतल व उत्तल दर्पण के उपयोग, दर्पण सूत्र (1/f = 1/v + 1/u) तथा अपवर्तनांक के VVI आंकिक प्रश्न।',
-    createdAt: new Date(Date.now() - 3600000 * 48).toISOString(),
-    publishedAt: new Date(Date.now() - 3600000 * 48).toISOString()
-  },
-  {
-    id: 'live_science_2',
-    title: '🔬 विज्ञान - बिहार बोर्ड ऑफिशियल मॉडल पेपर हल (80/80 VVI प्रश्नोत्तर)',
-    youtubeUrl: 'ai_studio_lecture',
-    videoSourceType: 'ai_board',
-    contentType: 'recorded',
-    category: 'Classes',
-    libraryCategory: 'Model Paper Solutions',
-    subjectName: 'विज्ञान',
-    chapterName: 'रासायनिक अभिक्रियाएँ एवं समीकरण',
-    playlistId: 'science',
-    teacherName: 'के.के. मैम',
-    scheduledAt: 'कल सुबह 9:00 बजे',
-    isLive: false,
-    streamStatus: 'ended',
-    publicationStatus: 'published',
-    featured: false,
-    displayOrder: 8,
-    duration: '38:50',
-    durationSeconds: 2330,
-    viewsCount: 2940,
-    likesCount: 580,
-    isVip: false,
-    description: 'संयोजन, वियोजन, विस्थापन एवं द्विविस्थापन अभिक्रियाएं, ऑक्सीकरण एवं अपचयन के समीकरणों को संतुलित करने का नियम तथा मॉडल पेपर हल।',
-    createdAt: new Date(Date.now() - 3600000 * 60).toISOString(),
-    publishedAt: new Date(Date.now() - 3600000 * 60).toISOString()
-  },
-
-  // 5. SANSKRIT LIBRARY (संस्कृत)
-  {
-    id: 'live_sanskrit_1',
-    title: '🪔 संस्कृत (पीयूषम्) - मङ्गलम् पाठ सम्पूर्ण श्लोक अर्थ, अनुवाद एवं VVI प्रश्न',
-    youtubeUrl: 'ai_studio_lecture',
-    videoSourceType: 'ai_board',
-    contentType: 'recorded',
-    category: 'Classes',
-    libraryCategory: 'Chapter-wise Lectures',
-    subjectName: 'संस्कृत',
-    chapterName: 'मङ्गलम्',
-    playlistId: 'sanskrit',
-    teacherName: 'पंडित जी सर',
-    scheduledAt: 'आज शाम 6:00 बजे',
-    isLive: false,
-    streamStatus: 'ended',
-    publicationStatus: 'published',
-    featured: false,
-    displayOrder: 9,
-    duration: '31:25',
-    durationSeconds: 1885,
-    viewsCount: 3310,
-    likesCount: 690,
-    isVip: false,
-    description: 'उपनिषद से संकलित मङ्गलम् पाठ के पांचों श्लोकों का सरल हिंदी अनुवाद, संधि विच्छेद एवं बिहार बोर्ड के वस्तुनिष्ठ प्रश्न।',
-    createdAt: new Date(Date.now() - 3600000 * 72).toISOString(),
-    publishedAt: new Date(Date.now() - 3600000 * 72).toISOString()
-  },
-
-  // 6. SOCIAL SCIENCE LIBRARY (सामाजिक विज्ञान)
-  {
-    id: 'live_sst_1',
-    title: '🏛️ सामाजिक विज्ञान - यूरोप में राष्ट्रवाद और भारत में राष्ट्रवाद महा-रिवीजन',
-    youtubeUrl: 'ai_studio_lecture',
-    videoSourceType: 'ai_board',
-    contentType: 'crash_course',
-    category: 'Crash Course',
-    libraryCategory: 'Revision Classes',
-    subjectName: 'सामाजिक विज्ञान',
-    chapterName: 'यूरोप में राष्ट्रवाद',
-    playlistId: 'social_science',
-    teacherName: 'वर्मा सर',
-    scheduledAt: 'कल शाम 4:00 बजे',
-    isLive: false,
-    streamStatus: 'ended',
-    publicationStatus: 'published',
-    featured: false,
-    displayOrder: 10,
-    duration: '47:10',
-    durationSeconds: 2830,
-    viewsCount: 4120,
-    likesCount: 840,
-    isVip: false,
-    description: 'मेजिनी, काउंट काबूर, गैरीबाल्डी और बिस्मार्क की भूमिका, जलियांवाला बाग हत्याकांड, असहयोग एवं सविनय अवज्ञा आंदोलन।',
-    createdAt: new Date(Date.now() - 3600000 * 84).toISOString(),
-    publishedAt: new Date(Date.now() - 3600000 * 84).toISOString()
-  },
-
-  // 7. ENGLISH LIBRARY (अंग्रेजी - Panorama Part 2 & Grammar)
-  {
-    id: 'live_eng_1',
-    title: '🔤 अंग्रेजी (Panorama Part-2) Chapter 1: The Pace for Living - हिंदी अर्थ, Summary & VVI MCQs',
-    youtubeUrl: 'ai_studio_lecture',
-    videoSourceType: 'ai_board',
-    contentType: 'recorded',
-    category: 'Classes',
-    libraryCategory: 'Complete Courses',
-    subjectName: 'अंग्रेजी',
-    chapterName: 'The Pace for Living (R.C. Hutchinson)',
-    playlistId: 'english',
-    teacherName: 'आर्यन सर',
-    scheduledAt: 'आज शाम 5:30 बजे',
-    isLive: false,
-    streamStatus: 'ended',
-    publicationStatus: 'published',
-    featured: false,
-    displayOrder: 11,
-    duration: '39:15',
-    durationSeconds: 2355,
-    viewsCount: 2780,
-    likesCount: 520,
-    isVip: false,
-    description: '【 प्रश्न 】 : Who is the author of "The Pace for Living"?\n【 उत्तर 】 : R.C. Hutchinson (आर. सी. हचिन्सन) ने आधुनिक मानव के तेज रफ्तार जीवन और Corn-merchant के चरित्र का सुंदर वर्णन किया है।\n★ मुख्य बिंदु: बिहार बोर्ड कक्षा 10वीं अंग्रेजी में लेखक के नाम और हिंदी से अंग्रेजी अनुवाद (Translation) से सीधे 15 अंक के प्रश्न आते हैं।',
-    createdAt: new Date(Date.now() - 3600000 * 96).toISOString(),
-    publishedAt: new Date(Date.now() - 3600000 * 96).toISOString()
-  },
-  {
-    id: 'live_eng_2',
-    title: '🔤 BSEB 10th English Grammar, Translation & Letter Writing (PYQ + Model Paper Solution)',
-    youtubeUrl: 'ai_studio_lecture',
-    videoSourceType: 'ai_board',
-    contentType: 'crash_course',
-    category: 'Crash Course',
-    libraryCategory: 'Model Paper Solutions',
-    subjectName: 'अंग्रेजी',
-    chapterName: 'English Grammar & Translation',
-    playlistId: 'english',
-    teacherName: 'आर्यन सर',
-    scheduledAt: 'कल सुबह 11:00 बजे',
-    isLive: false,
-    streamStatus: 'ended',
-    publicationStatus: 'published',
-    featured: false,
-    displayOrder: 12,
-    duration: '42:30',
-    durationSeconds: 2550,
-    viewsCount: 3140,
-    likesCount: 640,
-    isVip: false,
-    description: 'बिहार बोर्ड कक्षा 10वीं अंग्रेजी व्याकरण (Tense, Voice, Narration, Preposition), हिंदी से अंग्रेजी अनुवाद और Application/Letter लिखने का सबसे आसान तरीका।',
-    createdAt: new Date(Date.now() - 3600000 * 108).toISOString(),
-    publishedAt: new Date(Date.now() - 3600000 * 108).toISOString()
+export const isAiStudioLectureItem = (raw: any): boolean => {
+  if (!raw) return true;
+  const id = String(raw.id || '').trim();
+  if (!id || LEGACY_AI_STUDIO_IDS.has(id)) return true;
+  const ytUrl = String(raw.youtubeUrl || '').trim();
+  const playUrl = String(raw.playbackUrl || '').trim();
+  if (
+    raw.videoSourceType === 'ai_board' ||
+    ytUrl === 'ai_studio_lecture' ||
+    playUrl === 'ai_studio_lecture' ||
+    ytUrl.includes('ai_studio') ||
+    playUrl.includes('ai_studio')
+  ) {
+    return true;
   }
-];
+  const effectiveUrl = ytUrl || playUrl;
+  if (!effectiveUrl) return true;
+  return false;
+};
+
+export const defaultLiveClasses: LiveClass[] = [];
 
 export const defaultDailyQuizzes: DailyQuizItem[] = [
   {
@@ -671,15 +368,15 @@ export const DataProvider = ({ children }: any) => {
         // PYQs
         setPyqs(data.pyqs || defaultPyqs);
 
-        // Live Classes
-        const staticLive = data.live_classes || defaultLiveClasses;
+        // Live Classes (Keep ONLY Admin-added YouTube/video items, purge AI Tech Video Studio items)
+        const staticLive = (data.live_classes || []).filter((c: any) => !isAiStudioLectureItem(c));
         setLiveClasses((prev) => {
           const map = new Map<string, LiveClass>();
           staticLive.forEach((c: LiveClass) => {
-            if (c && c.id) map.set(c.id, normalizeLiveClassItem(c));
+            if (c && c.id && !isAiStudioLectureItem(c)) map.set(c.id, normalizeLiveClassItem(c));
           });
           prev.forEach(c => {
-            if (c && c.id) map.set(c.id, normalizeLiveClassItem(c));
+            if (c && c.id && !isAiStudioLectureItem(c)) map.set(c.id, normalizeLiveClassItem(c));
           });
           try {
             const cached = localStorage.getItem('bseb_live_classes_cache');
@@ -687,12 +384,16 @@ export const DataProvider = ({ children }: any) => {
               const parsed = JSON.parse(cached);
               if (Array.isArray(parsed)) {
                 parsed.forEach((c: LiveClass) => {
-                  if (c && c.id) map.set(c.id, normalizeLiveClassItem(c));
+                  if (c && c.id && !isAiStudioLectureItem(c)) map.set(c.id, normalizeLiveClassItem(c));
                 });
               }
             }
           } catch {}
-          return Array.from(map.values()).sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
+          const cleaned = Array.from(map.values()).sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
+          try {
+            localStorage.setItem('bseb_live_classes_cache', JSON.stringify(cleaned));
+          } catch {}
+          return cleaned;
         });
 
         // Daily Quizzes
@@ -906,17 +607,20 @@ export const DataProvider = ({ children }: any) => {
       const cached = localStorage.getItem('bseb_live_classes_cache');
       if (cached) {
         const parsed = JSON.parse(cached);
-        if (Array.isArray(parsed) && parsed.length > 0) {
+        if (Array.isArray(parsed)) {
           const map = new Map<string, LiveClass>();
-          defaultLiveClasses.forEach(c => map.set(c.id, normalizeLiveClassItem(c)));
           parsed.forEach(c => {
-            if (c && c.id) map.set(c.id, normalizeLiveClassItem(c));
+            if (c && c.id && !isAiStudioLectureItem(c)) {
+              map.set(c.id, normalizeLiveClassItem(c));
+            }
           });
-          return Array.from(map.values()).sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
+          const cleaned = Array.from(map.values()).sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
+          localStorage.setItem('bseb_live_classes_cache', JSON.stringify(cleaned));
+          return cleaned;
         }
       }
     } catch {}
-    return defaultLiveClasses.map(normalizeLiveClassItem);
+    return [];
   });
 
   // Real-time listener for live_classes
@@ -925,17 +629,22 @@ export const DataProvider = ({ children }: any) => {
       const unsub = onSnapshot(collection(db, 'live_classes'), (snapshot) => {
         const classesFromDb: LiveClass[] = [];
         snapshot.forEach((docSnap) => {
-          classesFromDb.push(normalizeLiveClassItem({ id: docSnap.id, ...(docSnap.data() as any) }));
+          const rawItem = { id: docSnap.id, ...(docSnap.data() as any) };
+          if (isAiStudioLectureItem(rawItem)) {
+            // Automatically purge any legacy AI Tech Video Studio document from Firestore
+            safeDeleteDoc(doc(db, 'live_classes', docSnap.id)).catch(() => {});
+          } else {
+            classesFromDb.push(normalizeLiveClassItem(rawItem));
+          }
         });
         
         setLiveClasses((prev) => {
           const map = new Map<string, LiveClass>();
-          defaultLiveClasses.forEach(c => map.set(c.id, normalizeLiveClassItem(c)));
           prev.forEach(c => {
-            if (c && c.id) map.set(c.id, normalizeLiveClassItem(c));
+            if (c && c.id && !isAiStudioLectureItem(c)) map.set(c.id, normalizeLiveClassItem(c));
           });
           classesFromDb.forEach(c => {
-            if (c && c.id) map.set(c.id, normalizeLiveClassItem(c));
+            if (c && c.id && !isAiStudioLectureItem(c)) map.set(c.id, normalizeLiveClassItem(c));
           });
           const combined = Array.from(map.values()).sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
           try {

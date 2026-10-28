@@ -36,7 +36,7 @@ import {
   Search,
   BookOpen
 } from 'lucide-react';
-import { useData } from '../context/DataContext';
+import { useData, isAiStudioLectureItem } from '../context/DataContext';
 import {
   LiveClass,
   LiveWatchRecord,
@@ -87,7 +87,11 @@ const BIHAR_BOARD_SUBJECTS = [
 ];
 
 export function AdminLiveClassesManager() {
-  const { liveClasses, subjects, addLiveClass, updateLiveClass, deleteLiveClass } = useData();
+  const { liveClasses: rawLiveClasses, subjects, addLiveClass, updateLiveClass, deleteLiveClass } = useData();
+  const liveClasses = useMemo(
+    () => (rawLiveClasses || []).filter((c) => !isAiStudioLectureItem(c)),
+    [rawLiveClasses]
+  );
 
   // Form state (supports both Create & Edit)
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -313,14 +317,13 @@ export function AdminLiveClassesManager() {
     setEditingId(cls.id);
     setTitle(cls.title || '');
     setVideoSourceType(
-      cls.videoSourceType ||
-        (cls.youtubeUrl === 'ai_studio_lecture'
-          ? 'ai_board'
-          : cls.playbackUrl?.endsWith('.m3u8')
-          ? 'hls_stream'
-          : cls.playbackUrl?.match(/\.(mp4|webm|ogg)$/i) || cls.youtubeUrl?.startsWith('/uploads/')
-          ? 'video_file'
-          : 'youtube')
+      cls.videoSourceType && cls.videoSourceType !== 'ai_board'
+        ? cls.videoSourceType
+        : cls.playbackUrl?.endsWith('.m3u8')
+        ? 'hls_stream'
+        : cls.playbackUrl?.match(/\.(mp4|webm|ogg)$/i) || cls.youtubeUrl?.startsWith('/uploads/')
+        ? 'video_file'
+        : 'youtube'
     );
     setYoutubeUrl(cls.youtubeUrl || '');
     setPlaybackUrl(cls.playbackUrl || cls.youtubeUrl || '');
@@ -348,9 +351,7 @@ export function AdminLiveClassesManager() {
   const handleSaveOrUpdate = async (e: React.FormEvent) => {
     e.preventDefault();
     const primaryUrl =
-      videoSourceType === 'ai_board'
-        ? 'ai_studio_lecture'
-        : videoSourceType === 'youtube'
+      videoSourceType === 'youtube'
         ? youtubeUrl.trim()
         : playbackUrl.trim() || youtubeUrl.trim();
 
@@ -726,12 +727,11 @@ export function AdminLiveClassesManager() {
           <label className="text-xs font-black text-stone-300 block">
             1. वीडियो स्रोत चुनें (Select Video / Playlist Source Type):
           </label>
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
             {[
-              { id: 'youtube', label: 'YouTube Video / Playlist', icon: Youtube, desc: 'वीडियो या पब्लिक प्लेलिस्ट (No API)' },
+              { id: 'youtube', label: 'YouTube Video / Live / Playlist', icon: Youtube, desc: 'YouTube वीडियो, लाइव या प्लेलिस्ट लिंक' },
               { id: 'video_file', label: 'MP4 / वीडियो अपलोड', icon: FileVideo, desc: 'फ़ाइल अपलोड या डायरेक्ट MP4' },
-              { id: 'hls_stream', label: 'HLS Live (.m3u8)', icon: Radio, desc: 'OBS / Cloudflare / Mux HLS' },
-              { id: 'ai_board', label: 'Smart AI Board', icon: Sparkles, desc: 'इंटरैक्टिव बोर्ड लेक्चर' }
+              { id: 'hls_stream', label: 'HLS Live (.m3u8)', icon: Radio, desc: 'OBS / Cloudflare / Mux HLS' }
             ].map((src) => {
               const Icon = src.icon;
               const active = videoSourceType === src.id;
@@ -741,10 +741,6 @@ export function AdminLiveClassesManager() {
                   type="button"
                   onClick={() => {
                     setVideoSourceType(src.id as VideoSourceType);
-                    if (src.id === 'ai_board') {
-                      setYoutubeUrl('ai_studio_lecture');
-                      setPlaybackUrl('ai_studio_lecture');
-                    }
                   }}
                   className={`p-3 rounded-2xl border text-left transition-all cursor-pointer ${
                     active
