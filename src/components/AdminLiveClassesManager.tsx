@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import {
   Video,
   Plus,
@@ -12,9 +12,7 @@ import {
   PlaySquare,
   Lock,
   Unlock,
-  Gift,
   Clock,
-  Zap,
   Users,
   Eye,
   Upload,
@@ -32,7 +30,11 @@ import {
   Play,
   Square,
   X,
-  ArrowUpDown
+  ArrowUpDown,
+  ListVideo,
+  ExternalLink,
+  Search,
+  BookOpen
 } from 'lucide-react';
 import { useData } from '../context/DataContext';
 import {
@@ -41,11 +43,19 @@ import {
   VideoSourceType,
   VideoContentType,
   VideoPublicationStatus,
-  LiveStreamStatus
+  LiveStreamStatus,
+  LibraryCategoryType
 } from '../types';
 import { ClassAttendanceModal } from './ClassAttendanceModal';
 import { subscribeClassAttendance, DEFAULT_BATCH_STUDENTS } from '../services/attendanceTracker';
-import { extractYouTubeVideoId, getYouTubeThumbnailUrl } from '../utils/youtubeHelper';
+import {
+  extractYouTubeVideoId,
+  extractYouTubePlaylistId,
+  isValidYouTubeUrlOrId,
+  getYouTubeEmbedUrl,
+  getYouTubeThumbnailUrl,
+  getYouTubeSearchShortcutUrl
+} from '../utils/youtubeHelper';
 
 interface StreamProviderConfig {
   provider: string;
@@ -55,8 +65,29 @@ interface StreamProviderConfig {
   maxUploadSizeMb: number;
 }
 
+const LIBRARY_CATEGORIES: { id: LibraryCategoryType; label: string; hindi: string }[] = [
+  { id: 'Complete Courses', label: 'Complete Courses', hindi: '🎓 संपूर्ण कोर्स (Complete Courses)' },
+  { id: 'Chapter-wise Lectures', label: 'Chapter-wise Lectures', hindi: '📖 अध्याय-वार लेक्चर (Chapter-wise)' },
+  { id: 'Objective & Subjective', label: 'Objective & Subjective', hindi: '✍️ वस्तुनिष्ठ व सब्जेक्टिव प्रश्न' },
+  { id: 'Previous-Year Questions', label: 'Previous-Year Questions', hindi: '📜 पिछले वर्षों के प्रश्न (PYQ)' },
+  { id: 'Model Paper Solutions', label: 'Model Paper Solutions', hindi: '📄 मॉडल पेपर हल (Model Papers)' },
+  { id: 'Revision Classes', label: 'Revision Classes', hindi: '⚡ रिवीजन क्लास (Revision)' },
+  { id: 'Exam Preparation', label: 'Exam Preparation', hindi: '🎯 परीक्षा की तैयारी (Exam Prep)' }
+];
+
+const BIHAR_BOARD_SUBJECTS = [
+  { value: 'गणित', label: '📐 गणित (Mathematics)' },
+  { value: 'विज्ञान', label: '🔬 विज्ञान (Science)' },
+  { value: 'सामाजिक विज्ञान', label: '🏛️ सामाजिक विज्ञान (Social Science)' },
+  { value: 'हिन्दी', label: '📖 हिन्दी (Hindi)' },
+  { value: 'संस्कृत', label: '🪔 संस्कृत (Sanskrit)' },
+  { value: 'अंग्रेजी', label: '🔤 अंग्रेजी (English)' },
+  { value: 'VVI & Trick Classes', label: '🔥 VVI & Trick Classes' },
+  { value: 'सामान्य', label: '🎯 सामान्य / मार्गदर्शन (General)' }
+];
+
 export function AdminLiveClassesManager() {
-  const { liveClasses, addLiveClass, updateLiveClass, deleteLiveClass } = useData();
+  const { liveClasses, subjects, addLiveClass, updateLiveClass, deleteLiveClass } = useData();
 
   // Form state (supports both Create & Edit)
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -67,6 +98,8 @@ export function AdminLiveClassesManager() {
   const [thumbnailUrl, setThumbnailUrl] = useState('');
   const [captionsUrl, setCaptionsUrl] = useState('');
   const [subjectName, setSubjectName] = useState('गणित');
+  const [chapterName, setChapterName] = useState('');
+  const [libraryCategory, setLibraryCategory] = useState<LibraryCategoryType>('Chapter-wise Lectures');
   const [category, setCategory] = useState<string>('Classes');
   const [contentType, setContentType] = useState<VideoContentType>('recorded');
   const [teacherName, setTeacherName] = useState('राज सर');
@@ -109,6 +142,24 @@ export function AdminLiveClassesManager() {
   const thumbInputRef = useRef<HTMLInputElement>(null);
   const captionsInputRef = useRef<HTMLInputElement>(null);
   const formTopRef = useRef<HTMLFormElement>(null);
+
+  // Dynamically list chapters for the selected Bihar Board Class 10 subject
+  const availableChaptersForSubject = useMemo(() => {
+    const subjectList = Object.values(subjects || {});
+    const matchedSubject = subjectList.find(
+      (s) =>
+        s.subject_name_hindi === subjectName ||
+        s.hindi === subjectName ||
+        s.subject_name?.toLowerCase() === subjectName.toLowerCase() ||
+        (s.subject_name_hindi && subjectName.includes(s.subject_name_hindi))
+    );
+    return matchedSubject?.chapters || [];
+  }, [subjects, subjectName]);
+
+  // Live validation of the entered YouTube Video or Playlist URL
+  const ytValidation = useMemo(() => {
+    return isValidYouTubeUrlOrId(youtubeUrl);
+  }, [youtubeUrl]);
 
   useEffect(() => {
     fetch('/api/live-stream/config')
@@ -189,7 +240,9 @@ export function AdminLiveClassesManager() {
     try {
       const maxMb = streamConfig?.maxUploadSizeMb || 50;
       if (file.size > maxMb * 1024 * 1024) {
-        throw new Error(`फ़ाइल का आकार ${maxMb}MB से कम होना चाहिए। बड़ी वीडियो के लिए डायरेक्ट MP4 या HLS (.m3u8) URL का उपयोग करें।`);
+        throw new Error(
+          `फ़ाइल का आकार ${maxMb}MB से कम होना चाहिए। बड़ी वीडियो के लिए डायरेक्ट MP4 या HLS (.m3u8) URL का उपयोग करें।`
+        );
       }
 
       const base64Data = await new Promise<string>((resolve, reject) => {
@@ -242,6 +295,8 @@ export function AdminLiveClassesManager() {
     setPlaybackUrl('');
     setThumbnailUrl('');
     setCaptionsUrl('');
+    setChapterName('');
+    setLibraryCategory('Chapter-wise Lectures');
     setDescription('');
     setVideoSourceType('youtube');
     setContentType('recorded');
@@ -272,6 +327,8 @@ export function AdminLiveClassesManager() {
     setThumbnailUrl(cls.thumbnailUrl || '');
     setCaptionsUrl(cls.captionsUrl || '');
     setSubjectName(cls.subjectName || 'गणित');
+    setChapterName(cls.chapterName || '');
+    setLibraryCategory(cls.libraryCategory || 'Chapter-wise Lectures');
     setCategory(cls.category || (cls.isLive ? 'Live' : 'Classes'));
     setContentType(cls.contentType || (cls.isLive ? 'live' : 'recorded'));
     setTeacherName(cls.teacherName || 'राज सर');
@@ -295,11 +352,21 @@ export function AdminLiveClassesManager() {
         ? 'ai_studio_lecture'
         : videoSourceType === 'youtube'
         ? youtubeUrl.trim()
-        : (playbackUrl.trim() || youtubeUrl.trim());
+        : playbackUrl.trim() || youtubeUrl.trim();
 
     if (!title.trim() || !primaryUrl) {
-      setErrorMsg('कृपया वीडियो का शीर्षक (Title) और वीडियो स्रोत (URL या फ़ाइल) प्रदान करें।');
+      setErrorMsg('कृपया वीडियो का शीर्षक (Title) और वीडियो/प्लेलिस्ट स्रोत (URL या फ़ाइल) प्रदान करें।');
       return;
+    }
+
+    if (videoSourceType === 'youtube') {
+      const check = isValidYouTubeUrlOrId(primaryUrl);
+      if (!check.valid) {
+        setErrorMsg(
+          'कृपया मान्य YouTube वीडियो लिंक (watch?v=..., youtu.be/..., live/...) या पब्लिक प्लेलिस्ट लिंक (playlist?list=PL...) दर्ज करें।'
+        );
+        return;
+      }
     }
 
     setLoading(true);
@@ -316,10 +383,21 @@ export function AdminLiveClassesManager() {
       }
 
       const ytId = videoSourceType === 'youtube' ? extractYouTubeVideoId(primaryUrl) : null;
-      const normalizedUrl = ytId ? `https://www.youtube.com/watch?v=${ytId}` : primaryUrl;
+      const ytPlaylistId = videoSourceType === 'youtube' ? extractYouTubePlaylistId(primaryUrl) : null;
+
+      let normalizedUrl = primaryUrl;
+      if (videoSourceType === 'youtube') {
+        if (ytId && ytPlaylistId) {
+          normalizedUrl = `https://www.youtube.com/watch?v=${ytId}&list=${ytPlaylistId}`;
+        } else if (ytId) {
+          normalizedUrl = `https://www.youtube.com/watch?v=${ytId}`;
+        } else if (ytPlaylistId) {
+          normalizedUrl = `https://www.youtube.com/playlist?list=${ytPlaylistId}`;
+        }
+      }
+
       const autoThumb =
-        thumbnailUrl.trim() ||
-        (ytId ? `https://i.ytimg.com/vi/${ytId}/hqdefault.jpg` : '');
+        thumbnailUrl.trim() || (ytId ? `https://i.ytimg.com/vi/${ytId}/hqdefault.jpg` : '');
 
       // Parse duration MM:SS to seconds
       let durationSeconds = 2700;
@@ -352,7 +430,11 @@ export function AdminLiveClassesManager() {
         videoSourceType,
         contentType,
         category,
+        libraryCategory,
         subjectName,
+        chapterName: chapterName.trim() || undefined,
+        youtubePlaylistId: ytPlaylistId || undefined,
+        isPlaylist: Boolean(ytPlaylistId),
         teacherName: teacherName.trim() || 'राज सर',
         duration: duration.trim() || '45:00',
         durationSeconds,
@@ -383,7 +465,7 @@ export function AdminLiveClassesManager() {
         });
         setSuccessMsg(
           publicationStatus === 'published'
-            ? 'वीडियो/लाइव क्लास सफलतापूर्वक पब्लिश हो गई है और छात्रों के YouTube-स्टाइल लाइव सेक्शन में दिख रही है!'
+            ? 'वीडियो/प्लेलिस्ट सफलतापूर्वक पब्लिश हो गई है और छात्रों के बिहार बोर्ड वीडियो लाइब्रेरी में दिख रही है!'
             : `वीडियो "${publicationStatus}" स्थिति में सुरक्षित कर लिया गया है (केवल एडमिन को दिखेगा)।`
         );
       }
@@ -493,7 +575,13 @@ export function AdminLiveClassesManager() {
       if (adminSubjectFilter !== 'all' && c.subjectName !== adminSubjectFilter) return false;
       const pubStatus = c.publicationStatus || 'published';
       if (adminStatusFilter !== 'all' && pubStatus !== adminStatusFilter) return false;
-      if (adminCategoryFilter !== 'all' && (c.category || 'Classes') !== adminCategoryFilter) return false;
+      if (
+        adminCategoryFilter !== 'all' &&
+        (c.libraryCategory || c.category || 'Classes') !== adminCategoryFilter &&
+        (c.category || 'Classes') !== adminCategoryFilter
+      ) {
+        return false;
+      }
       return true;
     })
     .sort((a, b) => {
@@ -524,10 +612,10 @@ export function AdminLiveClassesManager() {
             </div>
             <div>
               <h3 className="text-base sm:text-lg font-black text-white">
-                YouTube-स्टाइल वीडियो & लाइव स्ट्रीम स्टूडियो (Admin Control)
+                बिहार बोर्ड कक्षा 10वीं YouTube वीडियो लाइब्रेरी & लाइव स्टूडियो (Admin)
               </h3>
               <p className="text-xs text-stone-400">
-                केवल यहाँ से अपलोड, अप्रूव और पब्लिश किए गए वीडियो ही छात्रों के Live सेक्शन में दिखेंगे।
+                बिना किसी API Key के वेरिफाइड YouTube वीडियो व पब्लिक प्लेलिस्ट (Playlists) को विषय और अध्याय के अनुसार प्रबंधित करें।
               </p>
             </div>
           </div>
@@ -594,18 +682,15 @@ export function AdminLiveClassesManager() {
               <div className="bg-stone-950 p-3 rounded-xl border border-stone-800">
                 <div className="text-[10px] text-stone-400 font-bold uppercase">Playback Format (छात्रों के प्लेयर हेतु)</div>
                 <div className="text-stone-200 text-xs mt-1">
-                  HLS (<code className="text-emerald-400">.m3u8</code>), Direct <code className="text-emerald-400">.mp4/.webm</code>, या अधिकृत YouTube Live URL
+                  HLS (<code className="text-emerald-400">.m3u8</code>), Direct <code className="text-emerald-400">.mp4/.webm</code>, या अधिकृत YouTube Video/Playlist URL
                 </div>
               </div>
-            </div>
-            <div className="text-[11px] text-stone-400 bg-stone-950/70 p-2.5 rounded-xl border border-stone-800/80">
-              💡 <b>कैसे उपयोग करें:</b> नीचे फॉर्म में <b>"स्रोत प्रकार (Source Type)"</b> में <b>HLS Stream (.m3u8)</b> या <b>YouTube</b> चुनें, प्लेबैक URL डालें, और किसी भी शेड्यूल्ड या ड्राफ्ट क्लास पर <b>"🔴 Start Live"</b> बटन दबाकर तुरंत लाइव शुरू करें या <b>"⏹️ End Stream"</b> से समाप्त करें।
             </div>
           </div>
         )}
       </div>
 
-      {/* Create / Edit Video & Live Stream Form */}
+      {/* Create / Edit Video & Playlist Form */}
       <form
         ref={formTopRef}
         onSubmit={handleSaveOrUpdate}
@@ -616,12 +701,12 @@ export function AdminLiveClassesManager() {
             {editingId ? (
               <>
                 <Edit3 className="w-4 h-4 text-amber-400" />
-                <span>वीडियो / लाइव क्लास संपादित करें (Edit Mode)</span>
+                <span>वीडियो / प्लेलिस्ट संपादित करें (Edit Mode)</span>
               </>
             ) : (
               <>
                 <Plus className="w-4 h-4 text-amber-400" />
-                <span>नया वीडियो / लाइव स्ट्रीम / शॉर्ट्स अपलोड या शेड्यूल करें</span>
+                <span>नया YouTube वीडियो, पब्लिक प्लेलिस्ट या लाइव क्लास जोड़ें</span>
               </>
             )}
           </h4>
@@ -639,11 +724,11 @@ export function AdminLiveClassesManager() {
         {/* Step 1: Video Source Type Selector */}
         <div className="space-y-2">
           <label className="text-xs font-black text-stone-300 block">
-            1. वीडियो स्रोत चुनें (Select Video Source Type):
+            1. वीडियो स्रोत चुनें (Select Video / Playlist Source Type):
           </label>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
             {[
-              { id: 'youtube', label: 'YouTube / Live URL', icon: Youtube, desc: 'अधिकृत YouTube वीडियो/लाइव' },
+              { id: 'youtube', label: 'YouTube Video / Playlist', icon: Youtube, desc: 'वीडियो या पब्लिक प्लेलिस्ट (No API)' },
               { id: 'video_file', label: 'MP4 / वीडियो अपलोड', icon: FileVideo, desc: 'फ़ाइल अपलोड या डायरेक्ट MP4' },
               { id: 'hls_stream', label: 'HLS Live (.m3u8)', icon: Radio, desc: 'OBS / Cloudflare / Mux HLS' },
               { id: 'ai_board', label: 'Smart AI Board', icon: Sparkles, desc: 'इंटरैक्टिव बोर्ड लेक्चर' }
@@ -678,7 +763,25 @@ export function AdminLiveClassesManager() {
           </div>
         </div>
 
-        {/* Step 2: Content Type & Category */}
+        {/* Step 2: Subject Selection */}
+        <div className="bg-stone-900/80 p-3.5 rounded-2xl border border-stone-800">
+          <div className="space-y-1">
+            <label className="text-xs font-bold text-stone-300">विषय चुनें (Subject)</label>
+            <select
+              value={subjectName}
+              onChange={(e) => setSubjectName(e.target.value)}
+              className="w-full bg-stone-950 border border-stone-700 rounded-xl px-3 py-2 text-xs text-white font-bold focus:outline-none focus:border-amber-500"
+            >
+              {BIHAR_BOARD_SUBJECTS.map((s) => (
+                <option key={s.value} value={s.value}>
+                  {s.label}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+
+        {/* Step 3: Content Type, Tab & Approval Status */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 bg-stone-900/70 p-3.5 rounded-2xl border border-stone-800">
           <div className="space-y-1">
             <label className="text-xs font-bold text-stone-300">कंटेंट प्रकार (Content Type)</label>
@@ -724,7 +827,7 @@ export function AdminLiveClassesManager() {
           </div>
         </div>
 
-        {/* Step 3: Publishing Mode (Instant vs Scheduled) */}
+        {/* Step 4: Publishing Mode (Instant vs Scheduled) */}
         <div className="p-3.5 bg-stone-900 border border-stone-800 rounded-2xl space-y-2.5">
           <div className="flex items-center justify-between flex-wrap gap-2">
             <label className="text-xs font-black text-amber-400 flex items-center gap-1.5">
@@ -791,24 +894,29 @@ export function AdminLiveClassesManager() {
           )}
         </div>
 
-        {/* Step 4: Main Inputs */}
+        {/* Step 5: Main Inputs */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div className="space-y-1.5 sm:col-span-2">
-            <label className="text-xs font-bold text-stone-300">वीडियो / क्लास का शीर्षक (Video Title) *</label>
+            <label className="text-xs font-bold text-stone-300">वीडियो / प्लेलिस्ट का शीर्षक (Title) *</label>
             <input
               type="text"
               required
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              placeholder="उदा: बिहार बोर्ड 10th गणित - त्रिकोणमिति महा-मैराथन क्लास"
+              placeholder="उदा: बिहार बोर्ड 10th गणित - त्रिकोणमिति संपूर्ण अध्याय लेक्चर या प्लेलिस्ट"
               className="w-full bg-stone-900 border border-stone-800 rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none focus:border-red-500"
             />
           </div>
 
           {/* Dynamic Source Input based on videoSourceType */}
           {videoSourceType === 'youtube' && (
-            <div className="space-y-1.5 sm:col-span-2">
-              <label className="text-xs font-bold text-stone-300">YouTube वीडियो या लाइव लिंक (URL) *</label>
+            <div className="space-y-2 sm:col-span-2 bg-stone-900/60 p-3.5 rounded-2xl border border-stone-800">
+              <label className="text-xs font-bold text-stone-300 flex items-center justify-between flex-wrap gap-1">
+                <span>YouTube वीडियो लिंक या पब्लिक प्लेलिस्ट लिंक (Video or Public Playlist URL) *</span>
+                <span className="text-[10px] text-amber-400">
+                  समर्थित: watch?v=..., youtu.be/..., live/..., playlist?list=PL...
+                </span>
+              </label>
               <input
                 type="text"
                 required
@@ -817,12 +925,59 @@ export function AdminLiveClassesManager() {
                   setYoutubeUrl(e.target.value);
                   setPlaybackUrl(e.target.value);
                 }}
-                placeholder="https://www.youtube.com/watch?v=... या https://youtu.be/..."
-                className="w-full bg-stone-900 border border-stone-800 rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none focus:border-red-500"
+                placeholder="https://www.youtube.com/watch?v=... या https://www.youtube.com/playlist?list=PL..."
+                className="w-full bg-stone-950 border border-stone-700 rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none focus:border-red-500 font-mono"
               />
-              {youtubeUrl.trim() && extractYouTubeVideoId(youtubeUrl) && (
-                <div className="text-[11px] text-emerald-400 font-bold flex items-center gap-1.5">
-                  ✓ मान्य YouTube वीडियो (ID: {extractYouTubeVideoId(youtubeUrl)}) — 16:9 थंबनेल स्वतः उपलब्ध है।
+
+              {youtubeUrl.trim() && (
+                <div className="flex items-center justify-between flex-wrap gap-2 pt-1">
+                  {ytValidation.valid ? (
+                    <div className="text-[11px] text-emerald-400 font-bold flex items-center gap-2 flex-wrap">
+                      <span>✓ मान्य YouTube लिंक सत्यापित:</span>
+                      {ytValidation.videoId && (
+                        <span className="bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 px-2 py-0.5 rounded font-mono">
+                          Video ID: {ytValidation.videoId}
+                        </span>
+                      )}
+                      {ytValidation.playlistId && (
+                        <span className="bg-amber-500/20 text-amber-300 border border-amber-500/30 px-2 py-0.5 rounded font-mono flex items-center gap-1">
+                          <ListVideo className="w-3 h-3" /> Playlist ID: {ytValidation.playlistId}
+                        </span>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="text-[11px] text-red-400 font-bold">
+                      ⚠️ कोई मान्य YouTube Video ID या Playlist ID नहीं मिली। कृपया सही लिंक पेस्ट करें।
+                    </div>
+                  )}
+
+                  {ytValidation.valid && (
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setPreviewClass({
+                          id: 'temp_preview',
+                          title: title || 'YouTube Preview',
+                          youtubeUrl,
+                          playbackUrl: youtubeUrl,
+                          videoSourceType: 'youtube',
+                          subjectName,
+                          chapterName,
+                          libraryCategory,
+                          youtubePlaylistId: ytValidation.playlistId || undefined,
+                          isPlaylist: Boolean(ytValidation.playlistId),
+                          teacherName,
+                          scheduledAt: 'Preview',
+                          isLive: false,
+                          publicationStatus: publicationStatus
+                        })
+                      }
+                      className="bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 px-3 py-1 rounded-xl text-[11px] font-black flex items-center gap-1 cursor-pointer"
+                    >
+                      <Eye className="w-3.5 h-3.5" />
+                      <span>अभी प्लेयर में टेस्ट/प्रीव्यू करें</span>
+                    </button>
+                  )}
                 </div>
               )}
             </div>
@@ -883,9 +1038,6 @@ export function AdminLiveClassesManager() {
                 placeholder="उदा: https://customer-xyz.cloudflarestream.com/.../manifest/video.m3u8"
                 className="w-full bg-stone-950 border border-stone-700 rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none focus:border-red-500 font-mono"
               />
-              <p className="text-[10px] text-stone-400">
-                यह HLS स्ट्रीम सीधे ऐप के इन-बिल्ट वीडियो प्लेयर में बिना किसी तीसरे पक्ष के विज्ञापन या रिकमेंडेशन के चलेगी।
-              </p>
             </div>
           )}
 
@@ -961,24 +1113,6 @@ export function AdminLiveClassesManager() {
           </div>
 
           <div className="space-y-1.5">
-            <label className="text-xs font-bold text-stone-300">विषय (Subject)</label>
-            <select
-              value={subjectName}
-              onChange={(e) => setSubjectName(e.target.value)}
-              className="w-full bg-stone-900 border border-stone-800 rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none focus:border-red-500 font-bold"
-            >
-              <option value="गणित">📐 गणित (Mathematics)</option>
-              <option value="विज्ञान">🔬 विज्ञान (Science)</option>
-              <option value="सामाजिक विज्ञान">🏛️ सामाजिक विज्ञान (Social Science)</option>
-              <option value="हिन्दी">📖 हिन्दी (Hindi)</option>
-              <option value="संस्कृत">🪔 संस्कृत (Sanskrit)</option>
-              <option value="अंग्रेजी">🔤 अंग्रेजी (English)</option>
-              <option value="VVI & Trick Classes">🔥 VVI & Trick Classes</option>
-              <option value="सामान्य">🎯 सामान्य / मार्गदर्शन (General)</option>
-            </select>
-          </div>
-
-          <div className="space-y-1.5">
             <label className="text-xs font-bold text-stone-300">शिक्षक / चैनल का नाम (Teacher / Channel)</label>
             <input
               type="text"
@@ -995,7 +1129,7 @@ export function AdminLiveClassesManager() {
               type="text"
               value={duration}
               onChange={(e) => setDuration(e.target.value)}
-              placeholder="उदा: 45:20 या 12:15"
+              placeholder="उदा: 45:20 या Playlist"
               className="w-full bg-stone-900 border border-stone-800 rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none focus:border-red-500"
             />
           </div>
@@ -1024,11 +1158,11 @@ export function AdminLiveClassesManager() {
             </select>
           </div>
 
-          <div className="space-y-1.5 flex items-end">
+          <div className="space-y-1.5 sm:col-span-2">
             <label className="w-full bg-stone-900 border border-stone-800 rounded-xl px-3.5 py-2.5 text-xs text-white font-bold flex items-center justify-between cursor-pointer">
               <span className="flex items-center gap-2">
                 <Pin className="w-4 h-4 text-amber-400" />
-                <span>⭐ फीचर्ड वीडियो के रूप में पिन करें (Pin to Top)</span>
+                <span>⭐ फीचर्ड वीडियो/प्लेलिस्ट के रूप में पिन करें (Pin to Top)</span>
               </span>
               <input
                 type="checkbox"
@@ -1078,9 +1212,9 @@ export function AdminLiveClassesManager() {
               {loading
                 ? 'सहेजा जा रहा है...'
                 : editingId
-                ? 'परिवर्तन सहेजें (Update Video)'
+                ? 'परिवर्तन सहेजें (Update Video/Playlist)'
                 : publicationStatus === 'published'
-                ? 'अभी पब्लिश करें (Publish to Live Section)'
+                ? 'अभी पब्लिश करें (Publish to Live Library)'
                 : `सहेजें (${publicationStatus.toUpperCase()})`}
             </span>
           </button>
@@ -1108,7 +1242,7 @@ export function AdminLiveClassesManager() {
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
           <h4 className="text-sm font-black text-white flex items-center gap-2">
             <PlaySquare className="w-4 h-4 text-red-500" />
-            <span>वीडियो और लाइव स्ट्रीम प्रबंधन ({filteredClasses.length} / {liveClasses.length})</span>
+            <span>वीडियो, प्लेलिस्ट और लाइव स्ट्रीम प्रबंधन ({filteredClasses.length} / {liveClasses.length})</span>
           </h4>
 
           {/* Moderation Status Filter */}
@@ -1144,11 +1278,16 @@ export function AdminLiveClassesManager() {
             onChange={(e) => setAdminCategoryFilter(e.target.value)}
             className="bg-stone-900 border border-stone-800 rounded-xl px-3 py-1.5 text-xs text-stone-200 font-bold"
           >
-            <option value="all">📂 सभी कैटेगरी (All Categories)</option>
+            <option value="all">📂 सभी लाइब्रेरी कैटेगरी (All Categories)</option>
             <option value="Live">🔴 Live</option>
             <option value="Classes">📚 Classes</option>
             <option value="Crash Course">⚡ Crash Course</option>
             <option value="Shorts">📱 Shorts</option>
+            {LIBRARY_CATEGORIES.map((cat) => (
+              <option key={cat.id} value={cat.id}>
+                {cat.hindi}
+              </option>
+            ))}
           </select>
 
           <select
@@ -1157,9 +1296,9 @@ export function AdminLiveClassesManager() {
             className="bg-stone-900 border border-stone-800 rounded-xl px-3 py-1.5 text-xs text-stone-200 font-bold"
           >
             <option value="all">📖 सभी विषय (All Subjects)</option>
-            {Array.from(new Set(liveClasses.map((c) => c.subjectName).filter(Boolean))).map((subj) => (
-              <option key={subj} value={subj}>
-                {subj}
+            {BIHAR_BOARD_SUBJECTS.map((s) => (
+              <option key={s.value} value={s.value}>
+                {s.label}
               </option>
             ))}
           </select>
@@ -1168,7 +1307,7 @@ export function AdminLiveClassesManager() {
         <div className="space-y-3">
           {filteredClasses.length === 0 ? (
             <div className="text-center py-10 text-stone-500 text-xs">
-              इस फ़िल्टर में कोई वीडियो नहीं मिला।
+              इस फ़िल्टर में कोई वीडियो या प्लेलिस्ट नहीं मिली।
             </div>
           ) : (
             filteredClasses.map((cls) => {
@@ -1176,6 +1315,7 @@ export function AdminLiveClassesManager() {
               const ytThumb = getYouTubeThumbnailUrl(cls.youtubeUrl);
               const thumbSrc = cls.thumbnailUrl || ytThumb;
               const isCurrentlyLive = cls.isLive || cls.streamStatus === 'live';
+              const hasPlaylist = Boolean(cls.isPlaylist || cls.youtubePlaylistId || extractYouTubePlaylistId(cls.youtubeUrl));
 
               return (
                 <div
@@ -1212,6 +1352,10 @@ export function AdminLiveClassesManager() {
                         {isCurrentlyLive ? (
                           <span className="bg-red-600 text-white text-[9px] font-black px-2 py-0.5 rounded flex items-center gap-1 shadow">
                             <span className="w-1.5 h-1.5 rounded-full bg-white animate-ping" /> LIVE
+                          </span>
+                        ) : hasPlaylist ? (
+                          <span className="bg-indigo-600 text-white text-[9px] font-black px-2 py-0.5 rounded flex items-center gap-1 shadow">
+                            <ListVideo className="w-3 h-3" /> PLAYLIST
                           </span>
                         ) : cls.streamStatus === 'scheduled' ? (
                           <span className="bg-amber-500 text-stone-950 text-[9px] font-black px-2 py-0.5 rounded shadow">
@@ -1263,9 +1407,21 @@ export function AdminLiveClassesManager() {
                           </span>
                         )}
 
-                        <span className="bg-stone-800 text-stone-300 text-[10px] font-bold px-2 py-0.5 rounded-full">
+                        <span className="bg-stone-800 text-stone-200 text-[10px] font-bold px-2 py-0.5 rounded-full">
                           {cls.subjectName}
                         </span>
+
+                        {cls.chapterName && (
+                          <span className="bg-blue-500/15 text-blue-300 border border-blue-500/30 text-[10px] font-bold px-2 py-0.5 rounded-full">
+                            अध्याय: {cls.chapterName}
+                          </span>
+                        )}
+
+                        {cls.libraryCategory && (
+                          <span className="bg-purple-500/15 text-purple-300 border border-purple-500/30 text-[10px] font-bold px-2 py-0.5 rounded-full">
+                            {cls.libraryCategory}
+                          </span>
+                        )}
 
                         <span className="bg-stone-800/80 text-stone-400 text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1">
                           <ArrowUpDown className="w-2.5 h-2.5" /> क्रम: #{cls.displayOrder ?? 10}
@@ -1433,7 +1589,7 @@ export function AdminLiveClassesManager() {
         </div>
       </div>
 
-      {/* Admin Preview Modal (Allows previewing Drafts, Pending, or Live Videos before publishing) */}
+      {/* Admin Preview Modal (Supports single YouTube videos, public YouTube playlists, MP4/HLS, and Smart AI Board) */}
       {previewClass && (
         <div
           onClick={() => setPreviewClass(null)}
@@ -1473,14 +1629,16 @@ export function AdminLiveClassesManager() {
                     <track kind="subtitles" src={previewClass.captionsUrl} srcLang="hi" label="हिन्दी" default />
                   )}
                 </video>
-              ) : extractYouTubeVideoId(previewClass.youtubeUrl) ? (
+              ) : isValidYouTubeUrlOrId(previewClass.youtubeUrl).valid ? (
                 <iframe
-                  src={`https://www.youtube-nocookie.com/embed/${extractYouTubeVideoId(
-                    previewClass.youtubeUrl
-                  )}?autoplay=1&rel=0&modestbranding=1`}
+                  src={getYouTubeEmbedUrl(previewClass.youtubeUrl, {
+                    useNoCookie: true,
+                    autoplay: true,
+                    playlistId: previewClass.youtubePlaylistId
+                  })}
                   title={previewClass.title}
                   className="w-full h-full border-0"
-                  allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
                   allowFullScreen
                 />
               ) : (
@@ -1492,23 +1650,33 @@ export function AdminLiveClassesManager() {
               )}
             </div>
 
-            <div className="flex items-center justify-between pt-1">
+            <div className="flex items-center justify-between pt-1 flex-wrap gap-2">
               <div className="text-xs text-stone-400">
-                शिक्षक: <b className="text-white">{previewClass.teacherName}</b> • कैटेगरी:{' '}
-                <b className="text-amber-300">{previewClass.category || 'Classes'}</b>
+                विषय: <b className="text-white">{previewClass.subjectName}</b>
+                {previewClass.chapterName ? (
+                  <>
+                    {' '}
+                    • अध्याय: <b className="text-blue-300">{previewClass.chapterName}</b>
+                  </>
+                ) : null}{' '}
+                • श्रेणी:{' '}
+                <b className="text-amber-300">
+                  {previewClass.libraryCategory || previewClass.category || 'Classes'}
+                </b>
               </div>
-              {(previewClass.publicationStatus || 'published') !== 'published' && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    handlePublicationChange(previewClass, 'published');
-                    setPreviewClass(null);
-                  }}
-                  className="bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-black px-4 py-2 rounded-xl cursor-pointer"
-                >
-                  ✅ अभी अप्रूव और पब्लिश करें
-                </button>
-              )}
+              {previewClass.id !== 'temp_preview' &&
+                (previewClass.publicationStatus || 'published') !== 'published' && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      handlePublicationChange(previewClass, 'published');
+                      setPreviewClass(null);
+                    }}
+                    className="bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-black px-4 py-2 rounded-xl cursor-pointer"
+                  >
+                    ✅ अभी अप्रूव और पब्लिश करें
+                  </button>
+                )}
             </div>
           </div>
         </div>

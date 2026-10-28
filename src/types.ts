@@ -65,7 +65,29 @@ export type VideoSourceType = 'youtube' | 'video_file' | 'hls_stream' | 'ai_boar
 export type VideoContentType = 'live' | 'recorded' | 'short' | 'crash_course';
 export type VideoPublicationStatus = 'published' | 'draft' | 'pending_approval' | 'rejected' | 'unpublished';
 export type LiveStreamStatus = 'offline' | 'scheduled' | 'live' | 'ended';
-export type VideoCategoryTab = 'All' | 'Live' | 'Classes' | 'Crash Course' | 'Shorts' | 'Recently Added';
+export type VideoCategoryTab =
+  | 'All'
+  | 'Live'
+  | 'Classes'
+  | 'Crash Course'
+  | 'Shorts'
+  | 'Recently Added'
+  | 'Complete Courses'
+  | 'Chapter-wise Lectures'
+  | 'Objective & Subjective'
+  | 'Previous-Year Questions'
+  | 'Model Paper Solutions'
+  | 'Revision Classes'
+  | 'Exam Preparation';
+
+export type LibraryCategoryType =
+  | 'Complete Courses'
+  | 'Chapter-wise Lectures'
+  | 'Objective & Subjective'
+  | 'Previous-Year Questions'
+  | 'Model Paper Solutions'
+  | 'Revision Classes'
+  | 'Exam Preparation';
 
 export interface LiveClass {
   id: string;
@@ -76,8 +98,12 @@ export interface LiveClass {
   videoSourceType?: VideoSourceType;
   contentType?: VideoContentType;
   category?: string; // 'Live' | 'Classes' | 'Crash Course' | 'Shorts'
+  libraryCategory?: LibraryCategoryType; // Structured Bihar Board Class 10 library category
   subjectName: string;
+  chapterName?: string; // Chapter title for chapter-wise organization
   playlistId?: string;
+  youtubePlaylistId?: string; // Official YouTube Playlist ID (e.g. PL...)
+  isPlaylist?: boolean;
   teacherName: string;
   teacherAvatar?: string;
   scheduledAt: string;

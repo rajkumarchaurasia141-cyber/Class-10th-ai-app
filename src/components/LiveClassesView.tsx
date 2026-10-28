@@ -7,16 +7,11 @@ import {
   VolumeX,
   Lock,
   Crown,
-  Calendar,
-  User,
-  Sparkles,
   X,
-  Gift,
   MessageCircle,
   ArrowLeft,
   Video,
   Gauge,
-  ShieldCheck,
   Maximize,
   Minimize,
   Clock,
@@ -25,7 +20,6 @@ import {
   Languages,
   Settings,
   Users,
-  Eye,
   ExternalLink,
   RefreshCw,
   Search,
@@ -37,22 +31,29 @@ import {
   ChevronUp,
   Sun,
   Moon,
-  Subtitles,
   PictureInPicture2,
   RotateCcw,
   Pin,
-  Filter
+  Filter,
+  AlertTriangle,
+  WifiOff,
+  Loader2
 } from 'lucide-react';
 import { db } from '../lib/firebase';
 import { doc } from 'firebase/firestore';
 import { safeSetDoc } from '../utils/firestoreSafe';
 import { useData } from '../context/DataContext';
 import { useAuth } from '../context/AuthContext';
-import { LiveClass, LiveWatchRecord, UserVideoInteraction, VideoCategoryTab } from '../types';
+import {
+  LiveClass,
+  LiveWatchRecord,
+  UserVideoInteraction,
+  VideoCategoryTab
+} from '../types';
 import { ClassAttendanceModal } from './ClassAttendanceModal';
 import { SmartAiBoardPlayer } from './SmartAiBoardPlayer';
 import {
-  extractYouTubeVideoId,
+  isValidYouTubeUrlOrId,
   getYouTubeEmbedUrl,
   getYouTubeDirectWatchUrl,
   getYouTubeThumbnailUrl
@@ -72,12 +73,16 @@ interface LiveClassesViewProps {
 
 const SPEED_OPTIONS = [0.5, 0.75, 1, 1.25, 1.5, 1.75, 2];
 
-const CATEGORY_CHIPS: { id: VideoCategoryTab | 'Saved' | 'Continue'; label: string; hindi: string }[] = [
+const CATEGORY_CHIPS: {
+  id: VideoCategoryTab | 'Saved' | 'Continue';
+  label: string;
+  hindi: string;
+}[] = [
   { id: 'All', label: 'All', hindi: 'सभी (All)' },
   { id: 'Live', label: 'Live', hindi: '🔴 लाइव (Live)' },
-  { id: 'Classes', label: 'Classes', hindi: '📚 क्लासेस' },
+  { id: 'Classes', label: 'Classes', hindi: '📚 क्लासेस (Classes)' },
   { id: 'Crash Course', label: 'Crash Course', hindi: '⚡ क्रैश कोर्स' },
-  { id: 'Shorts', label: 'Shorts', hindi: '📱 शॉर्ट्स' },
+  { id: 'Shorts', label: 'Shorts', hindi: '📱 शॉर्ट्स (Shorts)' },
   { id: 'Recently Added', label: 'Recently Added', hindi: '🆕 हाल ही में जोड़े गए' },
   { id: 'Continue', label: 'Continue Watching', hindi: '⏱️ देखना जारी रखें' },
   { id: 'Saved', label: 'Saved', hindi: '🔖 सेव किए गए' }
@@ -109,7 +114,11 @@ function formatRelativeDate(isoDate?: string, fallbackLabel?: string): string {
   if (diffHr < 24) return `${diffHr} घंटे पहले`;
   const diffDays = Math.floor(diffHr / 24);
   if (diffDays < 30) return `${diffDays} दिन पहले`;
-  return new Date(isoDate).toLocaleDateString('hi-IN', { day: 'numeric', month: 'short', year: 'numeric' });
+  return new Date(isoDate).toLocaleDateString('hi-IN', {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric'
+  });
 }
 
 // Format compact views count (e.g. 4.8K)
@@ -121,40 +130,48 @@ function formatViewsCount(count?: number): string {
 }
 
 // Subject visual theme helper for resilient 16:9 poster thumbnails
-function getSubjectPosterTheme(subjectName: string) {
-  if (subjectName.includes('गणित')) {
+function getSubjectPosterTheme(subjectName?: string | null) {
+  const safeSubject = String(subjectName || '');
+  if (safeSubject.includes('गणित')) {
     return {
       gradient: 'from-blue-950 via-indigo-900 to-slate-950',
       accent: 'bg-amber-400 text-slate-950',
       badge: '📐 BSEB 10th MATHS'
     };
   }
-  if (subjectName.includes('विज्ञान')) {
+  if (safeSubject.includes('विज्ञान') && !safeSubject.includes('सामाजिक')) {
     return {
       gradient: 'from-emerald-950 via-teal-900 to-slate-950',
       accent: 'bg-emerald-400 text-slate-950',
       badge: '🔬 BSEB 10th SCIENCE'
     };
   }
-  if (subjectName.includes('सामाजिक')) {
+  if (safeSubject.includes('सामाजिक')) {
     return {
       gradient: 'from-amber-950 via-orange-900 to-stone-950',
       accent: 'bg-amber-300 text-stone-950',
       badge: '🏛️ SOCIAL SCIENCE'
     };
   }
-  if (subjectName.includes('संस्कृत')) {
+  if (safeSubject.includes('संस्कृत')) {
     return {
       gradient: 'from-rose-950 via-red-900 to-stone-950',
       accent: 'bg-yellow-400 text-stone-950',
       badge: '🪔 संस्कृत पीयूषम्'
     };
   }
-  if (subjectName.includes('हिन्दी')) {
+  if (safeSubject.includes('हिन्दी')) {
     return {
       gradient: 'from-purple-950 via-fuchsia-900 to-stone-950',
       accent: 'bg-pink-300 text-stone-950',
       badge: '📖 गोधूलि & वर्णिका'
+    };
+  }
+  if (safeSubject.includes('अंग्रेजी') || safeSubject.toLowerCase().includes('english')) {
+    return {
+      gradient: 'from-cyan-950 via-sky-900 to-slate-950',
+      accent: 'bg-cyan-300 text-slate-950',
+      badge: '🔤 PANORAMA ENGLISH'
     };
   }
   return {
@@ -164,11 +181,363 @@ function getSubjectPosterTheme(subjectName: string) {
   };
 }
 
+/**
+ * Isolated Watch-Time Counter Badge:
+ * Runs its own 1-second timer locally without ever triggering a re-render on `LiveClassesView` or the video player!
+ */
+const LiveWatchTimerBadge = React.memo(function LiveWatchTimerBadge({
+  selectedClass,
+  user,
+  isVIP,
+  isPaid,
+  initialResumeSeconds,
+  onSyncFinalProgress,
+  hasNativeVideo
+}: {
+  selectedClass: LiveClass;
+  user: any;
+  isVIP: boolean;
+  isPaid: boolean;
+  initialResumeSeconds: number;
+  onSyncFinalProgress: (videoId: string, progressSeconds: number, durationSeconds: number) => void;
+  hasNativeVideo: boolean;
+}) {
+  const [watchSeconds, setWatchSeconds] = useState<number>(0);
+  const syncCallbackRef = useRef(onSyncFinalProgress);
+  syncCallbackRef.current = onSyncFinalProgress;
+
+  useEffect(() => {
+    setWatchSeconds(0);
+    const studentKey =
+      user?.email || (user as any)?.uid || 'student_' + Math.random().toString(36).substring(2, 8);
+    const studentName = user?.name || (user?.email ? user.email.split('@')[0] : 'विद्यार्थी');
+    const docId = getAttendanceDocId(selectedClass.id, studentKey);
+
+    const record: LiveWatchRecord = {
+      id: docId,
+      classId: selectedClass.id,
+      classTitle: selectedClass.title,
+      isLive: Boolean(selectedClass.isLive || selectedClass.streamStatus === 'live'),
+      studentId: studentKey,
+      studentName,
+      studentEmail: user?.email || '',
+      isPaid: Boolean(isVIP || isPaid),
+      joinedAt: new Date().toISOString(),
+      lastHeartbeat: Date.now(),
+      watchSeconds: 0,
+      isOnline: true
+    };
+
+    syncWatchHeartbeat(record, false);
+    let currentSeconds = 0;
+
+    const secondTimer = setInterval(() => {
+      if (typeof document !== 'undefined' && document.hidden) {
+        return;
+      }
+      currentSeconds += 1;
+      setWatchSeconds(currentSeconds);
+      record.watchSeconds = currentSeconds;
+    }, 1000);
+
+    const syncTimer = setInterval(() => {
+      syncWatchHeartbeat(record, false);
+    }, 60000);
+
+    return () => {
+      clearInterval(secondTimer);
+      clearInterval(syncTimer);
+      record.watchSeconds = currentSeconds;
+      syncWatchHeartbeat(record, true);
+
+      if (currentSeconds >= 3 && !hasNativeVideo) {
+        const estDuration = selectedClass.durationSeconds || 2700;
+        syncCallbackRef.current(
+          selectedClass.id,
+          Math.min(initialResumeSeconds + currentSeconds, estDuration),
+          estDuration
+        );
+      }
+    };
+  }, [selectedClass.id, user?.email, isVIP, isPaid, initialResumeSeconds, hasNativeVideo]);
+
+  return (
+    <span className="text-emerald-600 dark:text-emerald-400 font-bold">
+      आपका वॉच-टाइम: {formatWatchDuration(watchSeconds)}
+    </span>
+  );
+});
+
+/**
+ * Isolated Scheduled Stream Countdown Screen:
+ * Updates its countdown every second locally without re-rendering the parent feed or player!
+ */
+const ScheduledCountdownScreen = React.memo(function ScheduledCountdownScreen({
+  selectedClass,
+  isAdmin,
+  onStartLiveNow,
+  onCountdownFinished
+}: {
+  selectedClass: LiveClass;
+  isAdmin: boolean;
+  onStartLiveNow: () => void;
+  onCountdownFinished: () => void;
+}) {
+  const [now, setNow] = useState<number>(() => Date.now());
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      const current = Date.now();
+      setNow(current);
+      if (selectedClass.scheduledDateTime) {
+        const target = new Date(selectedClass.scheduledDateTime).getTime();
+        if (!isNaN(target) && target <= current) {
+          onCountdownFinished();
+        }
+      }
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [selectedClass.scheduledDateTime, onCountdownFinished]);
+
+  const targetTime = selectedClass.scheduledDateTime
+    ? new Date(selectedClass.scheduledDateTime).getTime()
+    : 0;
+  const diff = Math.max(0, targetTime - now);
+  const hours = Math.floor(diff / (1000 * 60 * 60));
+  const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+  const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+
+  return (
+    <div className="aspect-video w-full bg-gradient-to-b from-stone-950 via-stone-900 to-stone-950 flex flex-col items-center justify-center p-6 text-center space-y-4 text-white">
+      <div className="inline-flex items-center gap-1.5 bg-amber-500/20 text-amber-300 border border-amber-400/40 text-xs font-black px-3 py-1 rounded-full">
+        <Clock className="w-3.5 h-3.5 animate-pulse" />
+        <span>लाइव स्ट्रीम शेड्यूल्ड है ({selectedClass.scheduledAt})</span>
+      </div>
+      <h3 className="text-sm sm:text-base font-black text-white max-w-md line-clamp-2">
+        {selectedClass.title}
+      </h3>
+      <div className="grid grid-cols-3 gap-2.5 max-w-xs w-full">
+        <div className="bg-stone-900 p-2.5 rounded-xl border border-stone-800">
+          <span className="block text-xl font-black text-amber-400">
+            {String(hours).padStart(2, '0')}
+          </span>
+          <span className="text-[10px] text-stone-400">घंटे</span>
+        </div>
+        <div className="bg-stone-900 p-2.5 rounded-xl border border-stone-800">
+          <span className="block text-xl font-black text-amber-400">
+            {String(minutes).padStart(2, '0')}
+          </span>
+          <span className="text-[10px] text-stone-400">मिनट</span>
+        </div>
+        <div className="bg-stone-900 p-2.5 rounded-xl border border-stone-800">
+          <span className="block text-xl font-black text-amber-400">
+            {String(seconds).padStart(2, '0')}
+          </span>
+          <span className="text-[10px] text-stone-400">सेकंड</span>
+        </div>
+      </div>
+      {isAdmin && (
+        <button
+          type="button"
+          onClick={onStartLiveNow}
+          className="bg-red-600 hover:bg-red-500 text-white font-black px-4 py-2 rounded-xl text-xs flex items-center gap-1.5 cursor-pointer"
+        >
+          <Zap className="w-4 h-4 fill-white" />
+          <span>एडमिन: अभी तुरंत लाइव शुरू करें</span>
+        </button>
+      )}
+    </div>
+  );
+});
+
+/**
+ * Pure, Stutter-Free YouTube Embedded Player (`StableYouTubePlayer`):
+ * - Locks `stableEmbedUrl` per `classId` so parent updates never reload the iframe.
+ * - Avoids noisy `infoDelivery` postMessage state-updates during playback so the browser's hardware video decoder runs without interruption.
+ */
+const StableYouTubePlayer = React.memo(function StableYouTubePlayer({
+  classId,
+  youtubeUrl,
+  playlistId,
+  title,
+  isLive,
+  initialStartSeconds,
+  useNoCookie,
+  playbackSpeed,
+  isFullscreen,
+  onToggleNoCookie
+}: {
+  classId: string;
+  youtubeUrl: string;
+  playlistId?: string;
+  title: string;
+  isLive: boolean;
+  initialStartSeconds: number;
+  useNoCookie: boolean;
+  playbackSpeed: number;
+  isFullscreen: boolean;
+  onToggleNoCookie: () => void;
+}) {
+  const iframeRef = useRef<HTMLIFrameElement>(null);
+  const [retryCount, setRetryCount] = useState<number>(0);
+  const [iframeLoaded, setIframeLoaded] = useState<boolean>(false);
+  const [playerError, setPlayerError] = useState<{
+    code: number | string;
+    message: string;
+  } | null>(null);
+  const [isOffline, setIsOffline] = useState<boolean>(() =>
+    typeof navigator !== 'undefined' ? !navigator.onLine : false
+  );
+
+  // Lock the embed URL ONLY to classId, youtubeUrl, playlistId, useNoCookie, and explicit retryCount.
+  const stableEmbedUrl = useMemo(() => {
+    const startSec = !isLive && initialStartSeconds > 10 ? initialStartSeconds : undefined;
+    const base = getYouTubeEmbedUrl(youtubeUrl, {
+      useNoCookie,
+      autoplay: true,
+      startSeconds: startSec,
+      playlistId
+    });
+    if (retryCount > 0 && base.includes('?')) {
+      return `${base}&retry=${retryCount}`;
+    }
+    return base;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [classId, youtubeUrl, playlistId, useNoCookie, retryCount]);
+
+  // Reset player status when switching to a new video or explicit retry
+  useEffect(() => {
+    setIframeLoaded(false);
+    setPlayerError(null);
+
+    const validation = isValidYouTubeUrlOrId(youtubeUrl);
+    if (!validation.valid && !playlistId) {
+      setPlayerError({
+        code: 'INVALID_URL',
+        message: 'यह YouTube वीडियो लिंक अमान्य है। कृपया एडमिन पैनल में सही लिंक जांचें।'
+      });
+    }
+  }, [classId, youtubeUrl, playlistId, useNoCookie, retryCount]);
+
+  // Monitor network online/offline status without reloading the iframe automatically
+  useEffect(() => {
+    const handleOnline = () => setIsOffline(false);
+    const handleOffline = () => setIsOffline(true);
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+  }, []);
+
+  // Apply playback speed via postMessage only when user explicitly changes speed
+  useEffect(() => {
+    if (!iframeLoaded || !iframeRef.current?.contentWindow) return;
+    try {
+      iframeRef.current.contentWindow.postMessage(
+        JSON.stringify({
+          event: 'command',
+          func: 'setPlaybackRate',
+          args: [playbackSpeed]
+        }),
+        '*'
+      );
+    } catch {}
+  }, [playbackSpeed, iframeLoaded]);
+
+  return (
+    <div
+      className={`relative w-full bg-black overflow-hidden flex items-center justify-center transform-gpu ${
+        isFullscreen ? 'flex-1 h-full' : 'aspect-video'
+      }`}
+    >
+      {/* Initial Loading Spinner before iframe finishes loading */}
+      {!iframeLoaded && !playerError && (
+        <div className="absolute inset-0 z-10 bg-stone-950 flex flex-col items-center justify-center p-4 text-center space-y-2 pointer-events-none">
+          <Loader2 className="w-8 h-8 text-red-600 animate-spin" />
+          <p className="text-xs font-bold text-stone-200">वीडियो प्लेयर लोड हो रहा है...</p>
+        </div>
+      )}
+
+      {/* Offline Network Warning Banner */}
+      {isOffline && (
+        <div className="absolute top-3 left-3 z-20 bg-red-950/90 text-red-200 border border-red-500/50 px-3 py-1.5 rounded-xl text-[11px] font-bold flex items-center gap-1.5 shadow-lg">
+          <WifiOff className="w-3.5 h-3.5 text-red-400" />
+          <span>इंटरनेट कनेक्शन बंद है। कनेक्शन आने पर वीडियो स्वतः चलेगा।</span>
+        </div>
+      )}
+
+      {/* Player Error Overlay with Manual Retry */}
+      {playerError ? (
+        <div className="absolute inset-0 z-30 bg-stone-950/95 flex flex-col items-center justify-center p-5 text-center space-y-3 text-white">
+          <div className="w-12 h-12 rounded-2xl bg-red-500/20 border border-red-500/40 flex items-center justify-center text-red-400">
+            <AlertTriangle className="w-6 h-6" />
+          </div>
+          <h4 className="font-black text-sm sm:text-base max-w-md">
+            वीडियो चलाने में रुकावट ({playerError.code})
+          </h4>
+          <p className="text-xs text-stone-300 max-w-md leading-relaxed">
+            {playerError.message}
+          </p>
+          <div className="flex items-center justify-center gap-2 flex-wrap pt-1">
+            <button
+              type="button"
+              onClick={() => {
+                setPlayerError(null);
+                setIframeLoaded(false);
+                setRetryCount((c) => c + 1);
+              }}
+              className="bg-red-600 hover:bg-red-500 text-white font-black px-4 py-2 rounded-xl text-xs flex items-center gap-1.5 cursor-pointer shadow"
+            >
+              <RefreshCw className="w-3.5 h-3.5" />
+              <span>पुनः प्रयास करें (Retry)</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                setPlayerError(null);
+                onToggleNoCookie();
+              }}
+              className="bg-stone-800 hover:bg-stone-700 text-amber-300 border border-stone-700 font-bold px-3.5 py-2 rounded-xl text-xs cursor-pointer"
+            >
+              {useNoCookie ? 'स्टैंडर्ड YouTube मोड आज़माएं' : 'प्राइवेसी मोड आज़माएं'}
+            </button>
+
+            <a
+              href={getYouTubeDirectWatchUrl(youtubeUrl, playlistId)}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="bg-stone-800 hover:bg-stone-700 text-white border border-stone-700 font-bold px-3.5 py-2 rounded-xl text-xs flex items-center gap-1.5"
+            >
+              <ExternalLink className="w-3.5 h-3.5 text-red-400" />
+              <span>सीधे YouTube ऐप में खोलें</span>
+            </a>
+          </div>
+        </div>
+      ) : (
+        <iframe
+          ref={iframeRef}
+          key={`${classId}_${useNoCookie ? 'nocookie' : 'std'}_${retryCount}`}
+          src={stableEmbedUrl}
+          title={title}
+          className="w-full h-full border-0 absolute inset-0"
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+          allowFullScreen
+          referrerPolicy="strict-origin-when-cross-origin"
+          onLoad={() => setIframeLoaded(true)}
+        />
+      )}
+    </div>
+  );
+});
+
 export function LiveClassesView({ onOpenVip }: LiveClassesViewProps) {
   const { liveClasses, appConfig, updateLiveClass } = useData();
   const { isVIP, isAdmin, user, isPaid } = useAuth();
 
-  // Theme State (Clean Light Theme default as requested, with optional Dark Mode)
+  // Theme State (Clean Light Theme default, with optional Dark Mode)
   const [darkMode, setDarkMode] = useState<boolean>(() => {
     try {
       return localStorage.getItem('bseb_live_theme') === 'dark';
@@ -187,15 +556,26 @@ export function LiveClassesView({ onOpenVip }: LiveClassesViewProps) {
     });
   };
 
-  // Search, Category & Subject Filter State
+  // Search (with 250ms debounce), Category & Subject Filter State
   const [searchOpen, setSearchOpen] = useState<boolean>(false);
   const [searchQuery, setSearchQuery] = useState<string>('');
+  const [debouncedSearchQuery, setDebouncedSearchQuery] = useState<string>('');
   const [activeCategory, setActiveCategory] = useState<VideoCategoryTab | 'Saved' | 'Continue'>('All');
   const [selectedSubject, setSelectedSubject] = useState<string>('all');
-  const [visibleCount, setVisibleCount] = useState<number>(8);
+  const [visibleCount, setVisibleCount] = useState<number>(9);
+
+  // Debounce search input by 250ms
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearchQuery(searchQuery.trim().toLowerCase());
+    }, 250);
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
 
   // Selected Video Player State
   const [selectedClass, setSelectedClass] = useState<LiveClass | null>(null);
+  const initialResumeSecondsRef = useRef<number>(0);
+
   const [lockedClassPrompt, setLockedClassPrompt] = useState<LiveClass | null>(null);
   const [menuOpenClass, setMenuOpenClass] = useState<LiveClass | null>(null);
   const [descriptionExpanded, setDescriptionExpanded] = useState<boolean>(false);
@@ -203,7 +583,7 @@ export function LiveClassesView({ onOpenVip }: LiveClassesViewProps) {
   // Broken image fallback tracker
   const [failedThumbnails, setFailedThumbnails] = useState<Record<string, boolean>>({});
 
-  // User Interactions (Likes, Saved/Watch Later, Resume Progress) persisted in localStorage + Firestore
+  // User Interactions (Likes, Saved/Watch Later, Resume Progress)
   const userKey = user?.email || (user as any)?.uid || 'guest_student';
   const interactionsStorageKey = `bseb_video_interactions_${userKey}`;
 
@@ -232,10 +612,11 @@ export function LiveClassesView({ onOpenVip }: LiveClassesViewProps) {
           localStorage.setItem(interactionsStorageKey, JSON.stringify(nextMap));
         } catch {}
 
-        // Persist asynchronously to Firestore for authenticated users
         if (user?.email) {
           const docId = `${user.email.replace(/[^a-zA-Z0-9]/g, '_')}_${videoId}`;
-          safeSetDoc(doc(db, 'video_interactions', docId), updatedItem, { merge: true }).catch(() => {});
+          safeSetDoc(doc(db, 'video_interactions', docId), updatedItem, { merge: true }).catch(
+            () => {}
+          );
         }
         return nextMap;
       });
@@ -243,47 +624,38 @@ export function LiveClassesView({ onOpenVip }: LiveClassesViewProps) {
     [interactionsStorageKey, user?.email, userKey]
   );
 
-  // Attendance & Watch-Time State
+  const handleSaveWatchProgress = useCallback(
+    (videoId: string, progressSeconds: number, durationSeconds: number) => {
+      saveInteraction(videoId, {
+        watchProgressSeconds: progressSeconds,
+        durationSeconds
+      });
+    },
+    [saveInteraction]
+  );
+
+  // Attendance State
   const [activeAttendanceRecords, setActiveAttendanceRecords] = useState<LiveWatchRecord[]>([]);
   const [showAttendanceModal, setShowAttendanceModal] = useState<boolean>(false);
-  const [myWatchSeconds, setMyWatchSeconds] = useState<number>(0);
   const [useNoCookie, setUseNoCookie] = useState<boolean>(true);
-
-  // Real-time clock for scheduled countdowns
-  const [currentTime, setCurrentTime] = useState<number>(Date.now());
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setCurrentTime(Date.now());
-    }, 1000);
-    return () => clearInterval(timer);
-  }, []);
+  const [countdownDoneIds, setCountdownDoneIds] = useState<Record<string, boolean>>({});
 
   const isClassScheduledFuture = useCallback(
     (cls: LiveClass) => {
+      if (countdownDoneIds[cls.id]) return false;
       if (
         (cls.publishType === 'scheduled' || cls.streamStatus === 'scheduled') &&
         cls.scheduledDateTime
       ) {
         const target = new Date(cls.scheduledDateTime).getTime();
-        return !isNaN(target) && target > currentTime;
+        return !isNaN(target) && target > Date.now();
       }
       return false;
     },
-    [currentTime]
+    [countdownDoneIds]
   );
 
-  const getRemainingTime = (scheduledDateTime?: string) => {
-    if (!scheduledDateTime) return null;
-    const diff = new Date(scheduledDateTime).getTime() - currentTime;
-    if (diff <= 0) return null;
-    const hours = Math.floor(diff / (1000 * 60 * 60));
-    const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-    const seconds = Math.floor((diff % (1000 * 60)) / 1000);
-    return { hours, minutes, seconds, diff };
-  };
-
-  // Native HTML5 <video> & YouTube Player Refs & Controls
-  const iframeRef = useRef<HTMLIFrameElement>(null);
+  // Native HTML5 <video> & Container Refs
   const nativeVideoRef = useRef<HTMLVideoElement>(null);
   const playerContainerRef = useRef<HTMLDivElement>(null);
   const controlsTimeoutRef = useRef<any>(null);
@@ -291,9 +663,7 @@ export function LiveClassesView({ onOpenVip }: LiveClassesViewProps) {
   const [playbackSpeed, setPlaybackSpeed] = useState<number>(1);
   const [speedToast, setSpeedToast] = useState<string>('');
   const [showSettingsModal, setShowSettingsModal] = useState<boolean>(false);
-  const [dataSaverMode, setDataSaverMode] = useState<boolean>(true);
   const [isFullscreen, setIsFullscreen] = useState<boolean>(false);
-  const [showControls, setShowControls] = useState<boolean>(true);
 
   // Native HTML5 video playback state
   const [isNativePlaying, setIsNativePlaying] = useState<boolean>(false);
@@ -310,91 +680,43 @@ export function LiveClassesView({ onOpenVip }: LiveClassesViewProps) {
     );
   }, []);
 
-  // Auto-detect physical phone orientation
+  // Auto-detect physical phone orientation without remounting the player
   useEffect(() => {
     const handleOrientationChange = () => {
       const isLandscape = window.innerWidth > window.innerHeight;
       if (selectedClass) {
         if (isLandscape) {
           setIsFullscreen(true);
-        } else if (!document.fullscreenElement && !(document as any).webkitFullscreenElement) {
+        } else if (
+          !document.fullscreenElement &&
+          !(document as any).webkitFullscreenElement
+        ) {
           setIsFullscreen(false);
         }
       }
     };
 
-    handleOrientationChange();
     window.addEventListener('resize', handleOrientationChange);
     window.addEventListener('orientationchange', handleOrientationChange);
     return () => {
       window.removeEventListener('resize', handleOrientationChange);
       window.removeEventListener('orientationchange', handleOrientationChange);
     };
-  }, [selectedClass]);
+  }, [selectedClass?.id]);
 
-  // Real-time Class Attendance & Watch Time + Continue Watching Progress Tracking
+  // Subscribe to class attendance only when a video is open
   useEffect(() => {
     if (!selectedClass) {
-      setMyWatchSeconds(0);
+      setActiveAttendanceRecords([]);
       return;
     }
-
-    const studentKey =
-      user?.email || (user as any)?.uid || 'student_' + Math.random().toString(36).substring(2, 8);
-    const studentName = user?.name || (user?.email ? user.email.split('@')[0] : 'विद्यार्थी');
-    const docId = getAttendanceDocId(selectedClass.id, studentKey);
-
-    const record: LiveWatchRecord = {
-      id: docId,
-      classId: selectedClass.id,
-      classTitle: selectedClass.title,
-      isLive: Boolean(selectedClass.isLive || selectedClass.streamStatus === 'live'),
-      studentId: studentKey,
-      studentName,
-      studentEmail: user?.email || '',
-      isPaid: Boolean(isVIP || isPaid),
-      joinedAt: new Date().toISOString(),
-      lastHeartbeat: Date.now(),
-      watchSeconds: 0,
-      isOnline: true
-    };
-
-    syncWatchHeartbeat(record, false);
-
-    const initialResume = interactions[selectedClass.id]?.watchProgressSeconds || 0;
-    let currentSeconds = 0;
-
-    const secondTimer = setInterval(() => {
-      currentSeconds += 1;
-      setMyWatchSeconds(currentSeconds);
-      record.watchSeconds = currentSeconds;
-
-      // Save progress every 5 seconds for Continue Watching (if not using native video timeupdate)
-      if (currentSeconds % 5 === 0 && !nativeVideoRef.current) {
-        const estDuration = selectedClass.durationSeconds || 2700;
-        saveInteraction(selectedClass.id, {
-          watchProgressSeconds: Math.min(initialResume + currentSeconds, estDuration),
-          durationSeconds: estDuration
-        });
-      }
-    }, 1000);
-
-    const syncTimer = setInterval(() => {
-      syncWatchHeartbeat(record, false);
-    }, 60000);
-
     const unsubAttendance = subscribeClassAttendance(selectedClass.id, (records) => {
       setActiveAttendanceRecords(records);
     });
-
     return () => {
-      clearInterval(secondTimer);
-      clearInterval(syncTimer);
       unsubAttendance();
-      record.watchSeconds = currentSeconds;
-      syncWatchHeartbeat(record, true);
     };
-  }, [selectedClass?.id, user, isVIP, isPaid]);
+  }, [selectedClass?.id]);
 
   const userCanAccess = (cls: LiveClass) => {
     if (!cls.isVip) return true;
@@ -402,59 +724,63 @@ export function LiveClassesView({ onOpenVip }: LiveClassesViewProps) {
   };
 
   // Determine playback mode for a video item
-  const getPlaybackMode = (cls: LiveClass): 'ai_board' | 'native_video' | 'youtube' => {
-    const url = cls.playbackUrl || cls.youtubeUrl || '';
-    if (
-      cls.videoSourceType === 'ai_board' ||
-      url === 'ai_studio_lecture' ||
-      url.includes('ai_studio') ||
-      cls.youtubeUrl === 'dQw4w9WgXcQ' ||
-      (cls.description &&
-        cls.description.length > 10 &&
-        !url.includes('youtube.com') &&
-        !url.includes('youtu.be') &&
-        !url.match(/\.(mp4|webm|ogg|m3u8)$/i) &&
-        !url.startsWith('/uploads/'))
-    ) {
-      return 'ai_board';
-    }
-    if (
-      cls.videoSourceType === 'video_file' ||
-      cls.videoSourceType === 'hls_stream' ||
-      url.match(/\.(mp4|webm|ogg|m3u8)$/i) ||
-      url.startsWith('/uploads/') ||
-      url.startsWith('data:video/')
-    ) {
-      return 'native_video';
-    }
-    return 'youtube';
-  };
+  const getPlaybackMode = useCallback(
+    (cls: LiveClass): 'ai_board' | 'native_video' | 'youtube' => {
+      const url = cls.playbackUrl || cls.youtubeUrl || '';
+      if (
+        cls.videoSourceType === 'ai_board' ||
+        url === 'ai_studio_lecture' ||
+        url.includes('ai_studio') ||
+        cls.youtubeUrl === 'dQw4w9WgXcQ' ||
+        (cls.description &&
+          cls.description.length > 10 &&
+          !url.includes('youtube.com') &&
+          !url.includes('youtu.be') &&
+          !cls.youtubePlaylistId &&
+          !url.match(/\.(mp4|webm|ogg|m3u8)$/i) &&
+          !url.startsWith('/uploads/'))
+      ) {
+        return 'ai_board';
+      }
+      if (
+        cls.videoSourceType === 'video_file' ||
+        cls.videoSourceType === 'hls_stream' ||
+        url.match(/\.(mp4|webm|ogg|m3u8)$/i) ||
+        url.startsWith('/uploads/') ||
+        url.startsWith('data:video/')
+      ) {
+        return 'native_video';
+      }
+      return 'youtube';
+    },
+    []
+  );
 
-  // Open a video in the YouTube-style player page
-  const handleWatchClass = (cls: LiveClass) => {
-    if (!userCanAccess(cls)) {
-      setLockedClassPrompt(cls);
-      return;
-    }
-    setPlaybackSpeed(1);
-    setDescriptionExpanded(false);
-    setIsFullscreen(window.innerWidth > window.innerHeight);
-    setShowControls(true);
-    setSelectedClass(cls);
+  // Open a video in the player page without triggering background Firestore writes that re-render the player
+  const handleWatchClass = useCallback(
+    (cls: LiveClass) => {
+      if (!userCanAccess(cls)) {
+        setLockedClassPrompt(cls);
+        return;
+      }
 
-    // Increment view count
-    const currentViews = cls.viewsCount || 1240;
-    updateLiveClass(cls.id, { viewsCount: currentViews + 1 }).catch(() => {});
+      const savedSec = Math.floor(interactions[cls.id]?.watchProgressSeconds || 0);
+      initialResumeSecondsRef.current = savedSec;
 
-    // Show resume toast if previously watched > 10s
-    const savedSec = interactions[cls.id]?.watchProgressSeconds || 0;
-    if (savedSec > 10) {
-      setSpeedToast(`⏱️ ${formatTimeDisplay(savedSec)} से देखना जारी रखा गया`);
-      setTimeout(() => setSpeedToast(''), 3000);
-    }
+      setPlaybackSpeed(1);
+      setDescriptionExpanded(false);
+      setIsFullscreen(window.innerWidth > window.innerHeight);
+      setSelectedClass(cls);
 
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  };
+      if (savedSec > 10 && !cls.isLive) {
+        setSpeedToast(`⏱️ ${formatTimeDisplay(savedSec)} से देखना जारी रखा गया`);
+        setTimeout(() => setSpeedToast(''), 3000);
+      }
+
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    },
+    [interactions, isVIP, isAdmin]
+  );
 
   // Toggle Like on a video
   const handleToggleLike = (cls: LiveClass, e?: React.MouseEvent) => {
@@ -514,10 +840,7 @@ export function LiveClassesView({ onOpenVip }: LiveClassesViewProps) {
     if (controlsTimeoutRef.current) {
       clearTimeout(controlsTimeoutRef.current);
     }
-    setShowControls(true);
-    controlsTimeoutRef.current = setTimeout(() => {
-      setShowControls(false);
-    }, 3500);
+    controlsTimeoutRef.current = setTimeout(() => {}, 3500);
   }, []);
 
   const toggleFullscreen = async () => {
@@ -538,7 +861,7 @@ export function LiveClassesView({ onOpenVip }: LiveClassesViewProps) {
           if (document.exitFullscreen) {
             await document.exitFullscreen().catch(() => {});
           } else if ((document as any)?.webkitExitFullscreen) {
-            await (document as any).webkitExitFullscreen().catch(() => {});
+            await (document as any)?.webkitExitFullscreen().catch(() => {});
           }
         }
       }
@@ -561,66 +884,32 @@ export function LiveClassesView({ onOpenVip }: LiveClassesViewProps) {
     }
   };
 
-  // Set Playback Speed on both Native <video> and YouTube IFrame
+  // Set Playback Speed on both Native <video> and YouTube Player
   const handleSetSpeed = (speed: number) => {
     setPlaybackSpeed(speed);
     if (nativeVideoRef.current) {
       nativeVideoRef.current.playbackRate = speed;
     }
-    if (iframeRef.current && iframeRef.current.contentWindow) {
-      try {
-        iframeRef.current.contentWindow.postMessage(
-          JSON.stringify({
-            event: 'command',
-            func: 'setPlaybackRate',
-            args: [speed]
-          }),
-          '*'
-        );
-      } catch {}
-    }
     setSpeedToast(`⚡ प्लेबैक स्पीड ${speed}x सेट की गई`);
     setTimeout(() => setSpeedToast(''), 2000);
   };
 
-  const handleIframeLoad = () => {
-    if (iframeRef.current && iframeRef.current.contentWindow) {
-      try {
-        iframeRef.current.contentWindow.postMessage(JSON.stringify({ event: 'listening' }), '*');
-        if (playbackSpeed !== 1) {
-          setTimeout(() => {
-            iframeRef.current?.contentWindow?.postMessage(
-              JSON.stringify({
-                event: 'command',
-                func: 'setPlaybackRate',
-                args: [playbackSpeed]
-              }),
-              '*'
-            );
-          }, 600);
-        }
-      } catch {}
-    }
-  };
-
-  // Embed URL with resume support (`start` param)
-  const getEmbedUrlWithResume = (cls: LiveClass) => {
-    const base = getYouTubeEmbedUrl(cls.youtubeUrl, { useNoCookie, dataSaver: dataSaverMode });
-    const resumeSec = Math.floor(interactions[cls.id]?.watchProgressSeconds || 0);
-    if (resumeSec > 10 && !cls.isLive && base.includes('?')) {
-      return `${base}&start=${resumeSec}`;
-    }
-    return base;
-  };
-
-  // STRICT ADMIN CONTENT FILTER:
-  // Ordinary users ONLY see content that has been approved & published by the Admin!
+  // Approved & published classes
   const publishedClasses = useMemo(() => {
-    return liveClasses
+    return (liveClasses || [])
       .filter((cls) => {
+        if (!cls || !cls.id) return false;
         const status = cls.publicationStatus || 'published';
         return status === 'published';
       })
+      .map((cls) => ({
+        ...cls,
+        title: String(cls.title || 'बिहार बोर्ड कक्षा 10वीं विशेष क्लास'),
+        subjectName: String(cls.subjectName || 'सामान्य'),
+        teacherName: String(cls.teacherName || 'राज सर'),
+        youtubeUrl: String(cls.youtubeUrl || cls.playbackUrl || ''),
+        scheduledAt: String(cls.scheduledAt || 'रिकॉर्डेड क्लास')
+      }))
       .sort((a, b) => {
         if (a.featured && !b.featured) return -1;
         if (!a.featured && b.featured) return 1;
@@ -630,6 +919,14 @@ export function LiveClassesView({ onOpenVip }: LiveClassesViewProps) {
         return new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime();
       });
   }, [liveClasses]);
+
+  const availableSubjects = useMemo(() => {
+    const set = new Set<string>();
+    publishedClasses.forEach((c) => {
+      if (c.subjectName) set.add(c.subjectName);
+    });
+    return ['all', ...Array.from(set)];
+  }, [publishedClasses]);
 
   const liveNowCount = useMemo(
     () => publishedClasses.filter((c) => c.isLive || c.streamStatus === 'live').length,
@@ -644,30 +941,28 @@ export function LiveClassesView({ onOpenVip }: LiveClassesViewProps) {
     });
   }, [publishedClasses, interactions]);
 
-  // Subject filter chips
-  const subjects = useMemo(
-    () => ['all', ...Array.from(new Set(publishedClasses.map((c) => c.subjectName).filter(Boolean)))],
-    [publishedClasses]
-  );
-
-  // Filtered Feed based on Category Chip, Subject, and Search Query
+  // Filtered Feed based on Category Chip, Subject, and Debounced Search Query
   const filteredFeed = useMemo(() => {
-    const q = searchQuery.trim().toLowerCase();
+    const q = debouncedSearchQuery;
     let list = publishedClasses.filter((cls) => {
-      // Search match
       if (q) {
-        const hay = `${cls.title} ${cls.description || ''} ${cls.subjectName} ${cls.teacherName} ${cls.category || ''}`.toLowerCase();
+        const hay = `${cls.title || ''} ${cls.description || ''} ${cls.subjectName || ''} ${
+          cls.teacherName || ''
+        } ${cls.category || ''}`.toLowerCase();
         if (!hay.includes(q)) return false;
       }
 
-      // Subject match
       if (selectedSubject !== 'all' && cls.subjectName !== selectedSubject) {
         return false;
       }
 
-      // Category chip match
       if (activeCategory === 'Live') {
-        return Boolean(cls.isLive || cls.streamStatus === 'live' || cls.category === 'Live' || cls.contentType === 'live');
+        return Boolean(
+          cls.isLive ||
+            cls.streamStatus === 'live' ||
+            cls.category === 'Live' ||
+            cls.contentType === 'live'
+        );
       }
       if (activeCategory === 'Classes') {
         return (cls.category || 'Classes') === 'Classes' || cls.contentType === 'recorded';
@@ -696,9 +991,9 @@ export function LiveClassesView({ onOpenVip }: LiveClassesViewProps) {
     }
 
     return list;
-  }, [publishedClasses, searchQuery, selectedSubject, activeCategory, interactions]);
+  }, [publishedClasses, debouncedSearchQuery, selectedSubject, activeCategory, interactions]);
 
-  // Related videos for the active player (only from Admin-approved published content)
+  // Related videos for the active player
   const relatedVideos = useMemo(() => {
     if (!selectedClass) return [];
     const others = publishedClasses.filter((c) => c.id !== selectedClass.id);
@@ -719,7 +1014,8 @@ export function LiveClassesView({ onOpenVip }: LiveClassesViewProps) {
     const isShort = cls.category === 'Shorts' || cls.contentType === 'short';
     const progressSec = interactions[cls.id]?.watchProgressSeconds || 0;
     const totalSec = cls.durationSeconds || 2700;
-    const progressPercent = progressSec > 5 ? Math.min(100, Math.round((progressSec / totalSec) * 100)) : 0;
+    const progressPercent =
+      progressSec > 5 ? Math.min(100, Math.round((progressSec / totalSec) * 100)) : 0;
     const posterTheme = getSubjectPosterTheme(cls.subjectName);
 
     return (
@@ -733,11 +1029,11 @@ export function LiveClassesView({ onOpenVip }: LiveClassesViewProps) {
             src={thumbSrc}
             alt={cls.title}
             loading="lazy"
+            decoding="async"
             onError={() => setFailedThumbnails((prev) => ({ ...prev, [cls.id]: true }))}
             className="w-full h-full object-cover group-hover:scale-[1.02] transition-transform duration-300"
           />
         ) : (
-          /* High-Contrast 16:9 Bihar Board Studio Poster Thumbnail */
           <div
             className={`w-full h-full bg-gradient-to-br ${posterTheme.gradient} p-3.5 sm:p-5 flex flex-col justify-between relative overflow-hidden group-hover:scale-[1.02] transition-transform duration-300`}
           >
@@ -770,8 +1066,13 @@ export function LiveClassesView({ onOpenVip }: LiveClassesViewProps) {
                 <span className="w-5 h-5 rounded-full bg-amber-500 text-stone-950 font-black flex items-center justify-center text-[10px]">
                   {cls.teacherName?.charAt(0) || 'R'}
                 </span>
-                <span className="truncate max-w-[130px]">{cls.teacherName}</span>
+                <span className="truncate max-w-[140px]">{cls.teacherName}</span>
               </div>
+              {!compact && (
+                <span className="text-[10px] font-bold text-amber-300 bg-black/40 px-2 py-0.5 rounded">
+                  {cls.subjectName}
+                </span>
+              )}
             </div>
           </div>
         )}
@@ -787,7 +1088,7 @@ export function LiveClassesView({ onOpenVip }: LiveClassesViewProps) {
           </div>
         </div>
 
-        {/* Top-Left VIP / Free / Featured Pill */}
+        {/* Top-Left VIP / Free Pill */}
         <div className="absolute top-2 left-2 flex items-center gap-1.5 z-10">
           {cls.isVip ? (
             <span className="bg-amber-500 text-stone-950 text-[10px] font-black px-2 py-0.5 rounded shadow flex items-center gap-1">
@@ -805,7 +1106,7 @@ export function LiveClassesView({ onOpenVip }: LiveClassesViewProps) {
           )}
         </div>
 
-        {/* Bottom-Right Duration or LIVE Badge (YouTube-Exact Position) */}
+        {/* Bottom-Right Duration or LIVE Badge */}
         <div className="absolute bottom-2 right-2 z-10">
           {isScheduled ? (
             <span className="bg-amber-500 text-stone-950 text-[10px] font-black px-2 py-0.5 rounded shadow flex items-center gap-1">
@@ -822,7 +1123,7 @@ export function LiveClassesView({ onOpenVip }: LiveClassesViewProps) {
           )}
         </div>
 
-        {/* Bottom Red Watch Progress Bar (YouTube Resume Indicator) */}
+        {/* Bottom Red Watch Progress Bar */}
         {progressPercent > 0 && (
           <div className="absolute bottom-0 left-0 right-0 h-1 bg-white/30 z-10">
             <div
@@ -849,7 +1150,7 @@ export function LiveClassesView({ onOpenVip }: LiveClassesViewProps) {
       )}
 
       {/* ===================================================================
-          1. YOUTUBE-STYLE STICKY TOP NAVIGATION BAR (Inside Live Section)
+          1. STICKY TOP NAVIGATION BAR (Inside Live Section)
          =================================================================== */}
       <div
         className={`sticky top-0 z-30 border-b backdrop-blur-md transition-colors ${
@@ -869,7 +1170,7 @@ export function LiveClassesView({ onOpenVip }: LiveClassesViewProps) {
               }`}
             >
               <ArrowLeft className="w-5 h-5 text-red-600" />
-              <span>वापस फ़ीड पर (All Videos)</span>
+              <span>वापस सभी वीडियो पर (All Videos)</span>
             </button>
           ) : (
             <div className="flex items-center gap-2 shrink-0">
@@ -890,7 +1191,7 @@ export function LiveClassesView({ onOpenVip }: LiveClassesViewProps) {
                     darkMode ? 'text-stone-400' : 'text-slate-500'
                   }`}
                 >
-                  Official Video & Live Platform
+                  Bihar Board 10th Video Hub
                 </span>
               </div>
             </div>
@@ -907,7 +1208,7 @@ export function LiveClassesView({ onOpenVip }: LiveClassesViewProps) {
                   setSearchQuery(e.target.value);
                   if (selectedClass) setSelectedClass(null);
                 }}
-                placeholder="वीडियो, विषय या शिक्षक खोजें (Search classes)..."
+                placeholder="क्लास, विषय या शिक्षक का नाम खोजें..."
                 className={`w-full pl-9 pr-8 py-2 rounded-full text-xs font-medium border focus:outline-none focus:border-red-600 transition-colors ${
                   darkMode
                     ? 'bg-stone-900 border-stone-700 text-white placeholder:text-stone-400'
@@ -926,12 +1227,12 @@ export function LiveClassesView({ onOpenVip }: LiveClassesViewProps) {
             </div>
           </div>
 
-          {/* Right Action Icons: Mobile Search Toggle, Live Count, Theme Toggle, Saved/Profile */}
+          {/* Right Action Icons: Mobile Search, Live Count, Theme, Saved */}
           <div className="flex items-center gap-1 shrink-0">
             <button
               type="button"
               onClick={() => setSearchOpen(!searchOpen)}
-              className={`md:hidden min-h-[44px] min-w-[44px] rounded-full flex items-center justify-center cursor-pointer ${
+              className={`md:hidden min-h-[40px] min-w-[40px] rounded-full flex items-center justify-center cursor-pointer ${
                 darkMode ? 'hover:bg-stone-800 text-stone-200' : 'hover:bg-slate-100 text-slate-700'
               }`}
               title="खोजें (Search)"
@@ -957,7 +1258,7 @@ export function LiveClassesView({ onOpenVip }: LiveClassesViewProps) {
             <button
               type="button"
               onClick={toggleTheme}
-              className={`min-h-[44px] min-w-[44px] rounded-full flex items-center justify-center cursor-pointer transition-colors ${
+              className={`min-h-[40px] min-w-[40px] rounded-full flex items-center justify-center cursor-pointer transition-colors ${
                 darkMode
                   ? 'hover:bg-stone-800 text-amber-400'
                   : 'hover:bg-slate-100 text-slate-700'
@@ -974,8 +1275,8 @@ export function LiveClassesView({ onOpenVip }: LiveClassesViewProps) {
                 setSelectedClass(null);
                 setActiveCategory(activeCategory === 'Saved' ? 'All' : 'Saved');
               }}
-              className="min-h-[44px] min-w-[44px] flex items-center justify-center cursor-pointer"
-              title="सेव किए गए वीडियो और प्रोफ़ाइल"
+              className="min-h-[40px] min-w-[40px] flex items-center justify-center cursor-pointer"
+              title="सेव किए गए वीडियो"
             >
               <div className="w-8 h-8 rounded-full bg-gradient-to-br from-red-600 to-amber-600 text-white font-black text-xs flex items-center justify-center shadow-xs">
                 {user?.name ? user.name.charAt(0).toUpperCase() : 'S'}
@@ -984,7 +1285,7 @@ export function LiveClassesView({ onOpenVip }: LiveClassesViewProps) {
           </div>
         </div>
 
-        {/* Horizontally Scrollable Category Chips Bar (YouTube Mobile Layout) */}
+        {/* Horizontally Scrollable Category Chips Bar */}
         {!selectedClass && (
           <div
             className={`max-w-7xl mx-auto px-3 sm:px-5 py-2 flex items-center gap-2 overflow-x-auto scrollbar-none border-t ${
@@ -999,7 +1300,7 @@ export function LiveClassesView({ onOpenVip }: LiveClassesViewProps) {
                   type="button"
                   onClick={() => {
                     setActiveCategory(chip.id);
-                    setVisibleCount(8);
+                    setVisibleCount(9);
                   }}
                   className={`px-3.5 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap transition-all cursor-pointer shrink-0 ${
                     isSelected
@@ -1015,38 +1316,35 @@ export function LiveClassesView({ onOpenVip }: LiveClassesViewProps) {
                 </button>
               );
             })}
-          </div>
-        )}
 
-        {/* Subject Filter Bar */}
-        {!selectedClass && (
-          <div
-            className={`max-w-7xl mx-auto px-3 sm:px-5 py-1.5 flex items-center gap-1.5 overflow-x-auto scrollbar-none border-t ${
-              darkMode ? 'border-stone-900 bg-stone-950/60' : 'border-slate-100 bg-slate-50/70'
-            }`}
-          >
-            <span className="text-[11px] font-bold text-slate-400 flex items-center gap-1 shrink-0 mr-1">
-              <Filter className="w-3 h-3" /> विषय:
-            </span>
-            {subjects.map((subj) => {
-              const active = selectedSubject === subj;
-              return (
-                <button
-                  key={subj}
-                  type="button"
-                  onClick={() => setSelectedSubject(subj)}
-                  className={`px-2.5 py-1 rounded-md text-[11px] font-bold whitespace-nowrap cursor-pointer transition-colors shrink-0 ${
-                    active
-                      ? 'bg-red-600 text-white font-black'
-                      : darkMode
-                      ? 'text-stone-400 hover:text-white'
-                      : 'text-slate-600 hover:text-slate-900'
-                  }`}
-                >
-                  {subj === 'all' ? 'सभी विषय' : subj}
-                </button>
-              );
-            })}
+            <div className="h-4 w-px bg-slate-300 dark:bg-stone-700 mx-1 shrink-0" />
+
+            {/* Subject Filter Chips */}
+            <div className="flex items-center gap-1.5 shrink-0">
+              <Filter className="w-3.5 h-3.5 text-slate-400" />
+              {availableSubjects.map((subj) => {
+                const active = selectedSubject === subj;
+                return (
+                  <button
+                    key={subj}
+                    type="button"
+                    onClick={() => {
+                      setSelectedSubject(subj);
+                      setVisibleCount(9);
+                    }}
+                    className={`px-2.5 py-1 rounded-lg text-[11px] font-bold whitespace-nowrap cursor-pointer transition-colors ${
+                      active
+                        ? 'bg-red-600 text-white font-black'
+                        : darkMode
+                        ? 'bg-stone-900 text-stone-400 hover:text-white border border-stone-800'
+                        : 'bg-slate-50 text-slate-600 hover:bg-slate-100 border border-slate-200'
+                    }`}
+                  >
+                    {subj === 'all' ? 'सभी विषय' : subj}
+                  </button>
+                );
+              })}
+            </div>
           </div>
         )}
       </div>
@@ -1071,61 +1369,24 @@ export function LiveClassesView({ onOpenVip }: LiveClassesViewProps) {
               }
             >
               {/* Scheduled Countdown Screen if Scheduled in Future */}
-              {isClassScheduledFuture(selectedClass) &&
-              getRemainingTime(selectedClass.scheduledDateTime) ? (
-                (() => {
-                  const rem = getRemainingTime(selectedClass.scheduledDateTime)!;
-                  return (
-                    <div className="aspect-video w-full bg-gradient-to-b from-stone-950 via-stone-900 to-stone-950 flex flex-col items-center justify-center p-6 text-center space-y-4 text-white">
-                      <div className="inline-flex items-center gap-1.5 bg-amber-500/20 text-amber-300 border border-amber-400/40 text-xs font-black px-3 py-1 rounded-full">
-                        <Clock className="w-3.5 h-3.5 animate-pulse" />
-                        <span>लाइव स्ट्रीम शेड्यूल्ड है ({selectedClass.scheduledAt})</span>
-                      </div>
-                      <h3 className="text-sm sm:text-base font-black text-white max-w-md line-clamp-2">
-                        {selectedClass.title}
-                      </h3>
-                      <div className="grid grid-cols-3 gap-2.5 max-w-xs w-full">
-                        <div className="bg-stone-900 p-2.5 rounded-xl border border-stone-800">
-                          <span className="block text-xl font-black text-amber-400">
-                            {String(rem.hours).padStart(2, '0')}
-                          </span>
-                          <span className="text-[10px] text-stone-400">घंटे</span>
-                        </div>
-                        <div className="bg-stone-900 p-2.5 rounded-xl border border-stone-800">
-                          <span className="block text-xl font-black text-amber-400">
-                            {String(rem.minutes).padStart(2, '0')}
-                          </span>
-                          <span className="text-[10px] text-stone-400">मिनट</span>
-                        </div>
-                        <div className="bg-stone-900 p-2.5 rounded-xl border border-stone-800">
-                          <span className="block text-xl font-black text-amber-400">
-                            {String(rem.seconds).padStart(2, '0')}
-                          </span>
-                          <span className="text-[10px] text-stone-400">सेकंड</span>
-                        </div>
-                      </div>
-                      {isAdmin && (
-                        <button
-                          type="button"
-                          onClick={() => {
-                            updateLiveClass(selectedClass.id, {
-                              publishType: 'instant',
-                              isLive: true,
-                              streamStatus: 'live',
-                              scheduledDateTime: new Date().toISOString()
-                            });
-                          }}
-                          className="bg-red-600 hover:bg-red-500 text-white font-black px-4 py-2 rounded-xl text-xs flex items-center gap-1.5 cursor-pointer"
-                        >
-                          <Zap className="w-4 h-4 fill-white" />
-                          <span>एडमिन: अभी तुरंत लाइव शुरू करें</span>
-                        </button>
-                      )}
-                    </div>
-                  );
-                })()
+              {isClassScheduledFuture(selectedClass) ? (
+                <ScheduledCountdownScreen
+                  selectedClass={selectedClass}
+                  isAdmin={isAdmin}
+                  onStartLiveNow={() => {
+                    updateLiveClass(selectedClass.id, {
+                      publishType: 'instant',
+                      isLive: true,
+                      streamStatus: 'live',
+                      scheduledDateTime: new Date().toISOString()
+                    });
+                  }}
+                  onCountdownFinished={() =>
+                    setCountdownDoneIds((prev) => ({ ...prev, [selectedClass.id]: true }))
+                  }
+                />
               ) : getPlaybackMode(selectedClass) === 'ai_board' ? (
-                /* 1. Smart AI Board Interactive Lecture Player */
+                /* 1. Smart AI Board Interactive Lecture Player (Stutter-Free Chunked TTS + Smooth Clock) */
                 <div className="w-full bg-black flex items-center justify-center p-1 sm:p-2">
                   <SmartAiBoardPlayer classItem={selectedClass} />
                 </div>
@@ -1147,7 +1408,7 @@ export function LiveClassesView({ onOpenVip }: LiveClassesViewProps) {
                     onLoadedMetadata={(e) => {
                       const vid = e.currentTarget;
                       setNativeDuration(vid.duration || selectedClass.durationSeconds || 0);
-                      const savedPos = interactions[selectedClass.id]?.watchProgressSeconds || 0;
+                      const savedPos = initialResumeSecondsRef.current;
                       if (savedPos > 5 && (!vid.duration || savedPos < vid.duration - 10)) {
                         vid.currentTime = savedPos;
                       }
@@ -1155,12 +1416,6 @@ export function LiveClassesView({ onOpenVip }: LiveClassesViewProps) {
                     onTimeUpdate={(e) => {
                       const vid = e.currentTarget;
                       setNativeCurrentTime(vid.currentTime);
-                      if (Math.floor(vid.currentTime) % 5 === 0 && vid.currentTime > 5) {
-                        saveInteraction(selectedClass.id, {
-                          watchProgressSeconds: Math.floor(vid.currentTime),
-                          durationSeconds: Math.floor(vid.duration || selectedClass.durationSeconds || 2700)
-                        });
-                      }
                     }}
                     className="w-full h-full object-contain"
                   >
@@ -1177,7 +1432,6 @@ export function LiveClassesView({ onOpenVip }: LiveClassesViewProps) {
 
                   {/* Custom Video Control Bar Overlay */}
                   <div className="bg-gradient-to-t from-black/95 via-black/75 to-transparent p-2.5 sm:p-3 space-y-2 text-white">
-                    {/* Interactive Seek Bar */}
                     <div className="flex items-center gap-2 text-[11px] font-mono">
                       <span>{formatTimeDisplay(nativeCurrentTime)}</span>
                       <input
@@ -1197,7 +1451,6 @@ export function LiveClassesView({ onOpenVip }: LiveClassesViewProps) {
                       <span>{formatTimeDisplay(nativeDuration)}</span>
                     </div>
 
-                    {/* Controls Row */}
                     <div className="flex items-center justify-between gap-2 flex-wrap">
                       <div className="flex items-center gap-2">
                         <button
@@ -1218,7 +1471,6 @@ export function LiveClassesView({ onOpenVip }: LiveClassesViewProps) {
                           )}
                         </button>
 
-                        {/* Volume & Mute */}
                         <button
                           type="button"
                           onClick={() => {
@@ -1256,13 +1508,14 @@ export function LiveClassesView({ onOpenVip }: LiveClassesViewProps) {
                       </div>
 
                       <div className="flex items-center gap-1.5">
-                        {/* Captions Toggle when captionsUrl is present */}
                         {selectedClass.captionsUrl && (
                           <button
                             type="button"
                             onClick={() => setCaptionsEnabled(!captionsEnabled)}
                             className={`px-2 py-1 rounded text-[10px] font-black cursor-pointer ${
-                              captionsEnabled ? 'bg-red-600 text-white' : 'bg-white/15 text-stone-300'
+                              captionsEnabled
+                                ? 'bg-red-600 text-white'
+                                : 'bg-white/15 text-stone-300'
                             }`}
                             title="Subtitles / Captions"
                           >
@@ -1270,7 +1523,6 @@ export function LiveClassesView({ onOpenVip }: LiveClassesViewProps) {
                           </button>
                         )}
 
-                        {/* Picture-in-Picture */}
                         {pipSupported && (
                           <button
                             type="button"
@@ -1282,7 +1534,6 @@ export function LiveClassesView({ onOpenVip }: LiveClassesViewProps) {
                           </button>
                         )}
 
-                        {/* Fullscreen */}
                         <button
                           type="button"
                           onClick={toggleFullscreen}
@@ -1300,27 +1551,23 @@ export function LiveClassesView({ onOpenVip }: LiveClassesViewProps) {
                   </div>
                 </div>
               ) : (
-                /* 3. Authorized YouTube Embed Player (No external channel recommendations) */
-                <div
-                  className={`relative w-full bg-black overflow-hidden flex items-center justify-center ${
-                    isFullscreen ? 'flex-1 h-full' : 'aspect-video'
-                  }`}
-                >
-                  <iframe
-                    ref={iframeRef}
-                    key={`${selectedClass.youtubeUrl}_${useNoCookie ? 'nocookie' : 'std'}`}
-                    src={getEmbedUrlWithResume(selectedClass)}
-                    title={selectedClass.title}
-                    className="w-full h-full border-0 absolute inset-0"
-                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                    allowFullScreen
-                    onLoad={handleIframeLoad}
-                  />
-                </div>
+                /* 3. Stable Official YouTube Video Embed Player */
+                <StableYouTubePlayer
+                  classId={selectedClass.id}
+                  youtubeUrl={selectedClass.youtubeUrl}
+                  playlistId={selectedClass.youtubePlaylistId}
+                  title={selectedClass.title}
+                  isLive={Boolean(selectedClass.isLive || selectedClass.streamStatus === 'live')}
+                  initialStartSeconds={initialResumeSecondsRef.current}
+                  useNoCookie={useNoCookie}
+                  playbackSpeed={playbackSpeed}
+                  isFullscreen={isFullscreen}
+                  onToggleNoCookie={() => setUseNoCookie((prev) => !prev)}
+                />
               )}
 
               {/* Speed & Mode Helper Strip inside Player Card */}
-              {!isFullscreen && (
+              {!isFullscreen && getPlaybackMode(selectedClass) !== 'ai_board' && (
                 <div className="bg-stone-950 text-stone-300 px-3 py-2 border-t border-stone-800 flex items-center justify-between gap-2 flex-wrap text-xs">
                   <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-none">
                     <span className="text-[11px] font-black text-amber-400 flex items-center gap-1 shrink-0">
@@ -1354,7 +1601,10 @@ export function LiveClassesView({ onOpenVip }: LiveClassesViewProps) {
                           <span>{useNoCookie ? 'प्राइवेसी मोड' : 'स्टैंडर्ड मोड'}</span>
                         </button>
                         <a
-                          href={getYouTubeDirectWatchUrl(selectedClass.youtubeUrl)}
+                          href={getYouTubeDirectWatchUrl(
+                            selectedClass.youtubeUrl,
+                            selectedClass.youtubePlaylistId
+                          )}
                           target="_blank"
                           rel="noopener noreferrer"
                           className="bg-red-600 hover:bg-red-500 text-white font-bold px-2.5 py-1 rounded-lg text-[10px] flex items-center gap-1"
@@ -1379,7 +1629,6 @@ export function LiveClassesView({ onOpenVip }: LiveClassesViewProps) {
 
             {/* Video Metadata, Channel Bar, Engagement Action Buttons & Description */}
             <div className="px-3 sm:px-1 space-y-3">
-              {/* Video Title & Views/Time Line */}
               <div className="space-y-1.5">
                 <div className="flex items-center gap-1.5 flex-wrap">
                   {(selectedClass.isLive || selectedClass.streamStatus === 'live') && (
@@ -1411,12 +1660,21 @@ export function LiveClassesView({ onOpenVip }: LiveClassesViewProps) {
                   <span>{formatViewsCount(selectedClass.viewsCount)} views</span>
                   <span>•</span>
                   <span>
-                    {formatRelativeDate(selectedClass.publishedAt || selectedClass.createdAt, selectedClass.scheduledAt)}
+                    {formatRelativeDate(
+                      selectedClass.publishedAt || selectedClass.createdAt,
+                      selectedClass.scheduledAt
+                    )}
                   </span>
                   <span>•</span>
-                  <span className="text-emerald-600 dark:text-emerald-400 font-bold">
-                    आपका वॉच-टाइम: {formatWatchDuration(myWatchSeconds)}
-                  </span>
+                  <LiveWatchTimerBadge
+                    selectedClass={selectedClass}
+                    user={user}
+                    isVIP={isVIP}
+                    isPaid={isPaid}
+                    initialResumeSeconds={initialResumeSecondsRef.current}
+                    onSyncFinalProgress={handleSaveWatchProgress}
+                    hasNativeVideo={getPlaybackMode(selectedClass) === 'native_video'}
+                  />
                 </div>
               </div>
 
@@ -1440,7 +1698,7 @@ export function LiveClassesView({ onOpenVip }: LiveClassesViewProps) {
                         darkMode ? 'text-stone-400' : 'text-slate-500'
                       }`}
                     >
-                      पढ़ेगा बिहार (Official BSEB Faculty)
+                      पढ़ेगा बिहार (Official BSEB Class 10 Faculty)
                     </div>
                   </div>
                 </div>
@@ -1451,13 +1709,14 @@ export function LiveClassesView({ onOpenVip }: LiveClassesViewProps) {
                   className="bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-black px-3.5 py-2 rounded-full flex items-center gap-1.5 cursor-pointer shrink-0 shadow-xs active:scale-95"
                 >
                   <Users className="w-3.5 h-3.5" />
-                  <span>{activeAttendanceRecords.filter((r) => r.isOnline).length || 1} लाइव छात्र</span>
+                  <span>
+                    {activeAttendanceRecords.filter((r) => r.isOnline).length || 1} लाइव छात्र
+                  </span>
                 </button>
               </div>
 
-              {/* YouTube-Style Horizontal Action Buttons Bar */}
+              {/* Horizontal Action Buttons Bar */}
               <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
-                {/* Like Button */}
                 <button
                   type="button"
                   onClick={(e) => handleToggleLike(selectedClass, e)}
@@ -1473,7 +1732,6 @@ export function LiveClassesView({ onOpenVip }: LiveClassesViewProps) {
                   <span>{(selectedClass.likesCount || 250).toLocaleString('en-IN')}</span>
                 </button>
 
-                {/* Save / Watch Later Button */}
                 <button
                   type="button"
                   onClick={(e) => handleToggleSave(selectedClass, e)}
@@ -1486,10 +1744,11 @@ export function LiveClassesView({ onOpenVip }: LiveClassesViewProps) {
                   }`}
                 >
                   <Bookmark className="w-4 h-4" />
-                  <span>{interactions[selectedClass.id]?.saved ? 'सेव किया गया' : 'सेव करें'}</span>
+                  <span>
+                    {interactions[selectedClass.id]?.saved ? 'सेव किया गया' : 'सेव करें'}
+                  </span>
                 </button>
 
-                {/* Share Button */}
                 <button
                   type="button"
                   onClick={(e) => handleShareVideo(selectedClass, e)}
@@ -1503,21 +1762,6 @@ export function LiveClassesView({ onOpenVip }: LiveClassesViewProps) {
                   <span>शेयर करें</span>
                 </button>
 
-                {/* Attendance List Button */}
-                <button
-                  type="button"
-                  onClick={() => setShowAttendanceModal(true)}
-                  className={`min-h-[40px] px-4 py-1.5 rounded-full text-xs font-bold flex items-center gap-1.5 shrink-0 cursor-pointer transition-colors ${
-                    darkMode
-                      ? 'bg-stone-800 hover:bg-stone-700 text-emerald-400'
-                      : 'bg-emerald-50 hover:bg-emerald-100 text-emerald-800'
-                  }`}
-                >
-                  <Eye className="w-4 h-4" />
-                  <span>अटेंडेंस रिपोर्ट</span>
-                </button>
-
-                {/* Settings & Voice Translate Button */}
                 <button
                   type="button"
                   onClick={() => setShowSettingsModal(true)}
@@ -1528,11 +1772,11 @@ export function LiveClassesView({ onOpenVip }: LiveClassesViewProps) {
                   }`}
                 >
                   <Settings className="w-4 h-4" />
-                  <span>ऑडियो & सेटिंग्स</span>
+                  <span>स्पीड & सेटिंग्स</span>
                 </button>
               </div>
 
-              {/* Expandable Description Box (YouTube Style) */}
+              {/* Expandable Description Box */}
               <div
                 onClick={() => setDescriptionExpanded(!descriptionExpanded)}
                 className={`p-3.5 rounded-2xl text-xs cursor-pointer transition-colors ${
@@ -1542,9 +1786,7 @@ export function LiveClassesView({ onOpenVip }: LiveClassesViewProps) {
                 }`}
               >
                 <div className="flex items-center justify-between font-black mb-1">
-                  <span>
-                    📚 क्लास विवरण और महत्वपूर्ण नोट्स ({selectedClass.subjectName})
-                  </span>
+                  <span>📚 क्लास विवरण और महत्वपूर्ण नोट्स ({selectedClass.subjectName})</span>
                   <span className="flex items-center gap-1 text-red-600 text-[11px]">
                     {descriptionExpanded ? (
                       <>
@@ -1567,27 +1809,20 @@ export function LiveClassesView({ onOpenVip }: LiveClassesViewProps) {
                 </p>
               </div>
 
-              {/* Banner Ad below Video Player as required */}
+              {/* Banner Ad below Video Player */}
               <div className="py-2 flex justify-center">
                 <AdsterraBanner />
               </div>
             </div>
           </div>
 
-          {/* Right Column (or Below on Mobile): Related Videos from App's Own Approved Catalog */}
+          {/* Right Column: Related Videos */}
           <div className="px-3 sm:px-1 lg:px-0 mt-4 lg:mt-0 space-y-3">
             <div className="flex items-center justify-between">
               <h3 className="font-black text-sm sm:text-base flex items-center gap-2">
                 <Play className="w-4 h-4 text-red-600 fill-red-600" />
                 <span>अगली संबंधित क्लासेस (Up Next)</span>
               </h3>
-              <span
-                className={`text-[11px] font-bold ${
-                  darkMode ? 'text-stone-400' : 'text-slate-500'
-                }`}
-              >
-                केवल अप्रूव्ड क्लासेस
-              </span>
             </div>
 
             <div className="space-y-3">
@@ -1620,7 +1855,9 @@ export function LiveClassesView({ onOpenVip }: LiveClassesViewProps) {
                     >
                       <span>{formatViewsCount(rel.viewsCount)} views</span>
                       <span>•</span>
-                      <span>{formatRelativeDate(rel.publishedAt || rel.createdAt, rel.scheduledAt)}</span>
+                      <span>
+                        {formatRelativeDate(rel.publishedAt || rel.createdAt, rel.scheduledAt)}
+                      </span>
                     </div>
                   </div>
                 </div>
@@ -1630,66 +1867,60 @@ export function LiveClassesView({ onOpenVip }: LiveClassesViewProps) {
         </div>
       ) : (
         /* ===================================================================
-            3. YOUTUBE-STYLE MAIN VIDEO FEED (When Browsing the Live Section)
+            3. MAIN VIDEO FEED (When Browsing the Live Section)
            =================================================================== */
         <div className="max-w-7xl mx-auto px-0 sm:px-4 pt-2 sm:pt-4 space-y-5">
-          {/* Continue Watching Strip (Shown on All tab if user has partially watched videos) */}
-          {activeCategory === 'All' && !searchQuery && continueWatchingList.length > 0 && (
-            <div className="px-3 sm:px-0 space-y-2">
-              <div className="flex items-center justify-between">
-                <h3 className="text-xs sm:text-sm font-black flex items-center gap-1.5">
-                  <RotateCcw className="w-4 h-4 text-red-600" />
-                  <span>देखना जारी रखें (Continue Watching)</span>
-                </h3>
-                <button
-                  type="button"
-                  onClick={() => setActiveCategory('Continue')}
-                  className="text-[11px] font-bold text-red-600 cursor-pointer"
-                >
-                  सभी देखें →
-                </button>
-              </div>
-              <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-none">
-                {continueWatchingList.slice(0, 5).map((cw) => {
-                  const sec = interactions[cw.id]?.watchProgressSeconds || 0;
-                  return (
-                    <div
-                      key={`cw_${cw.id}`}
-                      onClick={() => handleWatchClass(cw)}
-                      className={`w-56 sm:w-64 shrink-0 rounded-2xl overflow-hidden border p-2 cursor-pointer group transition-all ${
-                        darkMode
-                          ? 'bg-stone-900 border-stone-800 hover:border-stone-700'
-                          : 'bg-slate-50 border-slate-200 hover:border-slate-300'
-                      }`}
-                    >
-                      {renderThumbnail(cw, true)}
-                      <div className="pt-2 px-1">
-                        <h4 className="font-bold text-xs line-clamp-1">{cw.title}</h4>
-                        <p className="text-[10px] text-red-600 font-bold mt-0.5">
-                          ⏱️ {formatTimeDisplay(sec)} से आगे देखें
-                        </p>
+          {/* Continue Watching Strip */}
+          {activeCategory === 'All' &&
+            selectedSubject === 'all' &&
+            !debouncedSearchQuery &&
+            continueWatchingList.length > 0 && (
+              <div className="px-3 sm:px-0 space-y-2">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-xs sm:text-sm font-black flex items-center gap-1.5">
+                    <RotateCcw className="w-4 h-4 text-red-600" />
+                    <span>देखना जारी रखें (Continue Watching)</span>
+                  </h3>
+                  <button
+                    type="button"
+                    onClick={() => setActiveCategory('Continue')}
+                    className="text-[11px] font-bold text-red-600 cursor-pointer"
+                  >
+                    सभी देखें →
+                  </button>
+                </div>
+                <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-none">
+                  {continueWatchingList.slice(0, 5).map((cw) => {
+                    const sec = interactions[cw.id]?.watchProgressSeconds || 0;
+                    return (
+                      <div
+                        key={`cw_${cw.id}`}
+                        onClick={() => handleWatchClass(cw)}
+                        className={`w-56 sm:w-64 shrink-0 rounded-2xl overflow-hidden border p-2 cursor-pointer group transition-all ${
+                          darkMode
+                            ? 'bg-stone-900 border-stone-800 hover:border-stone-700'
+                            : 'bg-slate-50 border-slate-200 hover:border-slate-300'
+                        }`}
+                      >
+                        {renderThumbnail(cw, true)}
+                        <div className="pt-2 px-1">
+                          <h4 className="font-bold text-xs line-clamp-1">{cw.title}</h4>
+                          <p className="text-[10px] text-red-600 font-bold mt-0.5">
+                            ⏱️ {formatTimeDisplay(sec)} से आगे देखें
+                          </p>
+                        </div>
                       </div>
-                    </div>
-                  );
-                })}
+                    );
+                  })}
+                </div>
               </div>
-            </div>
-          )}
+            )}
 
-          {/* Video Feed Grid (Full-width mobile cards like YouTube App, 2-3 cols on Desktop) */}
+          {/* Video Feed Grid */}
           {filteredFeed.length === 0 ? (
-            <div className="mx-3 sm:mx-0 p-10 rounded-3xl border border-dashed border-slate-300 dark:border-stone-800 text-center space-y-3 my-6">
+            <div className="mx-3 sm:mx-0 p-8 sm:p-10 rounded-3xl border border-dashed border-slate-300 dark:border-stone-800 text-center space-y-3 my-6">
               <Video className="w-12 h-12 text-red-600 mx-auto opacity-80" />
-              <h3 className="font-black text-base">इस श्रेणी में कोई वीडियो नहीं मिला</h3>
-              <p
-                className={`text-xs max-w-md mx-auto ${
-                  darkMode ? 'text-stone-400' : 'text-slate-500'
-                }`}
-              >
-                {searchQuery
-                  ? `"${searchQuery}" से मेल खाने वाला कोई पब्लिश्ड वीडियो उपलब्ध नहीं है।`
-                  : 'अभी इस कैटेगरी में कोई वीडियो उपलब्ध नहीं है।'}
-              </p>
+              <h3 className="font-black text-base">इस श्रेणी में कोई वीडियो उपलब्ध नहीं है</h3>
               <button
                 type="button"
                 onClick={() => {
@@ -1715,14 +1946,12 @@ export function LiveClassesView({ onOpenVip }: LiveClassesViewProps) {
                     {/* 16:9 Thumbnail */}
                     {renderThumbnail(cls, false)}
 
-                    {/* Below Thumbnail: Avatar + Title/Metadata + 3-Dot Menu (YouTube Exact Layout) */}
+                    {/* Below Thumbnail: Avatar + Title/Metadata + 3-Dot Menu */}
                     <div className="flex items-start gap-3 px-3 sm:px-1 pt-3">
-                      {/* Channel / Teacher Avatar */}
                       <div className="w-10 h-10 rounded-full bg-gradient-to-br from-red-600 to-amber-600 text-white font-black text-sm flex items-center justify-center shrink-0 mt-0.5 shadow-xs">
                         {cls.teacherName?.charAt(0) || 'R'}
                       </div>
 
-                      {/* Title & Metadata */}
                       <div className="flex-1 min-w-0">
                         <h3 className="font-bold text-sm sm:text-[15px] leading-snug line-clamp-2 group-hover:text-red-600 transition-colors">
                           {cls.title}
@@ -1746,7 +1975,6 @@ export function LiveClassesView({ onOpenVip }: LiveClassesViewProps) {
                         </div>
                       </div>
 
-                      {/* Three-Dot (⋮) Menu Button */}
                       <button
                         type="button"
                         onClick={(e) => {
@@ -1812,14 +2040,17 @@ export function LiveClassesView({ onOpenVip }: LiveClassesViewProps) {
           <div
             onClick={(e) => e.stopPropagation()}
             className={`w-full sm:max-w-sm rounded-t-3xl sm:rounded-3xl p-4 space-y-2 shadow-2xl ${
-              darkMode ? 'bg-stone-900 text-white border border-stone-800' : 'bg-white text-slate-900'
+              darkMode
+                ? 'bg-stone-900 text-white border border-stone-800'
+                : 'bg-white text-slate-900'
             }`}
           >
             <div className="w-10 h-1.5 bg-slate-300 dark:bg-stone-700 rounded-full mx-auto mb-2 sm:hidden" />
             <div className="pb-2 border-b border-slate-200 dark:border-stone-800">
               <h4 className="font-black text-xs sm:text-sm line-clamp-1">{menuOpenClass.title}</h4>
               <p className="text-[11px] text-slate-500 dark:text-stone-400">
-                {menuOpenClass.teacherName} • {menuOpenClass.subjectName} • {menuOpenClass.duration || '45:20'}
+                {menuOpenClass.teacherName} • {menuOpenClass.subjectName} •{' '}
+                {menuOpenClass.duration || '45:20'}
               </p>
             </div>
 
@@ -1861,7 +2092,9 @@ export function LiveClassesView({ onOpenVip }: LiveClassesViewProps) {
             >
               <ThumbsUp className="w-4 h-4 text-blue-500" />
               <span>
-                {interactions[menuOpenClass.id]?.liked ? 'लाइक हटाएं (Unlike)' : 'वीडियो लाइक करें (Like)'}
+                {interactions[menuOpenClass.id]?.liked
+                  ? 'लाइक हटाएं (Unlike)'
+                  : 'वीडियो लाइक करें (Like)'}
               </span>
             </button>
 
@@ -1881,7 +2114,10 @@ export function LiveClassesView({ onOpenVip }: LiveClassesViewProps) {
               <button
                 type="button"
                 onClick={() => {
-                  saveInteraction(menuOpenClass.id, { watchProgressSeconds: 0, completed: false });
+                  saveInteraction(menuOpenClass.id, {
+                    watchProgressSeconds: 0,
+                    completed: false
+                  });
                   setSpeedToast('वॉच हिस्ट्री प्रोग्रेस रीसेट कर दी गई');
                   setTimeout(() => setSpeedToast(''), 2000);
                   setMenuOpenClass(null);
@@ -1928,7 +2164,9 @@ export function LiveClassesView({ onOpenVip }: LiveClassesViewProps) {
                   className="w-full min-h-[40px] px-3 py-2 rounded-xl flex items-center gap-3 text-xs font-bold text-amber-500 hover:bg-slate-100 dark:hover:bg-stone-800 cursor-pointer"
                 >
                   <Pin className="w-4 h-4" />
-                  <span>{menuOpenClass.featured ? 'फीचर्ड से हटाएं' : '⭐ फीचर्ड में पिन करें'}</span>
+                  <span>
+                    {menuOpenClass.featured ? 'फीचर्ड से हटाएं' : '⭐ फीचर्ड में पिन करें'}
+                  </span>
                 </button>
               </div>
             )}
@@ -2025,22 +2263,22 @@ export function LiveClassesView({ onOpenVip }: LiveClassesViewProps) {
 
             <div className="bg-stone-950 border border-stone-800 rounded-2xl p-3 flex items-center justify-between">
               <div>
-                <h5 className="font-black text-xs text-white">⚡ डेटा सेवर / लो-नेटवर्क मोड</h5>
-                <p className="text-[10px] text-stone-400">कम डेटा में बिना बफरिंग के स्मूथ प्लेबैक</p>
+                <h5 className="font-black text-xs text-white">
+                  ⚡ स्मूथ एचडी प्लेबैक (Zero-Stutter Engine)
+                </h5>
+                <p className="text-[10px] text-stone-400">
+                  बिना रुके लगातार वीडियो और बोर्ड लेक्चर चलाने के लिए ऑप्टिमाइज़्ड
+                </p>
               </div>
-              <button
-                type="button"
-                onClick={() => setDataSaverMode(!dataSaverMode)}
-                className={`px-3 py-1.5 rounded-xl text-xs font-black cursor-pointer ${
-                  dataSaverMode ? 'bg-emerald-600 text-white' : 'bg-stone-800 text-stone-300'
-                }`}
-              >
-                {dataSaverMode ? '✓ ऑन' : 'ऑफ'}
-              </button>
+              <span className="px-2.5 py-1 rounded-xl text-[10px] font-black bg-emerald-600/20 text-emerald-400 border border-emerald-500/30">
+                ✓ सक्रिय
+              </span>
             </div>
 
             <div className="space-y-2">
-              <div className="text-xs font-bold text-amber-400">प्लेबैक स्पीड (Playback Speed):</div>
+              <div className="text-xs font-bold text-amber-400">
+                प्लेबैक स्पीड (Playback Speed):
+              </div>
               <div className="grid grid-cols-7 gap-1.5">
                 {SPEED_OPTIONS.map((spd) => (
                   <button

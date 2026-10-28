@@ -47,7 +47,7 @@ export const defaultBanners: BannerItem[] = [
 ];
 
 export const defaultLiveClasses: LiveClass[] = [
-  // 1. VVI & TRICK CLASSES PLAYLIST (विशेष रामबाण)
+  // 1. VVI & EXAM PREPARATION (परीक्षा की तैयारी & मॉडल पेपर)
   {
     id: 'live_vvi_1',
     title: '🔥 10th बोर्ड परीक्षा ऑल सब्जेक्ट 100 VVI ऑब्जेक्टिव रामबाण ट्रिक क्लास',
@@ -55,7 +55,9 @@ export const defaultLiveClasses: LiveClass[] = [
     videoSourceType: 'ai_board',
     contentType: 'live',
     category: 'Live',
+    libraryCategory: 'Exam Preparation',
     subjectName: 'VVI & Trick Classes',
+    chapterName: 'संपूर्ण बिहार बोर्ड परीक्षा 2026',
     playlistId: 'vvi_tricks',
     teacherName: 'राज सर',
     scheduledAt: 'आज शाम 7:00 बजे',
@@ -80,7 +82,9 @@ export const defaultLiveClasses: LiveClass[] = [
     videoSourceType: 'ai_board',
     contentType: 'short',
     category: 'Shorts',
-    subjectName: 'VVI & Trick Classes',
+    libraryCategory: 'Objective & Subjective',
+    subjectName: 'गणित',
+    chapterName: 'त्रिकोणमिति का परिचय',
     playlistId: 'vvi_tricks',
     teacherName: 'राज सर',
     scheduledAt: 'कल सुबह 10:00 बजे',
@@ -99,7 +103,7 @@ export const defaultLiveClasses: LiveClass[] = [
     publishedAt: new Date(Date.now() - 3600000 * 12).toISOString()
   },
 
-  // 2. HINDI PLAYLIST (गोधूलि & वर्णिका)
+  // 2. HINDI LIBRARY (हिन्दी - गोधूलि & वर्णिका)
   {
     id: 'live_hindi_1',
     title: '📖 हिन्दी (गोधूलि) पाठ 1: श्रम विभाजन और जाति प्रथा - संपूर्ण व्याख्या एवं टॉप 50 VVI प्रश्न',
@@ -107,7 +111,9 @@ export const defaultLiveClasses: LiveClass[] = [
     videoSourceType: 'ai_board',
     contentType: 'live',
     category: 'Live',
+    libraryCategory: 'Chapter-wise Lectures',
     subjectName: 'हिन्दी',
+    chapterName: 'श्रम विभाजन और जाति प्रथा',
     playlistId: 'hindi',
     teacherName: 'राज सर',
     scheduledAt: 'आज दोपहर 3:00 बजे',
@@ -132,7 +138,9 @@ export const defaultLiveClasses: LiveClass[] = [
     videoSourceType: 'ai_board',
     contentType: 'recorded',
     category: 'Classes',
+    libraryCategory: 'Objective & Subjective',
     subjectName: 'हिन्दी',
+    chapterName: 'दही वाली मंगम्मा',
     playlistId: 'hindi',
     teacherName: 'राज सर',
     scheduledAt: 'कल शाम 5:00 बजे',
@@ -151,15 +159,17 @@ export const defaultLiveClasses: LiveClass[] = [
     publishedAt: new Date(Date.now() - 3600000 * 24).toISOString()
   },
 
-  // 3. MATH PLAYLIST (गणित)
+  // 3. MATHEMATICS LIBRARY (गणित)
   {
     id: 'live_math_1',
-    title: '📐 BSEB 10th गणित - वास्तविक संख्याएँ (Real Numbers) मैराथन क्लास',
+    title: '📐 BSEB 10th गणित - वास्तविक संख्याएँ (Real Numbers) संपूर्ण कोर्स मैराथन',
     youtubeUrl: 'ai_studio_lecture',
     videoSourceType: 'ai_board',
     contentType: 'live',
     category: 'Live',
+    libraryCategory: 'Complete Courses',
     subjectName: 'गणित',
+    chapterName: 'वास्तविक संख्याएँ',
     playlistId: 'math',
     teacherName: 'राज सर',
     scheduledAt: 'आज शाम 8:00 बजे',
@@ -179,12 +189,14 @@ export const defaultLiveClasses: LiveClass[] = [
   },
   {
     id: 'live_math_2',
-    title: '📐 गणित - त्रिकोणमिति (Trigonometry) के 5 नंबर वाले सभी सिद्ध करने वाले प्रश्न',
+    title: '📐 गणित - त्रिकोणमिति (Trigonometry) के 5 नंबर वाले सभी सिद्ध करने वाले प्रश्न (PYQ 2018-2025)',
     youtubeUrl: 'ai_studio_lecture',
     videoSourceType: 'ai_board',
     contentType: 'crash_course',
     category: 'Crash Course',
+    libraryCategory: 'Previous-Year Questions',
     subjectName: 'गणित',
+    chapterName: 'त्रिकोणमिति का परिचय',
     playlistId: 'math',
     teacherName: 'राज सर',
     scheduledAt: 'परसों शाम 7:30 बजे',
@@ -198,20 +210,22 @@ export const defaultLiveClasses: LiveClass[] = [
     viewsCount: 4190,
     likesCount: 890,
     isVip: true,
-    description: 'त्रिकोणमितीय सर्वसमिकाएं (sin²θ + cos²θ = 1) तथा 8.4 के सिद्ध करने वाले सभी महत्वपूर्ण दीर्घ उत्तरीय प्रश्न।',
+    description: 'त्रिकोणमितीय सर्वसमिकाएं (sin²θ + cos²θ = 1) तथा 8.4 के सिद्ध करने वाले पिछले वर्षों के सभी महत्वपूर्ण दीर्घ उत्तरीय प्रश्न।',
     createdAt: new Date(Date.now() - 3600000 * 36).toISOString(),
     publishedAt: new Date(Date.now() - 3600000 * 36).toISOString()
   },
 
-  // 4. SCIENCE PLAYLIST (विज्ञान)
+  // 4. SCIENCE LIBRARY (विज्ञान)
   {
     id: 'live_science_1',
-    title: '🔬 विज्ञान - प्रकाश का परावर्तन तथा अपवर्तन संपूर्ण महा-रिवीजन',
+    title: '🔬 विज्ञान - प्रकाश का परावर्तन तथा अपवर्तन संपूर्ण महा-रिवीजन क्लास',
     youtubeUrl: 'ai_studio_lecture',
     videoSourceType: 'ai_board',
     contentType: 'crash_course',
     category: 'Crash Course',
+    libraryCategory: 'Revision Classes',
     subjectName: 'विज्ञान',
+    chapterName: 'प्रकाश – परावर्तन तथा अपवर्तन',
     playlistId: 'science',
     teacherName: 'के.के. मैम',
     scheduledAt: 'कल शाम 6:30 बजे',
@@ -231,12 +245,14 @@ export const defaultLiveClasses: LiveClass[] = [
   },
   {
     id: 'live_science_2',
-    title: '🔬 विज्ञान - रासायनिक अभिक्रियाएँ एवं समीकरण VVI वस्तुनिष्ठ प्रश्न',
+    title: '🔬 विज्ञान - बिहार बोर्ड ऑफिशियल मॉडल पेपर हल (80/80 VVI प्रश्नोत्तर)',
     youtubeUrl: 'ai_studio_lecture',
     videoSourceType: 'ai_board',
     contentType: 'recorded',
     category: 'Classes',
+    libraryCategory: 'Model Paper Solutions',
     subjectName: 'विज्ञान',
+    chapterName: 'रासायनिक अभिक्रियाएँ एवं समीकरण',
     playlistId: 'science',
     teacherName: 'के.के. मैम',
     scheduledAt: 'कल सुबह 9:00 बजे',
@@ -250,12 +266,12 @@ export const defaultLiveClasses: LiveClass[] = [
     viewsCount: 2940,
     likesCount: 580,
     isVip: false,
-    description: 'संयोजन, वियोजन, विस्थापन एवं द्विविस्थापन अभिक्रियाएं, ऑक्सीकरण एवं अपचयन के समीकरणों को संतुलित करने का नियम।',
+    description: 'संयोजन, वियोजन, विस्थापन एवं द्विविस्थापन अभिक्रियाएं, ऑक्सीकरण एवं अपचयन के समीकरणों को संतुलित करने का नियम तथा मॉडल पेपर हल।',
     createdAt: new Date(Date.now() - 3600000 * 60).toISOString(),
     publishedAt: new Date(Date.now() - 3600000 * 60).toISOString()
   },
 
-  // 5. SANSKRIT PLAYLIST (संस्कृत)
+  // 5. SANSKRIT LIBRARY (संस्कृत)
   {
     id: 'live_sanskrit_1',
     title: '🪔 संस्कृत (पीयूषम्) - मङ्गलम् पाठ सम्पूर्ण श्लोक अर्थ, अनुवाद एवं VVI प्रश्न',
@@ -263,7 +279,9 @@ export const defaultLiveClasses: LiveClass[] = [
     videoSourceType: 'ai_board',
     contentType: 'recorded',
     category: 'Classes',
+    libraryCategory: 'Chapter-wise Lectures',
     subjectName: 'संस्कृत',
+    chapterName: 'मङ्गलम्',
     playlistId: 'sanskrit',
     teacherName: 'पंडित जी सर',
     scheduledAt: 'आज शाम 6:00 बजे',
@@ -282,7 +300,7 @@ export const defaultLiveClasses: LiveClass[] = [
     publishedAt: new Date(Date.now() - 3600000 * 72).toISOString()
   },
 
-  // 6. SOCIAL SCIENCE PLAYLIST (सामाजिक विज्ञान)
+  // 6. SOCIAL SCIENCE LIBRARY (सामाजिक विज्ञान)
   {
     id: 'live_sst_1',
     title: '🏛️ सामाजिक विज्ञान - यूरोप में राष्ट्रवाद और भारत में राष्ट्रवाद महा-रिवीजन',
@@ -290,7 +308,9 @@ export const defaultLiveClasses: LiveClass[] = [
     videoSourceType: 'ai_board',
     contentType: 'crash_course',
     category: 'Crash Course',
+    libraryCategory: 'Revision Classes',
     subjectName: 'सामाजिक विज्ञान',
+    chapterName: 'यूरोप में राष्ट्रवाद',
     playlistId: 'social_science',
     teacherName: 'वर्मा सर',
     scheduledAt: 'कल शाम 4:00 बजे',
@@ -307,6 +327,62 @@ export const defaultLiveClasses: LiveClass[] = [
     description: 'मेजिनी, काउंट काबूर, गैरीबाल्डी और बिस्मार्क की भूमिका, जलियांवाला बाग हत्याकांड, असहयोग एवं सविनय अवज्ञा आंदोलन।',
     createdAt: new Date(Date.now() - 3600000 * 84).toISOString(),
     publishedAt: new Date(Date.now() - 3600000 * 84).toISOString()
+  },
+
+  // 7. ENGLISH LIBRARY (अंग्रेजी - Panorama Part 2 & Grammar)
+  {
+    id: 'live_eng_1',
+    title: '🔤 अंग्रेजी (Panorama Part-2) Chapter 1: The Pace for Living - हिंदी अर्थ, Summary & VVI MCQs',
+    youtubeUrl: 'ai_studio_lecture',
+    videoSourceType: 'ai_board',
+    contentType: 'recorded',
+    category: 'Classes',
+    libraryCategory: 'Complete Courses',
+    subjectName: 'अंग्रेजी',
+    chapterName: 'The Pace for Living (R.C. Hutchinson)',
+    playlistId: 'english',
+    teacherName: 'आर्यन सर',
+    scheduledAt: 'आज शाम 5:30 बजे',
+    isLive: false,
+    streamStatus: 'ended',
+    publicationStatus: 'published',
+    featured: false,
+    displayOrder: 11,
+    duration: '39:15',
+    durationSeconds: 2355,
+    viewsCount: 2780,
+    likesCount: 520,
+    isVip: false,
+    description: '【 प्रश्न 】 : Who is the author of "The Pace for Living"?\n【 उत्तर 】 : R.C. Hutchinson (आर. सी. हचिन्सन) ने आधुनिक मानव के तेज रफ्तार जीवन और Corn-merchant के चरित्र का सुंदर वर्णन किया है।\n★ मुख्य बिंदु: बिहार बोर्ड कक्षा 10वीं अंग्रेजी में लेखक के नाम और हिंदी से अंग्रेजी अनुवाद (Translation) से सीधे 15 अंक के प्रश्न आते हैं।',
+    createdAt: new Date(Date.now() - 3600000 * 96).toISOString(),
+    publishedAt: new Date(Date.now() - 3600000 * 96).toISOString()
+  },
+  {
+    id: 'live_eng_2',
+    title: '🔤 BSEB 10th English Grammar, Translation & Letter Writing (PYQ + Model Paper Solution)',
+    youtubeUrl: 'ai_studio_lecture',
+    videoSourceType: 'ai_board',
+    contentType: 'crash_course',
+    category: 'Crash Course',
+    libraryCategory: 'Model Paper Solutions',
+    subjectName: 'अंग्रेजी',
+    chapterName: 'English Grammar & Translation',
+    playlistId: 'english',
+    teacherName: 'आर्यन सर',
+    scheduledAt: 'कल सुबह 11:00 बजे',
+    isLive: false,
+    streamStatus: 'ended',
+    publicationStatus: 'published',
+    featured: false,
+    displayOrder: 12,
+    duration: '42:30',
+    durationSeconds: 2550,
+    viewsCount: 3140,
+    likesCount: 640,
+    isVip: false,
+    description: 'बिहार बोर्ड कक्षा 10वीं अंग्रेजी व्याकरण (Tense, Voice, Narration, Preposition), हिंदी से अंग्रेजी अनुवाद और Application/Letter लिखने का सबसे आसान तरीका।',
+    createdAt: new Date(Date.now() - 3600000 * 108).toISOString(),
+    publishedAt: new Date(Date.now() - 3600000 * 108).toISOString()
   }
 ];
 
@@ -551,6 +627,21 @@ const getMergedSubjects = (baseSubjects: Record<string, Subject>) => {
   return merged;
 };
 
+const normalizeLiveClassItem = (raw: any): LiveClass => {
+  const id = String(raw?.id || 'live_' + Math.random().toString(36).substring(2, 9));
+  return {
+    ...raw,
+    id,
+    title: String(raw?.title || 'बिहार बोर्ड कक्षा 10वीं विशेष क्लास'),
+    youtubeUrl: String(raw?.youtubeUrl || raw?.playbackUrl || ''),
+    playbackUrl: String(raw?.playbackUrl || raw?.youtubeUrl || ''),
+    subjectName: String(raw?.subjectName || raw?.subject || 'सामान्य'),
+    teacherName: String(raw?.teacherName || raw?.teacher || 'राज सर'),
+    scheduledAt: String(raw?.scheduledAt || 'रिकॉर्डेड क्लास'),
+    isLive: Boolean(raw?.isLive)
+  };
+};
+
 export const DataProvider = ({ children }: any) => {
   const { user } = useAuth();
   const [subjects, setSubjects] = useState<Record<string, Subject>>(() => getMergedSubjects(defaultSubjectsData));
@@ -584,13 +675,21 @@ export const DataProvider = ({ children }: any) => {
         const staticLive = data.live_classes || defaultLiveClasses;
         setLiveClasses((prev) => {
           const map = new Map<string, LiveClass>();
-          staticLive.forEach((c: LiveClass) => map.set(c.id, c));
-          prev.forEach(c => map.set(c.id, c));
+          staticLive.forEach((c: LiveClass) => {
+            if (c && c.id) map.set(c.id, normalizeLiveClassItem(c));
+          });
+          prev.forEach(c => {
+            if (c && c.id) map.set(c.id, normalizeLiveClassItem(c));
+          });
           try {
             const cached = localStorage.getItem('bseb_live_classes_cache');
             if (cached) {
               const parsed = JSON.parse(cached);
-              if (Array.isArray(parsed)) parsed.forEach((c: LiveClass) => map.set(c.id, c));
+              if (Array.isArray(parsed)) {
+                parsed.forEach((c: LiveClass) => {
+                  if (c && c.id) map.set(c.id, normalizeLiveClassItem(c));
+                });
+              }
             }
           } catch {}
           return Array.from(map.values()).sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
@@ -809,13 +908,15 @@ export const DataProvider = ({ children }: any) => {
         const parsed = JSON.parse(cached);
         if (Array.isArray(parsed) && parsed.length > 0) {
           const map = new Map<string, LiveClass>();
-          defaultLiveClasses.forEach(c => map.set(c.id, c));
-          parsed.forEach(c => map.set(c.id, c));
+          defaultLiveClasses.forEach(c => map.set(c.id, normalizeLiveClassItem(c)));
+          parsed.forEach(c => {
+            if (c && c.id) map.set(c.id, normalizeLiveClassItem(c));
+          });
           return Array.from(map.values()).sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
         }
       }
     } catch {}
-    return defaultLiveClasses;
+    return defaultLiveClasses.map(normalizeLiveClassItem);
   });
 
   // Real-time listener for live_classes
@@ -824,14 +925,18 @@ export const DataProvider = ({ children }: any) => {
       const unsub = onSnapshot(collection(db, 'live_classes'), (snapshot) => {
         const classesFromDb: LiveClass[] = [];
         snapshot.forEach((docSnap) => {
-          classesFromDb.push({ id: docSnap.id, ...(docSnap.data() as any) });
+          classesFromDb.push(normalizeLiveClassItem({ id: docSnap.id, ...(docSnap.data() as any) }));
         });
         
         setLiveClasses((prev) => {
           const map = new Map<string, LiveClass>();
-          defaultLiveClasses.forEach(c => map.set(c.id, c));
-          prev.forEach(c => map.set(c.id, c));
-          classesFromDb.forEach(c => map.set(c.id, c));
+          defaultLiveClasses.forEach(c => map.set(c.id, normalizeLiveClassItem(c)));
+          prev.forEach(c => {
+            if (c && c.id) map.set(c.id, normalizeLiveClassItem(c));
+          });
+          classesFromDb.forEach(c => {
+            if (c && c.id) map.set(c.id, normalizeLiveClassItem(c));
+          });
           const combined = Array.from(map.values()).sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
           try {
             localStorage.setItem('bseb_live_classes_cache', JSON.stringify(combined));
