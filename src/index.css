@@ -44,3 +44,59 @@
   -ms-overflow-style: none;
   scrollbar-width: none;
 }
+
+/* ==========================================================================
+   CONTENT PROTECTION SYSTEM (ANTI-COPY & ANTI-SCREENSHOT FOR NON-ADMINS)
+   ========================================================================== */
+.protected-content-lock,
+.protected-content-lock body,
+.protected-content-lock #root {
+  -webkit-user-select: none !important;
+  -moz-user-select: none !important;
+  -ms-user-select: none !important;
+  user-select: none !important;
+  -webkit-touch-callout: none !important;
+}
+
+.protected-content-lock input,
+.protected-content-lock textarea {
+  -webkit-user-select: text !important;
+  -moz-user-select: text !important;
+  -ms-user-select: text !important;
+  user-select: text !important;
+}
+
+.protected-content-lock img,
+.protected-content-lock svg,
+.protected-content-lock video {
+  -webkit-user-drag: none !important;
+  user-drag: none !important;
+  pointer-events: auto;
+}
+
+/* Print / PDF Screen capture protection */
+@media print {
+  .protected-content-lock body,
+  .protected-content-lock #root {
+    display: none !important;
+    visibility: hidden !important;
+  }
+  .protected-content-lock::before {
+    content: "⚠️ सुरक्षा चेतावनी: इस ऐप्लिकेशन की सामग्री का स्क्रीनशॉट या प्रिंट लेना पूर्णतः प्रतिबंधित है। केवल अधिकृत एडमिन को अनुमति है।";
+    display: block !important;
+    position: fixed;
+    top: 30%;
+    left: 5%;
+    right: 5%;
+    font-size: 22px;
+    font-weight: 900;
+    color: #b91c1c;
+    text-align: center;
+    border: 3px solid #b91c1c;
+    padding: 30px;
+    background: #fff;
+    border-radius: 16px;
+    z-index: 999999;
+  }
+}
+

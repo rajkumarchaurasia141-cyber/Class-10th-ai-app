@@ -35,6 +35,7 @@ import { AdminDailyTestPage } from './components/AdminDailyTestPage';
 import { StudentDailyTestPage } from './components/StudentDailyTestPage';
 import { triggerAd } from './utils/adManager';
 import { recordAppDownload, syncUserIdentityWithDownload } from './services/downloadTracker';
+import { ContentProtectionGuard } from './components/ContentProtectionGuard';
 
 // Password check logic function as requested
 function checkAdminSecret(enteredPass: string): boolean {
@@ -133,6 +134,9 @@ function MainApp() {
   const [adminPasswordInput, setAdminPasswordInput] = useState('');
   const [adminPasswordError, setAdminPasswordError] = useState('');
 
+  // Effective Admin privilege check (Gmail Admin OR Verified Secret PIN Admin)
+  const isEffectiveAdmin = Boolean(isAdmin || adminVerified);
+
   const mainScrollRef = React.useRef<HTMLElement>(null);
 
   // Auto-scroll to top when active tab or subject changes so user NEVER has to scroll up!
@@ -177,35 +181,43 @@ function MainApp() {
   if (!user) {
     if (activeTab === 'daily_test' || isDailyTestQuery) {
       return (
-        <StudentDailyTestPage 
-          onBack={() => {
-            try { window.history.pushState({}, '', '/'); } catch (e) {}
-            setActiveTab('home');
-          }}
-          onNavigateToAdmin={() => {
-            try { window.history.pushState({}, '', '/admin/daily-test'); } catch (e) {}
-            setActiveTab('admin_daily_test');
-          }}
-        />
+        <ContentProtectionGuard isAdmin={false}>
+          <StudentDailyTestPage 
+            onBack={() => {
+              try { window.history.pushState({}, '', '/'); } catch (e) {}
+              setActiveTab('home');
+            }}
+            onNavigateToAdmin={() => {
+              try { window.history.pushState({}, '', '/admin/daily-test'); } catch (e) {}
+              setActiveTab('admin_daily_test');
+            }}
+          />
+        </ContentProtectionGuard>
       );
     }
 
     if (activeTab === 'admin_daily_test' || isAdminDailyTestQuery) {
       return (
-        <AdminDailyTestPage 
-          onBack={() => {
-            try { window.history.pushState({}, '', '/'); } catch (e) {}
-            setActiveTab('home');
-          }}
-          onNavigateToStudent={() => {
-            try { window.history.pushState({}, '', '/daily-test'); } catch (e) {}
-            setActiveTab('daily_test');
-          }}
-        />
+        <ContentProtectionGuard isAdmin={false}>
+          <AdminDailyTestPage 
+            onBack={() => {
+              try { window.history.pushState({}, '', '/'); } catch (e) {}
+              setActiveTab('home');
+            }}
+            onNavigateToStudent={() => {
+              try { window.history.pushState({}, '', '/daily-test'); } catch (e) {}
+              setActiveTab('daily_test');
+            }}
+          />
+        </ContentProtectionGuard>
       );
     }
 
-    return <LoginScreen />;
+    return (
+      <ContentProtectionGuard isAdmin={false}>
+        <LoginScreen />
+      </ContentProtectionGuard>
+    );
   }
 
   const handleDrawerNavigate = (view: string, extra?: any) => {
@@ -261,7 +273,8 @@ function MainApp() {
   };
 
   return (
-    <div className="min-h-screen w-full bg-[#FFF4D6] flex flex-col selection:bg-[#D8B45A]/30 overflow-x-hidden text-[#222222]">
+    <ContentProtectionGuard isAdmin={isEffectiveAdmin}>
+      <div className="min-h-screen w-full bg-[#FFF4D6] flex flex-col selection:bg-[#D8B45A]/30 overflow-x-hidden text-[#222222]">
       {/* Edge-to-Edge Full-Width Responsive App Container */}
       <div className="w-full bg-[#FFF4D6] min-h-screen flex flex-col relative overflow-x-hidden">
         {/* Top Header Bar with Hamburger Menu & Notifications */}
@@ -553,6 +566,7 @@ function MainApp() {
         <InstallAppBanner />
       </div>
     </div>
+    </ContentProtectionGuard>
   );
 }
 

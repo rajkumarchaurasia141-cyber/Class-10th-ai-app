@@ -7,31 +7,45 @@ import {
   CheckCircle2, 
   Clock, 
   Check, 
-  AlertCircle,
   Lightbulb,
-  Bookmark,
-  Share2,
   Copy,
   ChevronRight,
+  ChevronLeft,
   Volume2,
-  VolumeX
+  VolumeX,
+  FileText
 } from 'lucide-react';
 import { speakHindiText, stopHindiSpeech } from '../utils/speechHelper';
+import { useAuth } from '../context/AuthContext';
+import {
+  getMathChapterExercises,
+  cleanMathAndMarkdownText,
+} from '../data/mathNcertExercisesData';
 
 interface ChapterContentRendererProps {
   activeTab: 'intro' | 'notes' | 'tips' | 'qna' | 'mcq';
   currentChapter: any;
+  isMathSubject?: boolean;
   onStartPaidTest: () => void;
 }
 
 export const ChapterContentRenderer: React.FC<ChapterContentRendererProps> = ({
   activeTab,
   currentChapter,
+  isMathSubject = false,
   onStartPaidTest
 }) => {
+  const { isAdmin } = useAuth();
   const [selectedAnswers, setSelectedAnswers] = useState<Record<number, number>>({});
   const [copiedIndex, setCopiedIndex] = useState<number | null>(null);
   const [isPlayingAudio, setIsPlayingAudio] = useState(false);
+  const [selectedExerciseIndex, setSelectedExerciseIndex] = useState<number>(0);
+
+  // Reset selected exercise & MCQ answers when switching chapters
+  useEffect(() => {
+    setSelectedExerciseIndex(0);
+    setSelectedAnswers({});
+  }, [currentChapter?.chapter_no]);
 
   // Stop speech when switching chapters or tabs
   useEffect(() => {
@@ -40,7 +54,15 @@ export const ChapterContentRenderer: React.FC<ChapterContentRendererProps> = ({
     return () => {
       stopHindiSpeech();
     };
-  }, [activeTab, currentChapter]);
+  }, [activeTab, currentChapter, selectedExerciseIndex]);
+
+  const mathChapterExercises = isMathSubject
+    ? getMathChapterExercises(Number(currentChapter?.chapter_no) || 1)
+    : undefined;
+
+  const exercisesList = mathChapterExercises?.exercises || [];
+  const activeExercise =
+    exercisesList[selectedExerciseIndex] || exercisesList[0] || null;
 
   const handleReadAloud = () => {
     if (isPlayingAudio) {
@@ -50,15 +72,22 @@ export const ChapterContentRenderer: React.FC<ChapterContentRendererProps> = ({
     }
 
     let textToRead = '';
-    if (activeTab === 'intro') {
-      textToRead = currentChapter?.intro_hindi || currentChapter?.chapter_name_hindi || '';
+    if (isMathSubject && activeTab === 'qna' && activeExercise) {
+      textToRead = `${activeExercise.exerciseTitle}. ${activeExercise.questions
+        .map((q) => `${q.qNo}: ${q.question}. हल: ${q.solution.join(' ')} ${q.answer}`)
+        .join('. ')}`;
+    } else if (activeTab === 'intro') {
+      textToRead = cleanMathAndMarkdownText(currentChapter?.intro_hindi || currentChapter?.chapter_name_hindi || '');
     } else if (activeTab === 'notes') {
-      textToRead = currentChapter?.notes_hindi || '';
+      textToRead = cleanMathAndMarkdownText(currentChapter?.notes_hindi || '');
     } else if (activeTab === 'tips') {
-      textToRead = Array.isArray(currentChapter?.tips) ? currentChapter.tips.join('. ') : (currentChapter?.tips || '');
+      textToRead = cleanMathAndMarkdownText(
+        Array.isArray(currentChapter?.tips) ? currentChapter.tips.join('. ') : (currentChapter?.topper_tips || currentChapter?.tips || '')
+      );
     } else if (activeTab === 'qna') {
-      textToRead = Array.isArray(currentChapter?.important_qna) 
-        ? currentChapter.important_qna.map((q: any) => `प्रश्न: ${q.question}. उत्तर: ${q.answer}`).join('. ') 
+      const qaList = currentChapter?.subjective_qa || currentChapter?.important_qna || [];
+      textToRead = Array.isArray(qaList) 
+        ? qaList.map((q: any) => `प्रश्न: ${cleanMathAndMarkdownText(q.question)}. उत्तर: ${cleanMathAndMarkdownText(q.answer)}`).join('. ') 
         : '';
     }
 
@@ -75,16 +104,37 @@ export const ChapterContentRenderer: React.FC<ChapterContentRendererProps> = ({
   };
 
   const handleCopyQA = (text: string, idx: number) => {
+    if (!isAdmin) {
+      alert('⚠️ सामग्री कॉपी करना केवल एडमिन के लिए अनुमत है।');
+      return;
+    }
     navigator.clipboard?.writeText(text);
     setCopiedIndex(idx);
     setTimeout(() => setCopiedIndex(null), 2000);
+  };
+
+  // Helper to highlight terms in quotes or specific keywords after sanitizing raw LaTeX/Markdown
+  const highlightKeywords = (str: any) => {
+    const safeStr = cleanMathAndMarkdownText(str);
+    const parts = safeStr.split(/(['"][^'"]+['"])/g);
+    return parts.map((part, i) => {
+      if ((part.startsWith("'") && part.endsWith("'")) || (part.startsWith('"') && part.endsWith('"'))) {
+        return (
+          <span key={`hl-${i}`} className="font-bold text-rose-800 bg-rose-50 px-1.5 py-0.5 rounded-md mx-0.5 border border-rose-200/60">
+            {part.slice(1, -1)}
+          </span>
+        );
+      }
+      return part;
+    });
   };
 
   // Helper to format general notes text with styled headers, bullet points and highlights
   const renderFormattedNotes = (rawText: string) => {
     if (!rawText) return null;
 
-    const lines = String(rawText).split('\n');
+    const sanitizedText = cleanMathAndMarkdownText(rawText);
+    const lines = String(sanitizedText).split('\n');
     const elements: React.ReactNode[] = [];
     let currentBlock: string[] = [];
 
@@ -95,9 +145,11 @@ export const ChapterContentRenderer: React.FC<ChapterContentRendererProps> = ({
           elements.push(
             <div key={key} className="p-4 sm:p-5 rounded-2xl bg-white border border-slate-200/80 shadow-xs hover:border-slate-300 transition-all leading-relaxed text-slate-800 text-[14.5px] font-normal">
               {String(text || '').split('\n').map((l, lIdx) => {
+                const trimmedLine = l.trim();
+                if (!trimmedLine) return null;
                 // Bullet lines
-                if (l.trim().startsWith('▶') || l.trim().startsWith('•') || l.trim().startsWith('-')) {
-                  const cleanLine = l.replace(/^[▶•\-]\s*/, '');
+                if (trimmedLine.startsWith('▶') || trimmedLine.startsWith('•') || trimmedLine.startsWith('●') || trimmedLine.startsWith('-')) {
+                  const cleanLine = trimmedLine.replace(/^[▶•●\-*]+\s*/, '');
                   return (
                     <div key={`bullet-${lIdx}`} className="flex items-start gap-2.5 my-2">
                       <span className="w-2 h-2 rounded-full bg-rose-500 mt-2 shrink-0"></span>
@@ -109,7 +161,7 @@ export const ChapterContentRenderer: React.FC<ChapterContentRendererProps> = ({
                 }
                 return (
                   <p key={`p-${lIdx}`} className="mb-2 last:mb-0">
-                    {highlightKeywords(l)}
+                    {highlightKeywords(trimmedLine)}
                   </p>
                 );
               })}
@@ -121,7 +173,7 @@ export const ChapterContentRenderer: React.FC<ChapterContentRendererProps> = ({
     };
 
     lines.forEach((line, idx) => {
-      const trimmed = line.trim();
+      const trimmed = cleanMathAndMarkdownText(line.trim());
 
       // Section Banner: 【 ... 】
       if (trimmed.startsWith('【') && trimmed.endsWith('】')) {
@@ -158,18 +210,19 @@ export const ChapterContentRenderer: React.FC<ChapterContentRendererProps> = ({
         return;
       }
 
-      currentBlock.push(line);
+      currentBlock.push(trimmed);
     });
 
     flushCurrentBlock('flush-final');
     return elements;
   };
 
-  // Helper specifically for gorgeous large font design of Chapter Intro & Author context (1-12)
+  // Helper specifically for Chapter Intro & Author context
   const renderIntroContent = (rawText: string) => {
     if (!rawText) return null;
 
-    const lines = String(rawText).split('\n');
+    const sanitizedText = cleanMathAndMarkdownText(rawText);
+    const lines = String(sanitizedText).split('\n');
     const elements: React.ReactNode[] = [];
     let currentParagraphs: string[] = [];
 
@@ -182,9 +235,8 @@ export const ChapterContentRenderer: React.FC<ChapterContentRendererProps> = ({
               {joinedText.split('\n').map((para, pIdx) => {
                 const trimmedPara = para.trim();
                 if (!trimmedPara) return null;
-                // Check if line is a bullet
                 if (trimmedPara.startsWith('●') || trimmedPara.startsWith('•') || trimmedPara.startsWith('-')) {
-                  const cleanText = trimmedPara.replace(/^[●•\-]\s*/, '');
+                  const cleanText = trimmedPara.replace(/^[●•\-*]+\s*/, '');
                   const colonSplit = cleanText.split(/:\s*(.*)/);
                   const label = colonSplit.length > 1 ? colonSplit[0] : '';
                   const rest = colonSplit.length > 1 ? colonSplit[1] : cleanText;
@@ -219,9 +271,8 @@ export const ChapterContentRenderer: React.FC<ChapterContentRendererProps> = ({
     };
 
     lines.forEach((line, idx) => {
-      const trimmed = line.trim();
+      const trimmed = cleanMathAndMarkdownText(line.trim());
 
-      // 1. Top Section Banners: 【 ... 】
       if (trimmed.startsWith('【') && trimmed.endsWith('】')) {
         flushParagraphs(`flush-before-${idx}`);
         const title = trimmed.replace(/[【】]/g, '');
@@ -243,7 +294,6 @@ export const ChapterContentRenderer: React.FC<ChapterContentRendererProps> = ({
         return;
       }
 
-      // 2. Major Headings: "लेखक परिचय:", "पाठ का सारांश एवं मूल संवेदना:", etc.
       const isIntroHeading = 
         trimmed === 'लेखक परिचय:' || 
         trimmed === 'लेखक परिचय' ||
@@ -288,28 +338,11 @@ export const ChapterContentRenderer: React.FC<ChapterContentRendererProps> = ({
         return;
       }
 
-      currentParagraphs.push(line);
+      currentParagraphs.push(trimmed);
     });
 
     flushParagraphs('flush-final-intro');
     return elements;
-  };
-
-  // Helper to highlight terms in quotes or specific keywords
-  const highlightKeywords = (str: any) => {
-    const safeStr = typeof str === 'string' ? str : String(str || '');
-    // Regex for single or double quotes
-    const parts = safeStr.split(/(['"][^'"]+['"])/g);
-    return parts.map((part, i) => {
-      if ((part.startsWith("'") && part.endsWith("'")) || (part.startsWith('"') && part.endsWith('"'))) {
-        return (
-          <span key={`hl-${i}`} className="font-bold text-rose-800 bg-rose-50 px-1.5 py-0.5 rounded-md mx-0.5 border border-rose-200/60">
-            {part.slice(1, -1)}
-          </span>
-        );
-      }
-      return part;
-    });
   };
 
   return (
@@ -325,7 +358,7 @@ export const ChapterContentRenderer: React.FC<ChapterContentRendererProps> = ({
               Class 10th BSEB फुल सिलेबस
             </span>
             <h4 className="font-black text-sm sm:text-base tracking-tight text-white mt-0.5">
-              PADHEGA BIHAR — HINDI FULL NOTES
+              {isMathSubject ? 'NCERT गणित — संपूर्ण प्रश्नावली हल' : 'PADHEGA BIHAR — HINDI FULL NOTES'}
             </h4>
           </div>
         </div>
@@ -345,12 +378,12 @@ export const ChapterContentRenderer: React.FC<ChapterContentRendererProps> = ({
       <div className="bg-gradient-to-r from-red-700 via-rose-600 to-amber-600 text-white p-3.5 rounded-2xl shadow-md flex items-center justify-between">
         <div className="flex items-center gap-2.5">
           <div className={`w-9 h-9 rounded-xl bg-white/20 flex items-center justify-center ${isPlayingAudio ? 'animate-pulse bg-white text-red-700' : 'text-white'}`}>
-            {isPlayingAudio ? <Volume2 className="w-5 h-5" /> : <Volume2 className="w-5 h-5" />}
+            <Volume2 className="w-5 h-5" />
           </div>
           <div>
-            <h5 className="font-extrabold text-xs sm:text-sm">ऑडियो नोट्स शिक्षक (AI Voice Teacher)</h5>
+            <h5 className="font-extrabold text-xs sm:text-sm">ऑडियो नोट्स शिक्षक (Voice Teacher)</h5>
             <p className="text-[11px] text-amber-100">
-              {isPlayingAudio ? 'ऑडियो बज रहा है... ध्यान से सुनें' : 'बटन दबाकर इस पाठ को बोलकर सुनें'}
+              {isPlayingAudio ? 'ऑडियो बज रहा है... ध्यान से सुनें' : 'बटन दबाकर इस प्रश्नावली / पाठ को बोलकर सुनें'}
             </p>
           </div>
         </div>
@@ -369,16 +402,15 @@ export const ChapterContentRenderer: React.FC<ChapterContentRendererProps> = ({
             </>
           ) : (
             <>
-              <Volume2 className="w-4 h-4" /> ऑडियो सुनें (Play Aloud)
+              <Volume2 className="w-4 h-4" /> ऑडियो सुनें (Play)
             </>
           )}
         </button>
       </div>
 
       {/* 1. पाठ परिचय (INTRO) */}
-      {activeTab === 'intro' && (
+      {activeTab === 'intro' && !isMathSubject && (
         <div className="space-y-4 animate-fade-in">
-          {/* Top Banner Card */}
           <div className="p-4 sm:p-5 bg-gradient-to-r from-amber-500/20 via-orange-50 to-rose-50 border border-amber-300/80 rounded-3xl flex items-start gap-3.5 shadow-xs">
             <div className="p-2.5 bg-gradient-to-br from-amber-500 to-red-500 text-white rounded-2xl shadow-sm shrink-0 mt-0.5">
               <BookOpen className="w-5 h-5" />
@@ -393,15 +425,14 @@ export const ChapterContentRenderer: React.FC<ChapterContentRendererProps> = ({
                 </span>
               </div>
               <h4 className="text-stone-950 font-black text-sm sm:text-base">
-                {currentChapter.chapter_name_hindi || 'अध्याय का संक्षिप्त परिचय'}
+                {cleanMathAndMarkdownText(currentChapter.chapter_name_hindi || 'अध्याय का संक्षिप्त परिचय')}
               </h4>
               <p className="text-xs text-stone-600 mt-1 leading-relaxed">
-                बोर्ड परीक्षा में लेखक के जीवन, उनकी रचनाओं तथा पाठ के मूल उद्देश्य से 5 से 8 अंक के प्रश्न अवश्य आते हैं।
+                बोर्ड परीक्षा में इस पाठ के मुख्य बिंदुओं और मूल उद्देश्य से प्रश्न अवश्य पूछे जाते हैं।
               </p>
             </div>
           </div>
 
-          {/* Formatted Content */}
           <div className="space-y-3.5">
             {currentChapter.intro_hindi ? (
               renderIntroContent(currentChapter.intro_hindi)
@@ -415,9 +446,8 @@ export const ChapterContentRenderer: React.FC<ChapterContentRendererProps> = ({
       )}
 
       {/* 2. विस्तृत नोट्स (NOTES) */}
-      {activeTab === 'notes' && (
+      {activeTab === 'notes' && !isMathSubject && (
         <div className="space-y-4 animate-fade-in">
-          {/* Notes Top Header */}
           <div className="p-4 rounded-3xl bg-gradient-to-r from-blue-600/15 via-indigo-50 to-purple-50 border border-blue-200/80 flex items-center justify-between gap-3 shadow-xs">
             <div className="flex items-center gap-3">
               <div className="p-2.5 bg-indigo-600 text-white rounded-2xl shrink-0 shadow-sm">
@@ -435,7 +465,6 @@ export const ChapterContentRenderer: React.FC<ChapterContentRendererProps> = ({
             </span>
           </div>
 
-          {/* Notes Rendered Content */}
           <div className="space-y-3.5">
             {currentChapter.notes_hindi ? (
               renderFormattedNotes(currentChapter.notes_hindi)
@@ -449,9 +478,8 @@ export const ChapterContentRenderer: React.FC<ChapterContentRendererProps> = ({
       )}
 
       {/* 3. VVI टॉपर टिप्स (TIPS) */}
-      {activeTab === 'tips' && (
+      {activeTab === 'tips' && !isMathSubject && (
         <div className="space-y-4 animate-fade-in">
-          {/* Gold Banner */}
           <div className="p-4 sm:p-5 bg-gradient-to-r from-amber-500/25 via-yellow-100/60 to-amber-50 border-2 border-amber-400/80 rounded-3xl flex items-start gap-3.5 shadow-sm">
             <div className="p-3 bg-gradient-to-br from-amber-500 to-yellow-600 text-stone-950 rounded-2xl shadow-sm shrink-0">
               <Award className="w-6 h-6" />
@@ -459,7 +487,7 @@ export const ChapterContentRenderer: React.FC<ChapterContentRendererProps> = ({
             <div>
               <div className="flex items-center gap-2 mb-1">
                 <span className="bg-amber-400 text-stone-950 font-black text-[11px] px-2.5 py-0.5 rounded-full uppercase tracking-wider">
-                  🏆 TOPPER SECRETS
+                  TOPPER SECRETS
                 </span>
                 <span className="text-[11px] text-amber-900 font-bold">100/100 Target</span>
               </div>
@@ -467,58 +495,59 @@ export const ChapterContentRenderer: React.FC<ChapterContentRendererProps> = ({
                 बिहार बोर्ड VVI टॉपर परीक्षा टिप्स & मार्क्स बूस्टर
               </h4>
               <p className="text-xs text-stone-700 mt-1 leading-relaxed">
-                इन मुख्य बिंदुओं, महत्वपूर्ण तारीखों और उत्तर लिखने की विधियों को याद रखकर आप परीक्षा में पूरे अंक ला सकते हैं।
+                इन मुख्य बिंदुओं और उत्तर लिखने की विधियों को याद रखकर आप परीक्षा में पूरे अंक ला सकते हैं।
               </p>
             </div>
           </div>
 
-          {/* Rendered Tips */}
           <div className="space-y-3">
             {currentChapter.topper_tips ? (
-              String(currentChapter.topper_tips || '').split('\n').filter((l: string) => l.trim().length > 0).map((line: string, idx: number) => {
-                const trimmed = line.trim();
-                if (trimmed.startsWith('【')) {
+              cleanMathAndMarkdownText(currentChapter.topper_tips)
+                .split('\n')
+                .filter((l: string) => l.trim().length > 0)
+                .map((line: string, idx: number) => {
+                  const trimmed = line.trim();
+                  if (trimmed.startsWith('【')) {
+                    return (
+                      <div key={`tip-hdr-${idx}`} className="p-3 bg-amber-100/80 border border-amber-300 rounded-2xl text-amber-950 font-black text-xs sm:text-sm text-center">
+                        {trimmed.replace(/[【】]/g, '')}
+                      </div>
+                    );
+                  }
+
+                  const hasAnswer = trimmed.includes('उत्तर:') || trimmed.includes('उत्तर :');
+                  let qPart = trimmed;
+                  let aPart = '';
+                  if (hasAnswer) {
+                    const split = trimmed.split(/उत्तर\s*:\s*/);
+                    qPart = split[0];
+                    aPart = split[1] || '';
+                  }
+
                   return (
-                    <div key={`tip-hdr-${idx}`} className="p-3 bg-amber-100/80 border border-amber-300 rounded-2xl text-amber-950 font-black text-xs sm:text-sm text-center">
-                      {trimmed.replace(/[【】]/g, '')}
+                    <div key={`tip-item-${idx}`} className="p-4 bg-white rounded-2xl border-2 border-amber-200/80 shadow-xs hover:border-amber-400 transition-all space-y-2.5">
+                      <div className="flex items-start gap-2.5">
+                        <span className="w-6 h-6 rounded-xl bg-amber-400 text-stone-950 text-xs font-black flex items-center justify-center shrink-0 mt-0.5">
+                          #{idx + 1}
+                        </span>
+                        <div className="flex-1">
+                          <p className="text-stone-900 font-bold text-sm leading-snug">
+                            {qPart}
+                          </p>
+                        </div>
+                      </div>
+
+                      {hasAnswer && (
+                        <div className="ml-8 p-3 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-950 text-xs sm:text-sm font-semibold flex items-start gap-2">
+                          <span className="bg-emerald-600 text-white text-[10px] font-black px-2 py-0.5 rounded shrink-0">
+                            सटीक उत्तर
+                          </span>
+                          <span className="leading-relaxed">{aPart}</span>
+                        </div>
+                      )}
                     </div>
                   );
-                }
-
-                // Check if it's a Q&A tip: e.g. "१. डॉ. आंबेडकर का जन्म कब हुआ? उत्तर: 14 अप्रैल 1891..."
-                const hasAnswer = trimmed.includes('उत्तर:') || trimmed.includes('उत्तर :');
-                let qPart = trimmed;
-                let aPart = '';
-                if (hasAnswer) {
-                  const split = trimmed.split(/उत्तर\s*:\s*/);
-                  qPart = split[0];
-                  aPart = split[1] || '';
-                }
-
-                return (
-                  <div key={`tip-item-${idx}`} className="p-4 bg-white rounded-2xl border-2 border-amber-200/80 shadow-xs hover:border-amber-400 transition-all space-y-2.5">
-                    <div className="flex items-start gap-2.5">
-                      <span className="w-6 h-6 rounded-xl bg-amber-400 text-stone-950 text-xs font-black flex items-center justify-center shrink-0 mt-0.5">
-                        #{idx + 1}
-                      </span>
-                      <div className="flex-1">
-                        <p className="text-stone-900 font-bold text-sm leading-snug">
-                          {qPart}
-                        </p>
-                      </div>
-                    </div>
-
-                    {hasAnswer && (
-                      <div className="ml-8 p-3 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-950 text-xs sm:text-sm font-semibold flex items-start gap-2">
-                        <span className="bg-emerald-600 text-white text-[10px] font-black px-2 py-0.5 rounded shrink-0">
-                          सटीक उत्तर
-                        </span>
-                        <span className="leading-relaxed">{aPart}</span>
-                      </div>
-                    )}
-                  </div>
-                );
-              })
+                })
             ) : (
               <div className="p-6 bg-white rounded-2xl border border-slate-200 text-center text-slate-500 text-xs">
                 इस अध्याय के VVI टॉपर टिप्स जल्द ही उपलब्ध होंगे।
@@ -528,10 +557,211 @@ export const ChapterContentRenderer: React.FC<ChapterContentRendererProps> = ({
         </div>
       )}
 
-      {/* 4. NCERT एवं महत्वपूर्ण प्रश्नोत्तर (QNA) - EXTRA VIBRANT & DISTINCT COLORS */}
-      {activeTab === 'qna' && (
+      {/* 4A. MATHEMATICS EXERCISE-BY-EXERCISE NOTEBOOK / WRITTEN PAGE SOLUTIONS */}
+      {activeTab === 'qna' && isMathSubject && (
         <div className="space-y-4 animate-fade-in">
-          {/* Header Bar */}
+          {/* Exercise Selector Cards (प्रश्नावली चुनें) */}
+          <div className="bg-white rounded-2xl border-2 border-red-200 p-3.5 shadow-xs">
+            <div className="flex items-center justify-between mb-2.5">
+              <div className="flex items-center gap-2">
+                <FileText className="w-4 h-4 text-red-700" />
+                <span className="text-xs sm:text-sm font-black text-stone-900">
+                  NCERT प्रश्नावली चुनें (दबाकर प्रश्नावली खोलें):
+                </span>
+              </div>
+              <span className="text-[11px] font-bold bg-red-100 text-red-800 px-2.5 py-0.5 rounded-md">
+                कुल {exercisesList.length} प्रश्नावली
+              </span>
+            </div>
+
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+              {exercisesList.map((ex, idx) => {
+                const isSelected = idx === selectedExerciseIndex;
+                return (
+                  <button
+                    key={ex.exerciseId}
+                    onClick={() => setSelectedExerciseIndex(idx)}
+                    className={`p-2.5 rounded-xl border-2 text-left transition-all cursor-pointer flex flex-col justify-between ${
+                      isSelected
+                        ? 'bg-red-700 text-white border-red-800 shadow-sm'
+                        : 'bg-amber-50/50 text-stone-900 border-amber-200 hover:bg-amber-100/60 hover:border-amber-300'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between gap-1">
+                      <span className="font-black text-xs sm:text-sm">
+                        {ex.exerciseTitle}
+                      </span>
+                      <span
+                        className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${
+                          isSelected
+                            ? 'bg-white/20 text-amber-200'
+                            : 'bg-red-100 text-red-800'
+                        }`}
+                      >
+                        हल देखें
+                      </span>
+                    </div>
+                    <p
+                      className={`text-[10px] mt-1 line-clamp-1 font-medium ${
+                        isSelected ? 'text-amber-100' : 'text-stone-600'
+                      }`}
+                    >
+                      {ex.exerciseSubtitle}
+                    </p>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* REALISTIC WRITTEN NOTEBOOK / REGISTER PAGE VIEW */}
+          {activeExercise ? (
+            <div className="rounded-2xl overflow-hidden border-2 border-stone-300 shadow-md bg-[#fffef8]">
+              {/* Top Notebook Page Header (Red Double Rule + Page/Date Box) */}
+              <div className="bg-[#fffdf5] border-b-4 border-double border-rose-500 px-4 py-3.5 sm:px-6 sm:py-4 flex items-start justify-between gap-3">
+                <div>
+                  <span className="text-[11px] font-extrabold text-rose-700 uppercase tracking-wide block">
+                    अध्याय {currentChapter.chapter_no} • {cleanMathAndMarkdownText(currentChapter.chapter_name_hindi)}
+                  </span>
+                  <h4 className="text-base sm:text-lg font-black text-stone-950 mt-0.5">
+                    {activeExercise.exerciseTitle} (NCERT संपूर्ण हल)
+                  </h4>
+                  <p className="text-xs font-semibold text-stone-700 mt-0.5">
+                    {activeExercise.exerciseSubtitle}
+                  </p>
+                </div>
+
+                {/* Classic Notebook Corner Page / Date Box */}
+                <div className="border-2 border-rose-400 rounded-lg px-2.5 py-1 text-right bg-white/90 shrink-0">
+                  <div className="text-[10px] font-bold text-rose-700 border-b border-rose-300 pb-0.5">
+                    पृष्ठ संख्या : {selectedExerciseIndex + 1}/{exercisesList.length}
+                  </div>
+                  <div className="text-[10px] font-extrabold text-stone-800 pt-0.5">
+                    कक्षा 10 गणित
+                  </div>
+                </div>
+              </div>
+
+              {/* Notebook Ruled Sheet Body */}
+              <div
+                className="divide-y-2 divide-rose-200/80"
+                style={{
+                  backgroundImage:
+                    'repeating-linear-gradient(to bottom, transparent 0px, transparent 31px, rgba(148, 163, 184, 0.25) 31px, rgba(148, 163, 184, 0.25) 32px)',
+                }}
+              >
+                {activeExercise.questions.map((item, qIdx) => (
+                  <div
+                    key={`${activeExercise.exerciseId}-q-${qIdx}`}
+                    className="flex items-stretch"
+                  >
+                    {/* Left Notebook Margin (Vertical Red Double Line) */}
+                    <div className="w-16 sm:w-20 shrink-0 border-r-4 border-double border-rose-400/80 bg-rose-50/20 px-1.5 py-4 flex flex-col items-center justify-between select-none">
+                      <span className="text-xs sm:text-sm font-black text-rose-800 text-center leading-tight">
+                        {cleanMathAndMarkdownText(item.qNo)}
+                      </span>
+                      <button
+                        onClick={() =>
+                          handleCopyQA(
+                            `${item.qNo}: ${item.question}\nहल:\n${item.solution.join('\n')}\n${item.answer}`,
+                            qIdx
+                          )
+                        }
+                        title="हल कॉपी करें"
+                        className="p-1.5 rounded-lg text-stone-500 hover:text-rose-700 hover:bg-rose-100/60 transition-colors cursor-pointer"
+                      >
+                        {copiedIndex === qIdx ? (
+                          <Check className="w-3.5 h-3.5 text-emerald-600" />
+                        ) : (
+                          <Copy className="w-3.5 h-3.5" />
+                        )}
+                      </button>
+                    </div>
+
+                    {/* Right Main Written Area */}
+                    <div className="flex-1 p-3.5 sm:p-5 space-y-3">
+                      {/* Question Written in Crisp Black Ink */}
+                      <div className="pb-2 border-b border-dashed border-stone-300">
+                        <p className="text-stone-950 font-extrabold text-[15px] sm:text-base leading-7">
+                          {cleanMathAndMarkdownText(item.question)}
+                        </p>
+                      </div>
+
+                      {/* Step-by-Step Solution Written in Royal Blue Pen Ink */}
+                      <div className="space-y-1.5">
+                        <div className="inline-block font-black text-xs sm:text-sm text-blue-900 underline decoration-blue-600 decoration-2 underline-offset-4 mb-1">
+                          हल (Solution) :
+                        </div>
+                        <div className="space-y-1.5 pl-1">
+                          {item.solution.map((step, sIdx) => (
+                            <p
+                              key={`step-${sIdx}`}
+                              className="text-blue-950 font-semibold text-[14.5px] sm:text-[15.5px] leading-8 tracking-normal"
+                            >
+                              {cleanMathAndMarkdownText(step)}
+                            </p>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* Boxed Final Answer (अतः उत्तर) */}
+                      <div className="pt-1">
+                        <div className="inline-block bg-emerald-50/95 border-2 border-emerald-700/70 rounded-xl px-3.5 py-2 text-emerald-950 font-black text-xs sm:text-sm leading-relaxed shadow-2xs">
+                          <span className="text-emerald-800 mr-1.5">उत्तर :</span>
+                          <span>{cleanMathAndMarkdownText(item.answer)}</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Bottom Page Navigation Bar (Previous / Next Exercise) */}
+              <div className="bg-[#fffdf5] border-t-2 border-rose-300 p-3 sm:px-5 flex items-center justify-between gap-2">
+                <button
+                  disabled={selectedExerciseIndex === 0}
+                  onClick={() =>
+                    setSelectedExerciseIndex((prev) => Math.max(0, prev - 1))
+                  }
+                  className={`px-3 py-2 rounded-xl text-xs font-black flex items-center gap-1 transition-all ${
+                    selectedExerciseIndex === 0
+                      ? 'bg-stone-100 text-stone-400 cursor-not-allowed'
+                      : 'bg-white border border-stone-300 text-stone-800 hover:bg-stone-100 cursor-pointer shadow-2xs'
+                  }`}
+                >
+                  <ChevronLeft className="w-4 h-4" />
+                  <span>पिछली प्रश्नावली</span>
+                </button>
+
+                <span className="text-xs font-extrabold text-stone-700">
+                  {activeExercise.exerciseTitle}
+                </span>
+
+                <button
+                  disabled={selectedExerciseIndex >= exercisesList.length - 1}
+                  onClick={() =>
+                    setSelectedExerciseIndex((prev) =>
+                      Math.min(exercisesList.length - 1, prev + 1)
+                    )
+                  }
+                  className={`px-3 py-2 rounded-xl text-xs font-black flex items-center gap-1 transition-all ${
+                    selectedExerciseIndex >= exercisesList.length - 1
+                      ? 'bg-stone-100 text-stone-400 cursor-not-allowed'
+                      : 'bg-red-700 text-white hover:bg-red-800 cursor-pointer shadow-xs'
+                  }`}
+                >
+                  <span>अगली प्रश्नावली</span>
+                  <ChevronRight className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+          ) : null}
+        </div>
+      )}
+
+      {/* 4B. NCERT एवं महत्वपूर्ण प्रश्नोत्तर (QNA for non-Math subjects) */}
+      {activeTab === 'qna' && !isMathSubject && (
+        <div className="space-y-4 animate-fade-in">
           <div className="p-4 bg-gradient-to-r from-rose-700 via-red-600 to-indigo-700 text-white rounded-3xl shadow-sm flex items-center justify-between gap-3">
             <div className="flex items-center gap-3">
               <div className="p-2.5 bg-white/20 rounded-2xl text-white shrink-0">
@@ -551,39 +781,36 @@ export const ChapterContentRenderer: React.FC<ChapterContentRendererProps> = ({
             </span>
           </div>
 
-          {/* Question & Answer Cards */}
           <div className="space-y-4">
             {currentChapter.subjective_qa && currentChapter.subjective_qa.length > 0 ? (
               currentChapter.subjective_qa.map((qa: any, idx: number) => {
-                const isLong = qa.type?.includes('दीर्घ') || qa.question?.length > 70;
+                const cleanQ = cleanMathAndMarkdownText(qa.question);
+                const cleanA = cleanMathAndMarkdownText(qa.answer);
+                const isLong = qa.type?.includes('दीर्घ') || cleanQ.length > 70;
                 
                 return (
                   <div 
                     key={`qna-card-${idx}`} 
                     className="overflow-hidden rounded-3xl border-2 border-indigo-100 bg-white shadow-xs hover:shadow-md transition-all"
                   >
-                    {/* ===== 1. QUESTION SECTION (DISTINCT INDIGO / ROSE COLOR) ===== */}
                     <div className="bg-gradient-to-br from-indigo-900 via-slate-900 to-indigo-950 p-4 sm:p-5 text-white">
                       <div className="flex items-center justify-between gap-2 mb-2.5">
                         <div className="flex items-center gap-2 flex-wrap">
-                          {/* Question Number Badge */}
                           <span className="bg-amber-400 text-stone-950 font-black text-xs px-2.5 py-0.5 rounded-lg shadow-xs flex items-center gap-1">
                             <span>प्रश्न {idx + 1}</span>
                           </span>
                           
-                          {/* Question Type Tag */}
                           <span className={`text-[11px] font-extrabold px-2.5 py-0.5 rounded-lg border ${
                             isLong 
                               ? 'bg-rose-500/20 text-rose-300 border-rose-400/40' 
                               : 'bg-blue-500/20 text-blue-300 border-blue-400/40'
                           }`}>
-                            {qa.type || 'महत्वपूर्ण प्रश्न'} • {isLong ? '5 अंक' : '2 अंक'}
+                            {cleanMathAndMarkdownText(qa.type || 'महत्वपूर्ण प्रश्न')} • {isLong ? '5 अंक' : '2 अंक'}
                           </span>
                         </div>
 
-                        {/* Copy Question Button */}
                         <button
-                          onClick={() => handleCopyQA(`प्र. ${qa.question}\n\nउ. ${qa.answer}`, idx)}
+                          onClick={() => handleCopyQA(`प्र. ${cleanQ}\n\nउ. ${cleanA}`, idx)}
                           title="प्रश्न-उत्तर कॉपी करें"
                           className="p-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-slate-300 hover:text-white transition-all text-xs flex items-center gap-1 cursor-pointer"
                         >
@@ -601,13 +828,11 @@ export const ChapterContentRenderer: React.FC<ChapterContentRendererProps> = ({
                         </button>
                       </div>
 
-                      {/* Question Text - Bold, High-Visibility Distinct Font */}
                       <h5 className="font-extrabold text-white text-[15px] sm:text-base leading-snug tracking-wide">
-                        {qa.question}
+                        {cleanQ}
                       </h5>
                     </div>
 
-                    {/* ===== 2. ANSWER SECTION (DISTINCT EMERALD / SOFT CARD COLOR) ===== */}
                     <div className="p-4 sm:p-5 bg-gradient-to-b from-emerald-50/40 via-white to-slate-50 border-t-2 border-emerald-500/30">
                       <div className="flex items-center gap-2 mb-2.5">
                         <span className="bg-emerald-600 text-white font-black text-xs px-2.5 py-0.5 rounded-md flex items-center gap-1 shadow-xs">
@@ -619,10 +844,9 @@ export const ChapterContentRenderer: React.FC<ChapterContentRendererProps> = ({
                         </span>
                       </div>
 
-                      {/* Answer Text - Highly Readable, Deep Slate Color, Generous Line Height */}
                       <div className="border-l-4 border-emerald-500 pl-3.5 sm:pl-4 py-1">
                         <p className="text-slate-800 font-medium text-sm sm:text-[15px] leading-relaxed whitespace-pre-wrap">
-                          {highlightKeywords(qa.answer)}
+                          {highlightKeywords(cleanA)}
                         </p>
                       </div>
                     </div>
@@ -641,7 +865,6 @@ export const ChapterContentRenderer: React.FC<ChapterContentRendererProps> = ({
       {/* 5. वस्तुनिष्ठ प्रश्न (50 MCQS) */}
       {activeTab === 'mcq' && (
         <div className="space-y-4 animate-fade-in">
-          {/* Timed Test Hero Banner */}
           <div className="p-4 rounded-3xl bg-gradient-to-r from-blue-700 via-indigo-800 to-stone-900 text-white flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-md">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-2xl bg-white/20 flex items-center justify-center text-amber-300 shrink-0">
@@ -668,7 +891,6 @@ export const ChapterContentRenderer: React.FC<ChapterContentRendererProps> = ({
             </button>
           </div>
 
-          {/* Quick Counter */}
           <div className="flex items-center justify-between bg-white p-3.5 rounded-2xl border border-slate-200 shadow-xs">
             <div className="flex items-center gap-2">
               <span className="text-xs text-slate-700 font-bold">
@@ -683,7 +905,6 @@ export const ChapterContentRenderer: React.FC<ChapterContentRendererProps> = ({
             </span>
           </div>
 
-          {/* MCQ List */}
           <div className="space-y-3.5">
             {currentChapter.mcq && currentChapter.mcq.length > 0 ? (
               currentChapter.mcq.map((m: any, idx: number) => {
@@ -695,17 +916,15 @@ export const ChapterContentRenderer: React.FC<ChapterContentRendererProps> = ({
                     key={`mcq-item-${idx}`} 
                     className="bg-white p-4 sm:p-5 rounded-3xl border-2 border-slate-200/90 shadow-xs hover:border-slate-300 transition-all space-y-3"
                   >
-                    {/* Question Header */}
                     <div className="flex items-start gap-2.5">
                       <span className="bg-indigo-600 text-white font-black text-xs px-2.5 py-1 rounded-xl shrink-0 mt-0.5">
                         Q{idx + 1}
                       </span>
                       <p className="font-extrabold text-slate-900 text-[14.5px] sm:text-base leading-snug">
-                        {m.question}
+                        {cleanMathAndMarkdownText(m.question)}
                       </p>
                     </div>
 
-                    {/* Options Grid */}
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-1">
                       {m.options?.map((opt: string, oIdx: number) => {
                         let optStyle = 'border-slate-200 bg-slate-50/70 text-slate-800 hover:border-indigo-300 hover:bg-indigo-50/40 cursor-pointer';
@@ -741,7 +960,7 @@ export const ChapterContentRenderer: React.FC<ChapterContentRendererProps> = ({
                             }`}>
                               {optionLetter}
                             </span>
-                            <span className="flex-1 leading-snug">{opt}</span>
+                            <span className="flex-1 leading-snug">{cleanMathAndMarkdownText(opt)}</span>
                             {isAnswered && isCorrectOption && (
                               <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
                             )}
@@ -750,7 +969,6 @@ export const ChapterContentRenderer: React.FC<ChapterContentRendererProps> = ({
                       })}
                     </div>
 
-                    {/* Explanation Alert */}
                     {isAnswered && (
                       <div className="mt-3 p-3.5 rounded-2xl bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-300 text-xs sm:text-sm text-stone-900 animate-fade-in flex items-start gap-2.5">
                         <div className="p-1.5 rounded-lg bg-amber-400 text-stone-950 shrink-0 mt-0.5">
@@ -761,7 +979,7 @@ export const ChapterContentRenderer: React.FC<ChapterContentRendererProps> = ({
                             सही उत्तर व्याख्या (Explanation):
                           </span>
                           <p className="leading-relaxed font-medium text-stone-800">
-                            {m.explanation || `सही उत्तर विकल्प [${String.fromCharCode(65 + m.correct_answer)}] है।`}
+                            {cleanMathAndMarkdownText(m.explanation || `सही उत्तर विकल्प [${String.fromCharCode(65 + (typeof m.correct_answer === 'number' ? m.correct_answer : m.correctIndex))}] है।`)}
                           </p>
                         </div>
                       </div>

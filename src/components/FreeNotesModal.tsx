@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { X, Sparkles, BookOpen, Crown, ChevronRight, CheckCircle2, Copy, Check } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
 
 interface FreeNotesModalProps {
   onClose: () => void;
@@ -8,6 +9,7 @@ interface FreeNotesModalProps {
 }
 
 export function FreeNotesModal({ onClose, onOpenVip, onOpenSubject }: FreeNotesModalProps) {
+  const { isAdmin } = useAuth();
   const [copiedId, setCopiedId] = useState<string | null>(null);
 
   const notesList = [
@@ -56,6 +58,10 @@ export function FreeNotesModal({ onClose, onOpenVip, onOpenSubject }: FreeNotesM
   ];
 
   const handleCopy = (text: string, id: string) => {
+    if (!isAdmin) {
+      alert('⚠️ सामग्री कॉपी करना केवल एडमिन के लिए अनुमत है।');
+      return;
+    }
     navigator.clipboard?.writeText(text);
     setCopiedId(id);
     setTimeout(() => setCopiedId(null), 2000);

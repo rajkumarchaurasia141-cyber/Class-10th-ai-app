@@ -103,18 +103,27 @@ export function SubjectsExplorer({ subjectId, onBack }: any) {
   const subject = resolveSubject();
   if (!subject) return <div className="p-4 text-center text-stone-400">विषय नहीं मिला</div>;
 
+  const normSubId = String(subjectId || subject?.id || '').toLowerCase();
+  const isMathSubject =
+    normSubId === 'math' ||
+    normSubId === 'mathematics' ||
+    normSubId === 'maths' ||
+    normSubId.includes('गणित');
+
   const chapters = subject.chapters || [];
   const currentChapter = chapters.find((c: any) => Number(c.chapter_no) === Number(selectedCh)) || chapters[0];
 
   const handleSelectChapter = (chNo: number | string) => {
     const numericCh = Number(chNo);
-    if (numericCh > 1 && !isPaid) {
+    if (!isMathSubject && numericCh > 1 && !isPaid) {
       setShowPaywall(true);
       return;
     }
     setSelectedCh(numericCh);
-    setActiveTab('intro');
+    setActiveTab(isMathSubject ? 'qna' : 'intro');
   };
+
+  const effectiveTab = isMathSubject && activeTab !== 'mcq' ? 'qna' : activeTab;
 
   return (
     <div className="max-w-lg mx-auto pb-8 p-2.5 sm:p-3 selection:bg-red-500/30">
@@ -157,7 +166,7 @@ export function SubjectsExplorer({ subjectId, onBack }: any) {
             }`}
           >
             <span>अध्याय {ch.chapter_no}</span>
-            {Number(ch.chapter_no) > 1 && !isPaid && (
+            {!isMathSubject && Number(ch.chapter_no) > 1 && !isPaid && (
               <span className="text-[11px] text-stone-500" title="Locked">🔒</span>
             )}
           </button>
@@ -176,79 +185,108 @@ export function SubjectsExplorer({ subjectId, onBack }: any) {
             )}
           </div>
 
-          {/* 5 Distinctive Colorful Navigation Tabs */}
-          <div className="flex border-b border-slate-200 overflow-x-auto scrollbar-none bg-slate-50/80 p-1.5 gap-1.5">
-            {/* Tab 1: पाठ परिचय */}
-            <button 
-              onClick={() => setActiveTab('intro')} 
-              className={`px-3 py-2 rounded-2xl font-black text-xs flex items-center gap-1.5 whitespace-nowrap transition-all cursor-pointer ${
-                activeTab === 'intro' 
-                  ? 'bg-gradient-to-r from-amber-500 to-orange-500 text-white shadow-sm ring-1 ring-amber-400' 
-                  : 'text-stone-600 hover:bg-white hover:text-stone-900'
-              }`}
-            >
-              <BookOpen className="w-3.5 h-3.5" /> 
-              <span>पाठ परिचय</span>
-            </button>
+          {/* Navigation Tabs: Math shows ONLY Exercise Solutions + Objective (MCQs); other subjects show all 5 tabs */}
+          {isMathSubject ? (
+            <div className="grid grid-cols-2 border-b border-slate-200 bg-slate-100/90 p-1.5 gap-2">
+              <button
+                onClick={() => setActiveTab('qna')}
+                className={`py-2.5 px-3 rounded-2xl font-black text-xs sm:text-sm flex items-center justify-center gap-2 transition-all cursor-pointer ${
+                  effectiveTab === 'qna'
+                    ? 'bg-gradient-to-r from-red-700 to-rose-600 text-white shadow-sm ring-1 ring-red-400'
+                    : 'bg-white text-stone-700 border border-slate-200/80 hover:bg-slate-50'
+                }`}
+              >
+                <BookMarked className="w-4 h-4 shrink-0" />
+                <span>प्रश्नावली हल (NCERT Solution)</span>
+              </button>
 
-            {/* Tab 2: विस्तृत नोट्स */}
-            <button 
-              onClick={() => setActiveTab('notes')} 
-              className={`px-3 py-2 rounded-2xl font-black text-xs flex items-center gap-1.5 whitespace-nowrap transition-all cursor-pointer ${
-                activeTab === 'notes' 
-                  ? 'bg-gradient-to-r from-indigo-600 to-blue-600 text-white shadow-sm ring-1 ring-indigo-400' 
-                  : 'text-stone-600 hover:bg-white hover:text-stone-900'
-              }`}
-            >
-              <FileText className="w-3.5 h-3.5" /> 
-              <span>विस्तृत नोट्स</span>
-            </button>
+              <button
+                onClick={() => setActiveTab('mcq')}
+                className={`py-2.5 px-3 rounded-2xl font-black text-xs sm:text-sm flex items-center justify-center gap-2 transition-all cursor-pointer ${
+                  effectiveTab === 'mcq'
+                    ? 'bg-gradient-to-r from-blue-700 to-indigo-700 text-white shadow-sm ring-1 ring-blue-400'
+                    : 'bg-white text-stone-700 border border-slate-200/80 hover:bg-slate-50'
+                }`}
+              >
+                <CheckCircle2 className="w-4 h-4 shrink-0" />
+                <span>वस्तुनिष्ठ प्रश्न (Objective)</span>
+              </button>
+            </div>
+          ) : (
+            <div className="flex border-b border-slate-200 overflow-x-auto scrollbar-none bg-slate-50/80 p-1.5 gap-1.5">
+              {/* Tab 1: पाठ परिचय */}
+              <button 
+                onClick={() => setActiveTab('intro')} 
+                className={`px-3 py-2 rounded-2xl font-black text-xs flex items-center gap-1.5 whitespace-nowrap transition-all cursor-pointer ${
+                  activeTab === 'intro' 
+                    ? 'bg-gradient-to-r from-amber-500 to-orange-500 text-white shadow-sm ring-1 ring-amber-400' 
+                    : 'text-stone-600 hover:bg-white hover:text-stone-900'
+                }`}
+              >
+                <BookOpen className="w-3.5 h-3.5" /> 
+                <span>पाठ परिचय</span>
+              </button>
 
-            {/* Tab 3: टॉपर टिप्स */}
-            <button 
-              onClick={() => setActiveTab('tips')} 
-              className={`px-3 py-2 rounded-2xl font-black text-xs flex items-center gap-1.5 whitespace-nowrap transition-all cursor-pointer ${
-                activeTab === 'tips' 
-                  ? 'bg-gradient-to-r from-amber-400 to-yellow-500 text-stone-950 shadow-sm ring-1 ring-amber-300' 
-                  : 'text-stone-600 hover:bg-white hover:text-stone-900'
-              }`}
-            >
-              <Award className="w-3.5 h-3.5" /> 
-              <span>टॉपर टिप्स</span>
-            </button>
+              {/* Tab 2: विस्तृत नोट्स */}
+              <button 
+                onClick={() => setActiveTab('notes')} 
+                className={`px-3 py-2 rounded-2xl font-black text-xs flex items-center gap-1.5 whitespace-nowrap transition-all cursor-pointer ${
+                  activeTab === 'notes' 
+                    ? 'bg-gradient-to-r from-indigo-600 to-blue-600 text-white shadow-sm ring-1 ring-indigo-400' 
+                    : 'text-stone-600 hover:bg-white hover:text-stone-900'
+                }`}
+              >
+                <FileText className="w-3.5 h-3.5" /> 
+                <span>विस्तृत नोट्स</span>
+              </button>
 
-            {/* Tab 4: NCERT प्रश्न-उत्तर */}
-            <button 
-              onClick={() => setActiveTab('qna')} 
-              className={`px-3 py-2 rounded-2xl font-black text-xs flex items-center gap-1.5 whitespace-nowrap transition-all cursor-pointer ${
-                activeTab === 'qna' 
-                  ? 'bg-gradient-to-r from-rose-600 to-red-600 text-white shadow-sm ring-1 ring-rose-400' 
-                  : 'text-stone-600 hover:bg-white hover:text-stone-900'
-              }`}
-            >
-              <MessageSquare className="w-3.5 h-3.5" /> 
-              <span>NCERT प्रश्न</span>
-            </button>
+              {/* Tab 3: टॉपर टिप्स */}
+              <button 
+                onClick={() => setActiveTab('tips')} 
+                className={`px-3 py-2 rounded-2xl font-black text-xs flex items-center gap-1.5 whitespace-nowrap transition-all cursor-pointer ${
+                  activeTab === 'tips' 
+                    ? 'bg-gradient-to-r from-amber-400 to-yellow-500 text-stone-950 shadow-sm ring-1 ring-amber-300' 
+                    : 'text-stone-600 hover:bg-white hover:text-stone-900'
+                }`}
+              >
+                <Award className="w-3.5 h-3.5" /> 
+                <span>टॉपर टिप्स</span>
+              </button>
 
-            {/* Tab 5: 50 MCQs */}
-            <button 
-              onClick={() => setActiveTab('mcq')} 
-              className={`px-3 py-2 rounded-2xl font-black text-xs flex items-center gap-1.5 whitespace-nowrap transition-all cursor-pointer ${
-                activeTab === 'mcq' 
-                  ? 'bg-gradient-to-r from-blue-600 to-cyan-600 text-white shadow-sm ring-1 ring-blue-400' 
-                  : 'text-stone-600 hover:bg-white hover:text-stone-900'
-              }`}
-            >
-              <CheckCircle2 className="w-3.5 h-3.5" /> 
-              <span>50 MCQs</span>
-            </button>
-          </div>
+              {/* Tab 4: NCERT प्रश्न-उत्तर */}
+              <button 
+                onClick={() => setActiveTab('qna')} 
+                className={`px-3 py-2 rounded-2xl font-black text-xs flex items-center gap-1.5 whitespace-nowrap transition-all cursor-pointer ${
+                  activeTab === 'qna' 
+                    ? 'bg-gradient-to-r from-rose-600 to-red-600 text-white shadow-sm ring-1 ring-rose-400' 
+                    : 'text-stone-600 hover:bg-white hover:text-stone-900'
+                }`}
+              >
+                <MessageSquare className="w-3.5 h-3.5" /> 
+                <span>NCERT प्रश्न</span>
+              </button>
+
+              {/* Tab 5: 50 MCQs */}
+              <button 
+                onClick={() => setActiveTab('mcq')} 
+                className={`px-3 py-2 rounded-2xl font-black text-xs flex items-center gap-1.5 whitespace-nowrap transition-all cursor-pointer ${
+                  activeTab === 'mcq' 
+                    ? 'bg-gradient-to-r from-blue-600 to-cyan-600 text-white shadow-sm ring-1 ring-blue-400' 
+                    : 'text-stone-600 hover:bg-white hover:text-stone-900'
+                }`}
+              >
+                <CheckCircle2 className="w-3.5 h-3.5" /> 
+                <span>50 MCQs</span>
+              </button>
+            </div>
+          )}
 
           {/* Render Active Tab using Modern ChapterContentRenderer */}
-          <div className="p-3.5 sm:p-5 bg-slate-50/50 min-h-[400px]">
+          <div className="p-2.5 sm:p-5 bg-slate-50/50 min-h-[400px]">
             <ChapterContentRenderer 
-              activeTab={activeTab}
+              activeTab={effectiveTab}
               currentChapter={currentChapter}
+              isMathSubject={isMathSubject}
               onStartPaidTest={() => setShowPaidTest(true)}
             />
           </div>
