@@ -501,6 +501,133 @@ Guidelines for Bihar Guru:
     }
   });
 
+  // Endpoint to fetch App Download Tracker records & stats
+  app.get('/api/app-downloads', (_req: Request, res: Response) => {
+    try {
+      const filePath = path.join(process.cwd(), 'public', 'app_data.json');
+      if (!fs.existsSync(filePath)) {
+        return res.json({ downloads: [], baseOffset: 0 });
+      }
+      const raw = fs.readFileSync(filePath, 'utf-8');
+      const data = JSON.parse(raw);
+      const downloads = Array.isArray(data.app_downloads) ? data.app_downloads : [];
+      const baseOffset = typeof data.download_base_offset === 'number' ? data.download_base_offset : 0;
+      res.json({ downloads, baseOffset });
+    } catch (err: any) {
+      res.json({ downloads: [], baseOffset: 0 });
+    }
+  });
+
+  // Endpoint to record/upsert an App Download or Install event
+  app.post('/api/track-download', (req: Request, res: Response) => {
+    try {
+      const rawRecord = req.body;
+      if (!rawRecord || (!rawRecord.id && !rawRecord.deviceId)) {
+        return res.status(400).json({ error: 'Device ID is required' });
+      }
+
+      const cleanId = String(rawRecord.id || rawRecord.deviceId).trim();
+      const nowIso = new Date().toISOString();
+
+      const sanitizedRecord = {
+        id: cleanId,
+        deviceId: String(rawRecord.deviceId || cleanId).trim(),
+        studentName: String(rawRecord.studentName || 'अतिथि छात्र (Guest Student)').trim(),
+        studentEmail: String(rawRecord.studentEmail || 'बिना लॉगिन (Direct Install)').trim(),
+        deviceType: rawRecord.deviceType || 'Android',
+        browser: String(rawRecord.browser || 'Chrome').trim(),
+        installMethod: rawRecord.installMethod || 'install_button',
+        installMethodLabel: String(rawRecord.installMethodLabel || '📲 फोन में इंस्टॉल').trim(),
+        source: String(rawRecord.source || 'Direct / App Link').trim(),
+        downloadedAt: rawRecord.downloadedAt || nowIso,
+        lastActiveAt: nowIso,
+        userAgentSummary: String(rawRecord.userAgentSummary || '').trim()
+      };
+
+      const paths = [
+        path.join(process.cwd(), 'public', 'app_data.json'),
+        path.join(process.cwd(), 'dist', 'app_data.json')
+      ];
+
+      for (const filePath of paths) {
+        if (fs.existsSync(filePath)) {
+          try {
+            const raw = fs.readFileSync(filePath, 'utf-8');
+            const data = JSON.parse(raw);
+            if (!Array.isArray(data.app_downloads)) {
+              data.app_downloads = [];
+            }
+            const existingIdx = data.app_downloads.findIndex(
+              (r: any) => r.id === cleanId || r.deviceId === sanitizedRecord.deviceId
+            );
+            if (existingIdx >= 0) {
+              const prev = data.app_downloads[existingIdx];
+              data.app_downloads[existingIdx] = {
+                ...prev,
+                ...sanitizedRecord,
+                studentName:
+                  sanitizedRecord.studentName && !sanitizedRecord.studentName.includes('अतिथि')
+                    ? sanitizedRecord.studentName
+                    : prev.studentName || sanitizedRecord.studentName,
+                studentEmail:
+                  sanitizedRecord.studentEmail && !sanitizedRecord.studentEmail.includes('बिना लॉगिन')
+                    ? sanitizedRecord.studentEmail
+                    : prev.studentEmail || sanitizedRecord.studentEmail,
+                downloadedAt: prev.downloadedAt || sanitizedRecord.downloadedAt
+              };
+            } else {
+              data.app_downloads.unshift(sanitizedRecord);
+            }
+            fs.writeFileSync(filePath, JSON.stringify(data, null, 2), 'utf-8');
+          } catch (e) {
+            console.error('Failed to write app_downloads to file:', filePath, e);
+          }
+        }
+      }
+
+      res.json({ success: true, record: sanitizedRecord });
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  // Admin endpoint to manage download base count or delete a download entry
+  app.post('/api/admin/download-tracker', (req: Request, res: Response) => {
+    try {
+      const { action, baseOffset, id } = req.body;
+      const paths = [
+        path.join(process.cwd(), 'public', 'app_data.json'),
+        path.join(process.cwd(), 'dist', 'app_data.json')
+      ];
+
+      for (const filePath of paths) {
+        if (fs.existsSync(filePath)) {
+          try {
+            const raw = fs.readFileSync(filePath, 'utf-8');
+            const data = JSON.parse(raw);
+            if (!Array.isArray(data.app_downloads)) {
+              data.app_downloads = [];
+            }
+            if (action === 'set_offset' && typeof baseOffset === 'number') {
+              data.download_base_offset = Math.max(0, Math.floor(baseOffset));
+            } else if (action === 'delete_record' && id) {
+              data.app_downloads = data.app_downloads.filter(
+                (r: any) => r.id !== id && r.deviceId !== id
+              );
+            }
+            fs.writeFileSync(filePath, JSON.stringify(data, null, 2), 'utf-8');
+          } catch (e) {
+            console.error('Admin download tracker update error:', e);
+          }
+        }
+      }
+
+      res.json({ success: true });
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
   // Vite middleware for development
   if (process.env.NODE_ENV !== 'production') {
     const { createServer: createViteServer } = await import('vite');

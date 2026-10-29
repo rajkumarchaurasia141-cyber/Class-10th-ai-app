@@ -34,6 +34,7 @@ import { LoginScreen } from './components/LoginScreen';
 import { AdminDailyTestPage } from './components/AdminDailyTestPage';
 import { StudentDailyTestPage } from './components/StudentDailyTestPage';
 import { triggerAd } from './utils/adManager';
+import { recordAppDownload, syncUserIdentityWithDownload } from './services/downloadTracker';
 
 // Password check logic function as requested
 function checkAdminSecret(enteredPass: string): boolean {
@@ -49,6 +50,22 @@ function MainApp() {
       localStorage.removeItem('bseb_firestore_quota_exhausted');
     } catch (e) {}
   }, []);
+
+  // Automatically sync download/install tracker with logged-in user & standalone status
+  React.useEffect(() => {
+    if (user?.name && user?.email) {
+      syncUserIdentityWithDownload(user.name, user.email);
+    }
+    const handleInstalled = () => {
+      recordAppDownload({
+        method: 'pwa_prompt',
+        studentName: user?.name,
+        studentEmail: user?.email
+      });
+    };
+    window.addEventListener('appinstalled', handleInstalled);
+    return () => window.removeEventListener('appinstalled', handleInstalled);
+  }, [user?.name, user?.email]);
 
   // Screen Wake Lock API to prevent screen from turning off while app is open
   React.useEffect(() => {

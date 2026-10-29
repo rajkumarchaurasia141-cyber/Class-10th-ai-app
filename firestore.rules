@@ -110,6 +110,11 @@ service cloud.firestore {
     match /video_interactions/{interactionId} {
       allow read, write: if true;
     }
+
+    // Allow read/write to app_downloads (App Download & Install Tracker for Admin Panel)
+    match /app_downloads/{downloadId} {
+      allow read, write: if true;
+    }
   }
 }
 

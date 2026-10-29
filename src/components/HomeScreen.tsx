@@ -9,9 +9,17 @@ import {
   MessageCircle,
   Instagram,
   Youtube,
-  ArrowRight
+  ArrowRight,
+  BookOpen,
+  Globe,
+  FlaskConical,
+  ListChecks,
+  GraduationCap,
+  Landmark,
+  Compass,
+  Scale,
+  TrendingUp
 } from 'lucide-react';
-import { FeatureGrid } from './FeatureGrid';
 import { ClassRoutineModal } from './ClassRoutineModal';
 import { NcertBooksModal } from './NcertBooksModal';
 import { SocialMediaModal } from './SocialMediaModal';
@@ -25,9 +33,9 @@ interface HomeScreenProps {
   onOpenVip?: () => void;
 }
 
-export function HomeScreen({ onSelect, onOpenSubject, onNavigateTab, onOpenVip }: HomeScreenProps) {
-  const { subjects, motivationalQuotes, appConfig } = useData();
-  const { isVIP, isAdmin, user } = useAuth();
+export function HomeScreen({ onSelect, onOpenSubject, onNavigateTab }: HomeScreenProps) {
+  const { subjects, paidNotes, motivationalQuotes, appConfig } = useData();
+  const { isAdmin, user } = useAuth();
   const handleSelectSubject = onSelect || onOpenSubject || (() => {});
 
   const [showRoutine, setShowRoutine] = useState(false);
@@ -35,7 +43,6 @@ export function HomeScreen({ onSelect, onOpenSubject, onNavigateTab, onOpenVip }
   const [showSocial, setShowSocial] = useState(false);
 
   const handleFeatureNavigate = (id: string) => {
-    // Trigger ad when navigating away
     triggerAd();
 
     switch (id) {
@@ -62,8 +69,143 @@ export function HomeScreen({ onSelect, onOpenSubject, onNavigateTab, onOpenVip }
     }
   };
 
+  const handleOpenSubjectCard = (subjectId: string) => {
+    triggerAd();
+    handleSelectSubject(subjectId);
+  };
+
+  // Retrieve actual chapter/note counts from existing application data
+  const getSubjectChapterCount = (id: string): number => {
+    if (id === 'math') {
+      return subjects['math']?.chapters?.length ?? subjects['mathematics']?.chapters?.length ?? 0;
+    }
+    if (id === 'science') {
+      return subjects['science']?.chapters?.length ?? 0;
+    }
+    if (id === 'social_science' || id === 'sst') {
+      const directCount = subjects['social_science']?.chapters?.length || subjects['sst']?.chapters?.length || 0;
+      if (directCount > 0) return directCount;
+      return (
+        (subjects['history']?.chapters?.length || 0) +
+        (subjects['geography']?.chapters?.length || 0) +
+        (subjects['political_science']?.chapters?.length || 0) +
+        (subjects['economics']?.chapters?.length || 0)
+      );
+    }
+    if (id === 'hindi') {
+      return subjects['hindi']?.chapters?.length ?? 0;
+    }
+    if (id === 'sanskrit') {
+      return subjects['sanskrit']?.chapters?.length ?? 0;
+    }
+    if (id === 'english') {
+      const chCount = subjects['english']?.chapters?.length || 0;
+      if (chCount > 0) return chCount;
+      const noteCount = paidNotes?.filter(n => n.subjectId === 'english').length || 0;
+      return noteCount;
+    }
+    return subjects[id]?.chapters?.length ?? 0;
+  };
+
+  // Primary 6 subject cards matching the reference screenshot
+  const primarySubjectCards = [
+    {
+      id: 'math',
+      name: 'गणित',
+      chaptersCount: getSubjectChapterCount('math'),
+      circleBg: 'bg-[#FF574A]',
+      renderIcon: () => (
+        <svg viewBox="0 0 24 24" className="w-6 h-6 text-white fill-current">
+          <rect x="3.5" y="3.5" width="7" height="7" rx="1" />
+          <circle cx="17" cy="7" r="3.6" />
+          <polygon points="7,13.5 3.2,20.5 10.8,20.5" />
+          <path d="M17 13.5v7M13.5 17h7" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" />
+        </svg>
+      )
+    },
+    {
+      id: 'science',
+      name: 'विज्ञान',
+      chaptersCount: getSubjectChapterCount('science'),
+      circleBg: 'bg-[#00B8D4]',
+      renderIcon: () => <FlaskConical className="w-6 h-6 text-white stroke-[2.2]" />
+    },
+    {
+      id: 'social_science',
+      name: 'सामाजिक विज्ञान (SST)',
+      chaptersCount: getSubjectChapterCount('social_science'),
+      circleBg: 'bg-[#2E7D32]',
+      renderIcon: () => <Globe className="w-6 h-6 text-white stroke-[2.2]" />
+    },
+    {
+      id: 'hindi',
+      name: 'हिंदी',
+      chaptersCount: getSubjectChapterCount('hindi'),
+      circleBg: 'bg-[#29B6F6]',
+      renderIcon: () => <BookOpen className="w-6 h-6 text-white stroke-[2.2]" />
+    },
+    {
+      id: 'sanskrit',
+      name: 'संस्कृत',
+      chaptersCount: getSubjectChapterCount('sanskrit'),
+      circleBg: 'bg-[#4DB6AC]',
+      renderIcon: () => <BookOpen className="w-6 h-6 text-white stroke-[2.2]" />
+    },
+    {
+      id: 'english',
+      name: 'English',
+      chaptersCount: getSubjectChapterCount('english'),
+      circleBg: 'bg-[#8BC34A]',
+      renderIcon: () => <BookOpen className="w-6 h-6 text-white stroke-[2.2]" />
+    }
+  ];
+
+  // Include any additional existing subjects from application data so no existing subject or chapter is removed
+  const ignoredDuplicateKeys = new Set([
+    'math', 'mathematics', 'science', 'social_science', 'sst', 'hindi', 'sanskrit', 'english',
+    'arthashastra', 'bhugol', 'polscience', 'civics'
+  ]);
+
+  const additionalSubjectMeta: Record<string, { name: string; circleBg: string; renderIcon: () => React.ReactNode }> = {
+    history: {
+      name: 'इतिहास (History)',
+      circleBg: 'bg-[#D84315]',
+      renderIcon: () => <Landmark className="w-6 h-6 text-white stroke-[2.2]" />
+    },
+    geography: {
+      name: 'भूगोल (Geography)',
+      circleBg: 'bg-[#00897B]',
+      renderIcon: () => <Compass className="w-6 h-6 text-white stroke-[2.2]" />
+    },
+    political_science: {
+      name: 'राजनीति शास्त्र (Civics)',
+      circleBg: 'bg-[#5E35B1]',
+      renderIcon: () => <Scale className="w-6 h-6 text-white stroke-[2.2]" />
+    },
+    economics: {
+      name: 'अर्थशास्त्र (Economics)',
+      circleBg: 'bg-[#F57C00]',
+      renderIcon: () => <TrendingUp className="w-6 h-6 text-white stroke-[2.2]" />
+    }
+  };
+
+  const additionalSubjectCards = Object.values(subjects)
+    .filter((sub: any) => sub && sub.id && !ignoredDuplicateKeys.has(sub.id))
+    .map((sub: any) => {
+      const meta = additionalSubjectMeta[sub.id];
+      return {
+        id: sub.id,
+        name: meta?.name || sub.subject_name_hindi || sub.subject_name || sub.id,
+        chaptersCount: sub.chapters?.length ?? 0,
+        circleBg: meta?.circleBg || 'bg-[#3949AB]',
+        renderIcon: meta?.renderIcon || (() => <BookOpen className="w-6 h-6 text-white stroke-[2.2]" />)
+      };
+    });
+
+  const allSubjectCards = [...primarySubjectCards, ...additionalSubjectCards];
+
   return (
-    <div className="p-2.5 sm:p-3 w-full max-w-2xl mx-auto space-y-3 sm:space-y-4 pb-12">
+    <div className="p-2.5 sm:p-3 w-full max-w-2xl mx-auto space-y-3.5 sm:space-y-4 pb-12">
       {/* Admin Quick Access Banner */}
       {isAdmin && (
         <div className="bg-[#FFFFFF] border border-[#EADBB8] rounded-xl p-2 px-3 text-[#222222] flex items-center justify-between shadow-xs">
@@ -111,8 +253,95 @@ export function HomeScreen({ onSelect, onOpenSubject, onNavigateTab, onOpenVip }
         </div>
       )}
 
-      {/* Main Features Grid (Exactly 3 Cards: Course, Test & PDFs, Daily Test) */}
-      <FeatureGrid onNavigate={handleFeatureNavigate} />
+      {/* Top Test & Daily Test Quick Access (Preserving Test and Daily Test Navigation) */}
+      <div className="space-y-2.5">
+        <h3 className="text-center text-sm sm:text-base font-extrabold text-[#1A237E] tracking-tight">
+          अब हज़ारों बच्चों के साथ टेस्ट दीजिये
+        </h3>
+
+        <div className="grid grid-cols-2 gap-3 sm:gap-3.5">
+          {/* Daily Test Card */}
+          <div
+            onClick={() => handleFeatureNavigate('daily_test')}
+            className="bg-white rounded-xl border border-slate-200/90 shadow-xs hover:shadow-md transition-all cursor-pointer overflow-hidden group flex flex-col justify-between"
+          >
+            <div className="pt-4 pb-2.5 px-3 flex flex-col items-center text-center">
+              <div className="w-16 h-16 rounded-full bg-slate-100/90 flex items-center justify-center mb-2 shadow-inner">
+                <div className="w-12 h-12 rounded-full bg-[#00897B] flex items-center justify-center text-white shadow-xs group-hover:scale-105 transition-transform">
+                  <ListChecks className="w-6 h-6 stroke-[2.2]" />
+                </div>
+              </div>
+              <span className="text-xs text-slate-500 font-medium">Daily Live Test</span>
+            </div>
+            <div className="border-t border-slate-100 py-2.5 px-2 text-center bg-white">
+              <h4 className="text-sm sm:text-base font-extrabold text-slate-900 group-hover:text-[#00897B] transition-colors">
+                Daily Test
+              </h4>
+            </div>
+          </div>
+
+          {/* Test Section Card */}
+          <div
+            onClick={() => handleFeatureNavigate('crash_course')}
+            className="bg-white rounded-xl border border-slate-200/90 shadow-xs hover:shadow-md transition-all cursor-pointer overflow-hidden group flex flex-col justify-between"
+          >
+            <div className="pt-4 pb-2.5 px-3 flex flex-col items-center text-center">
+              <div className="w-16 h-16 rounded-full bg-slate-100/90 flex items-center justify-center mb-2 shadow-inner">
+                <div className="w-12 h-12 rounded-full bg-[#607D8B] flex items-center justify-center text-white shadow-xs group-hover:scale-105 transition-transform">
+                  <GraduationCap className="w-6 h-6 stroke-[2.2]" />
+                </div>
+              </div>
+              <span className="text-xs text-slate-500 font-medium">30 VVI MCQ Test</span>
+            </div>
+            <div className="border-t border-slate-100 py-2.5 px-2 text-center bg-white">
+              <h4 className="text-sm sm:text-base font-extrabold text-slate-900 group-hover:text-[#1A237E] transition-colors">
+                Test
+              </h4>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Subject-Wise Study Cards Section (2-Column Grid matching Reference Screenshot) */}
+      <div className="space-y-2.5 pt-1">
+        <div className="text-center space-y-0.5">
+          <h2 className="text-sm sm:text-base font-extrabold text-[#1A237E] tracking-tight">
+            अब होगी हर विषय की पूरी तैयारी
+          </h2>
+          <p className="text-[11px] sm:text-xs font-bold text-slate-500">
+            अपने विषय का चयन करें
+          </p>
+        </div>
+
+        <div className="grid grid-cols-2 gap-3 sm:gap-3.5">
+          {allSubjectCards.map((sub) => (
+            <div
+              key={sub.id}
+              onClick={() => handleOpenSubjectCard(sub.id)}
+              className="bg-white rounded-xl border border-slate-200/90 shadow-xs hover:shadow-md hover:border-slate-300 transition-all duration-200 cursor-pointer overflow-hidden group flex flex-col justify-between"
+            >
+              {/* Top Icon & Chapter Count */}
+              <div className="pt-4 pb-2.5 px-3 flex flex-col items-center text-center">
+                <div className="w-16 h-16 rounded-full bg-slate-100/90 flex items-center justify-center mb-2 shadow-inner">
+                  <div className={`w-12 h-12 rounded-full ${sub.circleBg} flex items-center justify-center text-white shadow-xs group-hover:scale-105 transition-transform`}>
+                    {sub.renderIcon()}
+                  </div>
+                </div>
+                <span className="text-xs sm:text-sm text-slate-500 font-medium">
+                  {sub.chaptersCount} Chapters
+                </span>
+              </div>
+
+              {/* Bottom Divider & Subject Name */}
+              <div className="border-t border-slate-100 py-2.5 px-2.5 text-center bg-white">
+                <h3 className="text-base sm:text-lg font-extrabold text-slate-900 leading-snug group-hover:text-[#1A237E] transition-colors">
+                  {sub.name}
+                </h3>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
 
       {/* Free Study Campaign Announcement */}
       <div className="bg-[#FFFFFF] border border-[#EADBB8] rounded-2xl p-3.5 flex items-center justify-between shadow-xs">

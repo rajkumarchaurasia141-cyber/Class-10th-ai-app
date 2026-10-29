@@ -47,8 +47,9 @@ import { AdminPyqManager } from './AdminPyqManager';
 import { AdminCrashCourseManager } from './AdminCrashCourseManager';
 import { AdminNewCrashCourseRecords } from './AdminNewCrashCourseRecords';
 import { AdminDailyTestPage } from './AdminDailyTestPage';
-import { Radio, Calendar, Bell, Layout, Smartphone, Eye, Zap } from 'lucide-react';
+import { Radio, Calendar, Bell, Layout, Smartphone, Eye, Zap, Download } from 'lucide-react';
 import { calculateVipExpiry } from '../utils/vipHelper';
+import { subscribeToAppDownloads } from '../services/downloadTracker';
 
 const PRESET_SUBJECTS = [
   { id: 'sanskrit', name: 'Sanskrit', hindi: 'संस्कृत (पीयूषम्)' },
@@ -63,6 +64,17 @@ export function AdminPanel({ onBack }: any) {
   const [activeTab, setActiveTab] = useState<'requests' | 'daily_test' | 'daily_quizzes' | 'crash_course_records' | 'students' | 'vip' | 'content' | 'pdf_notes' | 'live_classes' | 'live_attendance' | 'routine' | 'quotes' | 'notifications' | 'settings' | 'banners' | 'admins' | 'apk' | 'sync' | 'master' | 'courses' | 'ai_studio' | 'cartoon_studio' | 'pyq_manager' | 'crash_course'>('requests');
   const [pendingRequestsCount, setPendingRequestsCount] = useState<number>(0);
   const [pendingCrashCourseCount, setPendingCrashCourseCount] = useState<number>(0);
+  const [totalAppDownloads, setTotalAppDownloads] = useState<number>(0);
+  const [todayAppDownloads, setTodayAppDownloads] = useState<number>(0);
+
+  // Real-time listener for App Download Tracker stats
+  useEffect(() => {
+    const unsubDownloads = subscribeToAppDownloads((stats) => {
+      setTotalAppDownloads(stats.totalDownloads);
+      setTodayAppDownloads(stats.todayDownloads);
+    });
+    return () => unsubDownloads();
+  }, []);
 
   // Listener for crash course requests count
   useEffect(() => {
@@ -463,14 +475,30 @@ export function AdminPanel({ onBack }: any) {
             </div>
           </div>
 
-          <button
-            onClick={handleLoadSampleTemplate}
-            className="text-xs font-semibold bg-stone-800 hover:bg-stone-700 text-stone-200 px-3.5 py-2 rounded-xl transition-colors border border-stone-700 flex items-center gap-1.5 cursor-pointer w-fit"
-            title="सैंपल डेटा फॉर्म में लोड करें"
-          >
-            <Sparkles className="w-3.5 h-3.5 text-amber-400" />
-            सैंपल NCERT टेम्पलेट भरें
-          </button>
+          <div className="flex flex-wrap items-center gap-2">
+            <button
+              onClick={() => setActiveTab('apk')}
+              className="text-xs font-black bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-stone-950 px-3.5 py-2.5 rounded-xl transition-all shadow-md flex items-center gap-2 cursor-pointer"
+              title="देखें कितने लोगों ने ऐप डाउनलोड किया है"
+            >
+              <Download className="w-4 h-4 text-stone-950" />
+              <span>📊 कुल ऐप डाउनलोड: {totalAppDownloads}</span>
+              {todayAppDownloads > 0 && (
+                <span className="bg-stone-950 text-emerald-400 px-1.5 py-0.5 rounded-md text-[10px] font-black">
+                  आज +{todayAppDownloads}
+                </span>
+              )}
+            </button>
+
+            <button
+              onClick={handleLoadSampleTemplate}
+              className="text-xs font-semibold bg-stone-800 hover:bg-stone-700 text-stone-200 px-3.5 py-2 rounded-xl transition-colors border border-stone-700 flex items-center gap-1.5 cursor-pointer w-fit"
+              title="सैंपल डेटा फॉर्म में लोड करें"
+            >
+              <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+              सैंपल NCERT टेम्पलेट भरें
+            </button>
+          </div>
         </div>
 
         {/* Mobile Dropdown Navigation for Tabs */}
@@ -484,6 +512,7 @@ export function AdminPanel({ onBack }: any) {
             className="w-full bg-stone-950 border border-stone-800 rounded-2xl px-4 py-4 text-white text-sm font-black focus:border-amber-500 focus:outline-none shadow-xl cursor-pointer"
           >
             <option value="requests">📥 पेमेंट रिक्वेस्ट (फुल कोर्स) {pendingRequestsCount > 0 ? `(${pendingRequestsCount})` : ''}</option>
+            <option value="apk">📊 ऐप डाउनलोड ट्रैकर & लिंक ({totalAppDownloads}) ★ LIVE</option>
             <option value="daily_test">📝 डेली टेस्ट (/admin/daily-test) ★ NEW</option>
             <option value="crash_course_records">⚡ न्यू क्रैश कोर्स रिकॉर्ड {pendingCrashCourseCount > 0 ? `(${pendingCrashCourseCount})` : ''}</option>
             <option value="students">👥 पंजीकृत छात्र</option>
@@ -503,7 +532,6 @@ export function AdminPanel({ onBack }: any) {
             <option value="banners">🖼️ होम बैनर (Widgets)</option>
             <option value="settings">⚙️ ऐप सेटिंग्स & मूल्य</option>
             <option value="admins">🔒 एडमिन आईडी मैनेज</option>
-            <option value="apk">📲 वेब ऐप (PWA) & Ads लिंक</option>
             <option value="sync">🔄 क्लाउड सिंक (1-क्लिक)</option>
             <option value="master">🛠️ मास्टर डेटा & टेक्स्ट एडिटर</option>
           </select>
@@ -524,6 +552,18 @@ export function AdminPanel({ onBack }: any) {
                 {pendingRequestsCount}
               </span>
             )}
+          </button>
+          <button 
+            onClick={() => setActiveTab('apk')} 
+            className={`pb-3 px-4 font-bold text-sm flex items-center gap-2 transition-colors cursor-pointer whitespace-nowrap relative ${
+              activeTab === 'apk' ? 'border-b-2 border-emerald-400 text-emerald-400' : 'text-stone-300 hover:text-white'
+            }`}
+          >
+            <Download className="w-4 h-4 text-emerald-400" />
+            <span>📊 ऐप डाउनलोड ट्रैकर</span>
+            <span className="bg-emerald-500 text-stone-950 text-[10px] font-black px-2 py-0.2 rounded-full">
+              {totalAppDownloads}
+            </span>
           </button>
           <button 
             onClick={() => setActiveTab('daily_test')} 
@@ -701,7 +741,7 @@ export function AdminPanel({ onBack }: any) {
               activeTab === 'apk' ? 'border-b-2 border-amber-500 text-amber-500' : 'text-stone-400 hover:text-stone-200'
             }`}
           >
-            <Smartphone className="w-4 h-4 text-emerald-500" /> 📲 वेब ऐप (PWA) & Ads
+            <Smartphone className="w-4 h-4 text-emerald-500" /> 📲 वेब ऐप (PWA) & Ads ({totalAppDownloads})
           </button>
           <button 
             onClick={() => setActiveTab('sync')} 

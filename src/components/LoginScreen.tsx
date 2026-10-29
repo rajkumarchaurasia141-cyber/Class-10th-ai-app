@@ -3,6 +3,10 @@ import { useAuth } from '../context/AuthContext';
 import { useData } from '../context/DataContext';
 import { AppLogo } from './AppLogo';
 import {
+  recordAppDownload,
+  syncUserIdentityWithDownload
+} from '../services/downloadTracker';
+import {
   Smartphone,
   Download,
   AlertCircle,
@@ -41,6 +45,7 @@ export function LoginScreen() {
       (window.matchMedia('(display-mode: standalone)').matches || (window.navigator as any).standalone)
     ) {
       setIsAppInstalled(true);
+      recordAppDownload({ method: 'standalone_launch' });
     }
 
     // Capture prompt if available globally
@@ -67,6 +72,7 @@ export function LoginScreen() {
         (window as any).__deferredPrompt = null;
       }
       setInstallStatus('installed');
+      recordAppDownload({ method: 'pwa_prompt' });
     };
 
     window.addEventListener('app-install-ready', readyHandler);
@@ -83,6 +89,13 @@ export function LoginScreen() {
   const handleInstallClick = async () => {
     setIsTriggeringInstall(true);
 
+    // Record Install APK button click in Admin Download Tracker
+    recordAppDownload({
+      method: 'apk_direct',
+      studentName: name.trim() || undefined,
+      studentEmail: email.trim().toLowerCase() || undefined
+    });
+
     // 1. Direct prompt check (phone native install dialog)
     const prompt = deferredPrompt || (typeof window !== 'undefined' ? (window as any).__deferredPrompt : null);
 
@@ -93,6 +106,11 @@ export function LoginScreen() {
         if (choice?.outcome === 'accepted') {
           setIsAppInstalled(true);
           setInstallStatus('installed');
+          recordAppDownload({
+            method: 'pwa_prompt',
+            studentName: name.trim() || undefined,
+            studentEmail: email.trim().toLowerCase() || undefined
+          });
         } else {
           setInstallStatus('cancelled');
         }
@@ -171,6 +189,7 @@ export function LoginScreen() {
 
     try {
       await login(name.trim(), email.trim().toLowerCase());
+      await syncUserIdentityWithDownload(name.trim(), email.trim().toLowerCase());
     } catch (err: any) {
       console.warn('Login attempt note:', err);
       setError('लॉगिन करने में त्रुटि आई। कृपया पुनः प्रयास करें।');

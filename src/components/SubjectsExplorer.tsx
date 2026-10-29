@@ -46,13 +46,61 @@ export function SubjectsExplorer({ subjectId, onBack }: any) {
     if (onBack) onBack();
   };
 
-  const subject = subjects[subjectId] || 
-    subjects[subjectId?.toLowerCase()] || 
-    (subjectId?.toLowerCase().includes('sanskrit') ? subjects['sanskrit'] : undefined) ||
-    (subjectId?.toLowerCase().includes('econ') || subjectId?.toLowerCase().includes('artha') || subjectId?.includes('अर्थशास्त्र') ? (subjects['economics'] || subjects['arthashastra']) : undefined) ||
-    (subjectId?.toLowerCase().includes('geog') || subjectId?.toLowerCase().includes('bhugol') || subjectId?.includes('भूगोल') ? (subjects['geography'] || subjects['bhugol']) : undefined) ||
-    (subjectId?.toLowerCase().includes('pol') || subjectId?.toLowerCase().includes('civic') || subjectId?.includes('राजनीति') ? (subjects['political_science'] || subjects['polscience']) : undefined) ||
-    (subjectId?.toLowerCase().includes('hist') || subjectId?.includes('इतिहास') ? subjects['history'] : undefined);
+  const resolveSubject = () => {
+    const direct = subjects[subjectId] || 
+      subjects[subjectId?.toLowerCase()] || 
+      (subjectId?.toLowerCase().includes('sanskrit') ? subjects['sanskrit'] : undefined) ||
+      (subjectId?.toLowerCase().includes('econ') || subjectId?.toLowerCase().includes('artha') || subjectId?.includes('अर्थशास्त्र') ? (subjects['economics'] || subjects['arthashastra']) : undefined) ||
+      (subjectId?.toLowerCase().includes('geog') || subjectId?.toLowerCase().includes('bhugol') || subjectId?.includes('भूगोल') ? (subjects['geography'] || subjects['bhugol']) : undefined) ||
+      (subjectId?.toLowerCase().includes('pol') || subjectId?.toLowerCase().includes('civic') || subjectId?.includes('राजनीति') ? (subjects['political_science'] || subjects['polscience']) : undefined) ||
+      (subjectId?.toLowerCase().includes('hist') || subjectId?.includes('इतिहास') ? subjects['history'] : undefined);
+
+    if (direct) return direct;
+
+    const normId = (subjectId || '').toLowerCase();
+    if (normId === 'social_science' || normId === 'sst' || normId.includes('सामाजिक')) {
+      const sstBranches = [
+        { key: 'history', label: 'इतिहास (इतिहास की दुनिया भाग-2)' },
+        { key: 'geography', label: 'भूगोल (भारत : संसाधन एवं उपयोग भाग-2)' },
+        { key: 'political_science', label: 'राजनीति शास्त्र (लोकतांत्रिक राजनीति भाग-2)' },
+        { key: 'economics', label: 'अर्थशास्त्र (हमारी अर्थव्यवस्था भाग-2)' }
+      ];
+      let seqNo = 1;
+      const combinedChapters: any[] = [];
+      sstBranches.forEach(({ key, label }) => {
+        const sub = subjects[key];
+        if (sub && Array.isArray(sub.chapters)) {
+          sub.chapters.forEach((ch: any) => {
+            combinedChapters.push({
+              ...ch,
+              id: ch.id || `${key}-ch-${ch.chapter_no}`,
+              chapter_no: seqNo++,
+              section_name: ch.section_name || sub.subject_name_hindi || label
+            });
+          });
+        }
+      });
+      return {
+        id: 'social_science',
+        subject_name: 'Social Science (SST)',
+        subject_name_hindi: 'सामाजिक विज्ञान (SST)',
+        chapters: combinedChapters
+      };
+    }
+
+    if (normId === 'english' || normId.includes('अंग्रेजी')) {
+      return {
+        id: 'english',
+        subject_name: 'English',
+        subject_name_hindi: 'English',
+        chapters: subjects['english']?.chapters || []
+      };
+    }
+
+    return undefined;
+  };
+
+  const subject = resolveSubject();
   if (!subject) return <div className="p-4 text-center text-stone-400">विषय नहीं मिला</div>;
 
   const chapters = subject.chapters || [];
@@ -84,7 +132,7 @@ export function SubjectsExplorer({ subjectId, onBack }: any) {
             बिहार बोर्ड वर्ग 10
           </span>
           <h2 className="text-xl sm:text-2xl font-black mt-1 text-white">
-            {currentChapter.section_name || (subjectId === 'hindi' ? (
+            {currentChapter?.section_name || (subjectId === 'hindi' ? (
               selectedCh <= 12 ? 'हिंदी गोधूलि (गद्य खंड)' :
               selectedCh <= 24 ? 'हिंदी गोधूलि (काव्य खंड)' :
               'हिंदी वर्णिका'

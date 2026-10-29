@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Smartphone, Download, X, Sparkles, CheckCircle2 } from 'lucide-react';
 import { AppLogo } from './AppLogo';
+import { recordAppDownload } from '../services/downloadTracker';
 
 export function InstallAppBanner() {
   const [deferredPrompt, setDeferredPrompt] = useState<any>(() => {
@@ -20,6 +21,7 @@ export function InstallAppBanner() {
       (window.matchMedia('(display-mode: standalone)').matches || (window.navigator as any).standalone)
     ) {
       setInstalled(true);
+      recordAppDownload({ method: 'standalone_launch' });
       return;
     }
 
@@ -49,6 +51,7 @@ export function InstallAppBanner() {
     window.addEventListener('appinstalled', () => {
       setInstalled(true);
       setShowBanner(false);
+      recordAppDownload({ method: 'pwa_prompt' });
     });
 
     if (!dismissed) {
@@ -69,6 +72,9 @@ export function InstallAppBanner() {
   }, []);
 
   const handleInstallClick = async () => {
+    // Track install button click immediately
+    recordAppDownload({ method: 'install_button' });
+
     const prompt = deferredPrompt || (typeof window !== 'undefined' ? (window as any).__deferredPrompt : null);
 
     if (prompt) {
@@ -78,6 +84,7 @@ export function InstallAppBanner() {
         if (outcome === 'accepted') {
           setInstalled(true);
           setShowBanner(false);
+          recordAppDownload({ method: 'pwa_prompt' });
         }
       } catch (err) {
         console.warn('Install banner error:', err);
