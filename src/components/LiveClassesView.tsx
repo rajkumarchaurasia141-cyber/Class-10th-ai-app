@@ -39,9 +39,6 @@ import {
   WifiOff,
   Loader2
 } from 'lucide-react';
-import { db } from '../lib/firebase';
-import { doc } from 'firebase/firestore';
-import { safeSetDoc } from '../utils/firestoreSafe';
 import { useData, isAiStudioLectureItem } from '../context/DataContext';
 import { useAuth } from '../context/AuthContext';
 import {
@@ -612,17 +609,10 @@ export function LiveClassesView({ onOpenVip }: LiveClassesViewProps) {
         try {
           localStorage.setItem(interactionsStorageKey, JSON.stringify(nextMap));
         } catch {}
-
-        if (user?.email) {
-          const docId = `${user.email.replace(/[^a-zA-Z0-9]/g, '_')}_${videoId}`;
-          safeSetDoc(doc(db, 'video_interactions', docId), updatedItem, { merge: true }).catch(
-            () => {}
-          );
-        }
         return nextMap;
       });
     },
-    [interactionsStorageKey, user?.email, userKey]
+    [interactionsStorageKey, userKey]
   );
 
   const handleSaveWatchProgress = useCallback(
@@ -881,13 +871,12 @@ export function LiveClassesView({ onOpenVip }: LiveClassesViewProps) {
     setTimeout(() => setSpeedToast(''), 2000);
   };
 
-  // Approved & published classes (Strictly Admin-added YouTube / video items only)
+  // All Admin-added YouTube / video classes
   const publishedClasses = useMemo(() => {
     return (liveClasses || [])
       .filter((cls) => {
         if (!cls || !cls.id || isAiStudioLectureItem(cls)) return false;
-        const status = cls.publicationStatus || 'published';
-        return status !== 'draft' && status !== 'rejected' && status !== 'unpublished';
+        return true;
       })
       .map((cls) => ({
         ...cls,
@@ -1006,10 +995,10 @@ export function LiveClassesView({ onOpenVip }: LiveClassesViewProps) {
 
   const whatsappNumber = appConfig.whatsappNumber || '9241511070';
 
-  // Render 16:9 Thumbnail with resilient Educational Studio Poster fallback
+  // Render 16:9 Thumbnail directly from YouTube server with fallback
   const renderThumbnail = (cls: LiveClass, compact = false) => {
     const ytThumb = getYouTubeThumbnailUrl(cls.youtubeUrl);
-    const thumbSrc = cls.thumbnailUrl || ytThumb;
+    const thumbSrc = ytThumb || cls.thumbnailUrl;
     const isFailed = failedThumbnails[cls.id];
     const isCurrentlyLive = Boolean(cls.isLive || cls.streamStatus === 'live');
     const isScheduled = isClassScheduledFuture(cls);
@@ -1119,8 +1108,8 @@ export function LiveClassesView({ onOpenVip }: LiveClassesViewProps) {
               <span className="w-1.5 h-1.5 rounded-full bg-white animate-ping" /> LIVE
             </span>
           ) : (
-            <span className="bg-black/85 text-white text-[11px] font-bold px-1.5 py-0.5 rounded tracking-tight">
-              {cls.duration || '45:20'}
+            <span className="bg-black/85 text-white text-[10px] font-bold px-2 py-0.5 rounded tracking-tight flex items-center gap-1">
+              <Play className="w-2.5 h-2.5 fill-white" /> VIDEO
             </span>
           )}
         </div>

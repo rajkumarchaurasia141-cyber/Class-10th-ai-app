@@ -857,7 +857,7 @@ const normalizeLiveClassItem = (raw: any): LiveClass => {
     subjectName: String(raw?.subjectName || raw?.subject || 'सामान्य'),
     teacherName: String(raw?.teacherName || raw?.teacher || 'राज सर'),
     scheduledAt: String(raw?.scheduledAt || 'रिकॉर्डेड क्लास'),
-    publicationStatus: raw?.publicationStatus || 'published',
+    publicationStatus: 'published',
     createdAt: createdIso,
     publishedAt: String(raw?.publishedAt || createdIso),
     isLive: Boolean(raw?.isLive)
@@ -1233,20 +1233,11 @@ export const DataProvider = ({ children }: any) => {
           } catch {}
           return merged;
         });
-
-        // Also ensure any recently added classes in localCached are backed up to Firestore (without undefined fields)
-        const recentCutoff = Date.now() - 7 * 24 * 60 * 60 * 1000;
-        for (const item of localCached) {
-          const ts = new Date(item.createdAt || 0).getTime();
-          if (ts >= recentCutoff) {
-            safeSetDoc(doc(db, 'live_classes', item.id), normalizeLiveClassItem(item), { merge: true }).catch(() => {});
-          }
-        }
       }
     } catch {}
   }, []);
 
-  // Run server sync on mount, every 12 seconds, and on custom update event
+  // Run sync on mount, every 12 seconds, and on custom update event
   useEffect(() => {
     syncLiveClassesWithServer();
     const pollTimer = setInterval(() => {
@@ -1262,66 +1253,13 @@ export const DataProvider = ({ children }: any) => {
     };
   }, [syncLiveClassesWithServer]);
 
-  // Real-time listener for live_classes (when Firestore quota is available)
-  useEffect(() => {
-    try {
-      const unsub = onSnapshot(
-        collection(db, 'live_classes'),
-        (snapshot) => {
-          const deletedSet = getDeletedLiveIdsSet();
-          const classesFromDb: LiveClass[] = [];
-          snapshot.forEach((docSnap) => {
-            const rawItem = { id: docSnap.id, ...(docSnap.data() as any) };
-            if (isAiStudioLectureItem(rawItem)) {
-              safeDeleteDoc(doc(db, 'live_classes', docSnap.id)).catch(() => {});
-            } else if (!deletedSet.has(docSnap.id)) {
-              classesFromDb.push(normalizeLiveClassItem(rawItem));
-            }
-          });
-
-          setLiveClasses((prev) => {
-            const map = new Map<string, LiveClass>();
-            defaultLiveClasses.forEach((c) => {
-              if (c && c.id && !deletedSet.has(c.id) && !isAiStudioLectureItem(c)) {
-                map.set(c.id, normalizeLiveClassItem(c));
-              }
-            });
-            prev.forEach((c) => {
-              if (c && c.id && !deletedSet.has(c.id) && !isAiStudioLectureItem(c)) {
-                map.set(c.id, normalizeLiveClassItem(c));
-              }
-            });
-            classesFromDb.forEach((c) => {
-              if (c && c.id && !deletedSet.has(c.id) && !isAiStudioLectureItem(c)) {
-                map.set(c.id, normalizeLiveClassItem(c));
-              }
-            });
-            const combined = Array.from(map.values()).sort(
-              (a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime()
-            );
-            try {
-              localStorage.setItem('bseb_live_classes_cache', JSON.stringify(combined));
-            } catch {}
-            return combined;
-          });
-        },
-        (err) => {
-          console.warn('Live classes snapshot warning:', err?.message || String(err));
-        }
-      );
-      return () => unsub();
-    } catch (err: any) {
-      console.warn('Live classes listener error:', err?.message || String(err));
-    }
-  }, []);
-
   const addLiveClass = async (classData: Omit<LiveClass, 'id'>): Promise<string> => {
     const id = 'live_' + Date.now();
     const nowIso = new Date().toISOString();
     const newClass: LiveClass = normalizeLiveClassItem({
       ...classData,
       id,
-      publicationStatus: classData.publicationStatus || 'published',
+      publicationStatus: 'published',
       createdAt: classData.createdAt || nowIso,
       publishedAt: classData.publishedAt || nowIso,
       isUploaded: true
@@ -1338,7 +1276,7 @@ export const DataProvider = ({ children }: any) => {
       return updated;
     });
 
-    // Save to server app_data.json permanently so it appears immediately for all students and never disappears
+    // Save to app_data.json so all students see the YouTube link immediately in the app
     try {
       await fetch('/api/save-live-class', {
         method: 'POST',
@@ -1346,9 +1284,6 @@ export const DataProvider = ({ children }: any) => {
         body: JSON.stringify(newClass)
       });
     } catch {}
-
-    // Save to Firestore (non-blocking if quota exceeded, forceAttempt = true)
-    safeSetDoc(doc(db, 'live_classes', id), newClass, undefined, 4000, true).catch(() => {});
 
     if (typeof window !== 'undefined') {
       window.dispatchEvent(new CustomEvent('bseb-live-classes-updated'));
@@ -1386,10 +1321,6 @@ export const DataProvider = ({ children }: any) => {
         });
       } catch {}
     }
-
-    safeSetDoc(doc(db, 'live_classes', id), cleanUpdates, { merge: true }, 4000, true).catch(
-      () => {}
-    );
   };
 
   const deleteLiveClass = async (id: string): Promise<void> => {
@@ -1417,8 +1348,6 @@ export const DataProvider = ({ children }: any) => {
         body: JSON.stringify({ id })
       });
     } catch {}
-
-    safeDeleteDoc(doc(db, 'live_classes', id), 3500, true).catch(() => {});
   };
 
   const [dailyQuizzes, setDailyQuizzes] = useState<DailyQuizItem[]>(defaultDailyQuizzes);
