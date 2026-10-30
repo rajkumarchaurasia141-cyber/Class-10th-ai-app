@@ -31,6 +31,12 @@ export function extractYouTubeVideoId(input?: string | null): string | null {
     clean = iframeSrcMatch[1].trim();
   }
 
+  // If user pasted YouTube mobile share text like "Class 10 Math https://youtu.be/abc123?si=xyz", extract the URL
+  const embeddedUrlMatch = clean.match(/https?:\/\/[^\s"'<>]+/i);
+  if (embeddedUrlMatch && embeddedUrlMatch[0]) {
+    clean = embeddedUrlMatch[0].trim();
+  }
+
   // Direct 11-char ID
   if (/^[a-zA-Z0-9_-]{11}$/.test(clean)) {
     return clean;

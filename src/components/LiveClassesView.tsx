@@ -66,6 +66,7 @@ import {
   DEFAULT_BATCH_STUDENTS
 } from '../services/attendanceTracker';
 import { AdsterraBanner } from './AdsterraBanner';
+import { triggerAd } from '../utils/adManager';
 
 interface LiveClassesViewProps {
   onOpenVip: () => void;
@@ -562,7 +563,7 @@ export function LiveClassesView({ onOpenVip }: LiveClassesViewProps) {
   const [debouncedSearchQuery, setDebouncedSearchQuery] = useState<string>('');
   const [activeCategory, setActiveCategory] = useState<VideoCategoryTab | 'Saved' | 'Continue'>('All');
   const [selectedSubject, setSelectedSubject] = useState<string>('all');
-  const [visibleCount, setVisibleCount] = useState<number>(9);
+  const [visibleCount, setVisibleCount] = useState<number>(100);
 
   // Debounce search input by 250ms
   useEffect(() => {
@@ -744,6 +745,7 @@ export function LiveClassesView({ onOpenVip }: LiveClassesViewProps) {
   // Open a video in the player page without triggering background Firestore writes that re-render the player
   const handleWatchClass = useCallback(
     (cls: LiveClass) => {
+      triggerAd("live_video_click");
       if (!userCanAccess(cls)) {
         setLockedClassPrompt(cls);
         return;
@@ -885,7 +887,7 @@ export function LiveClassesView({ onOpenVip }: LiveClassesViewProps) {
       .filter((cls) => {
         if (!cls || !cls.id || isAiStudioLectureItem(cls)) return false;
         const status = cls.publicationStatus || 'published';
-        return status === 'published';
+        return status !== 'draft' && status !== 'rejected' && status !== 'unpublished';
       })
       .map((cls) => ({
         ...cls,
@@ -898,10 +900,7 @@ export function LiveClassesView({ onOpenVip }: LiveClassesViewProps) {
       .sort((a, b) => {
         if (a.featured && !b.featured) return -1;
         if (!a.featured && b.featured) return 1;
-        const orderA = typeof a.displayOrder === 'number' ? a.displayOrder : 999;
-        const orderB = typeof b.displayOrder === 'number' ? b.displayOrder : 999;
-        if (orderA !== orderB) return orderA - orderB;
-        return new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime();
+        return new Date(b.createdAt || b.publishedAt || 0).getTime() - new Date(a.createdAt || a.publishedAt || 0).getTime();
       });
   }, [liveClasses]);
 
@@ -1303,7 +1302,7 @@ export function LiveClassesView({ onOpenVip }: LiveClassesViewProps) {
                   type="button"
                   onClick={() => {
                     setActiveCategory(chip.id);
-                    setVisibleCount(9);
+                    setVisibleCount(100);
                   }}
                   className={`px-3.5 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap transition-all cursor-pointer shrink-0 ${
                     isSelected
@@ -1333,7 +1332,7 @@ export function LiveClassesView({ onOpenVip }: LiveClassesViewProps) {
                     type="button"
                     onClick={() => {
                       setSelectedSubject(subj);
-                      setVisibleCount(9);
+                      setVisibleCount(100);
                     }}
                     className={`px-2.5 py-1 rounded-lg text-[11px] font-bold whitespace-nowrap cursor-pointer transition-colors ${
                       active

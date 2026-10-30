@@ -2,15 +2,34 @@ import { setDoc, deleteDoc, getDoc, DocumentReference, SetOptions } from 'fireba
 
 const QUOTA_STORAGE_KEY = 'bseb_firestore_quota_exhausted';
 
-// Initialize from localStorage if marked recently (within 24 hours)
+/**
+ * Recursively strips `undefined` properties from objects so Firestore `setDoc()`
+ * never throws `Unsupported field value: undefined`.
+ */
+export function sanitizeForFirestore(val: any): any {
+  if (val === undefined) return null;
+  if (val === null || typeof val !== 'object') return val;
+  if (val instanceof Date) return val.toISOString();
+  if (Array.isArray(val)) {
+    return val.filter((item) => item !== undefined).map((item) => sanitizeForFirestore(item));
+  }
+  const cleaned: Record<string, any> = {};
+  for (const [k, v] of Object.entries(val)) {
+    if (v !== undefined) {
+      cleaned[k] = sanitizeForFirestore(v);
+    }
+  }
+  return cleaned;
+}
+
+// Initialize from localStorage if marked recently (within 2 hours so it recovers quickly)
 let quotaExceededState = (() => {
   try {
     const saved = localStorage.getItem(QUOTA_STORAGE_KEY);
     if (saved) {
       const parsed = JSON.parse(saved);
       const elapsed = Date.now() - (parsed.exceededAt || 0);
-      // Quotas reset daily (24h)
-      if (elapsed < 24 * 60 * 60 * 1000) {
+      if (elapsed < 2 * 60 * 60 * 1000) {
         return true;
       } else {
         localStorage.removeItem(QUOTA_STORAGE_KEY);
@@ -50,6 +69,7 @@ export function isQuotaError(err: any): boolean {
     msg.includes('Quota limit exceeded') ||
     msg.includes('resource-exhausted') ||
     msg.includes('Free daily write units') ||
+    msg.includes('Free daily read units') ||
     msg.includes('Quota exceeded')
   );
 }
@@ -58,30 +78,26 @@ export async function safeGetDoc<T = any>(
   reference: DocumentReference<T>,
   timeoutMs: number = 2500
 ): Promise<any | null> {
-  // If quota is already known exceeded, don't even try the read
   if (isFirestoreQuotaExceeded()) {
-    console.warn("Firestore read skipped: Daily read quota exceeded.");
     return null;
   }
 
   try {
     const getPromise = getDoc(reference);
-    const timeoutPromise = new Promise<'timeout'>((resolve) => setTimeout(() => resolve('timeout'), timeoutMs));
+    const timeoutPromise = new Promise<'timeout'>((resolve) =>
+      setTimeout(() => resolve('timeout'), timeoutMs)
+    );
 
     const result = await Promise.race([getPromise, timeoutPromise]);
     if (result === 'timeout') {
-      console.warn("Firestore read timed out.");
       return null;
     }
-    
-    // Result is the document snapshot
+
     return result;
   } catch (err: any) {
     if (isQuotaError(err)) {
       setFirestoreQuotaExceeded(true);
-      console.warn("Firestore daily read quota exceeded. Switching to offline mode.");
     }
-    console.warn("Firestore read notice:", err?.message || String(err));
     return null;
   }
 }
@@ -90,25 +106,26 @@ export async function safeSetDoc<T = any>(
   reference: DocumentReference<T>,
   data: any,
   options?: SetOptions,
-  timeoutMs: number = 2500,
+  timeoutMs: number = 3500,
   forceAttempt: boolean = false
 ): Promise<boolean> {
-  // If quota is already exceeded, SKIP routine background writes unless forceAttempt is true
   if (isFirestoreQuotaExceeded() && !forceAttempt) {
-    console.warn("Firestore write skipped: Daily write quota reached (20,000/day). Saved to local cache.");
     return false;
   }
 
   try {
-    const writePromise = options ? setDoc(reference, data, options) : setDoc(reference, data);
-    const timeoutPromise = new Promise<'timeout'>((resolve) => setTimeout(() => resolve('timeout'), timeoutMs));
+    const cleanData = sanitizeForFirestore(data);
+    const writePromise = options
+      ? setDoc(reference, cleanData, options)
+      : setDoc(reference, cleanData);
+    const timeoutPromise = new Promise<'timeout'>((resolve) =>
+      setTimeout(() => resolve('timeout'), timeoutMs)
+    );
 
     const result = await Promise.race([writePromise, timeoutPromise]);
     if (result === 'timeout') {
-      console.warn("Firestore write timed out. Safely continuing with local data.");
       return false;
     }
-    // If successfully written, clear any stale quota exceeded flag
     if (isFirestoreQuotaExceeded()) {
       setFirestoreQuotaExceeded(false);
     }
@@ -116,10 +133,9 @@ export async function safeSetDoc<T = any>(
   } catch (err: any) {
     if (isQuotaError(err)) {
       setFirestoreQuotaExceeded(true);
-      console.warn("Firestore daily write quota reached (20,000 free writes/day). The app continues in local-offline mode.");
       return false;
     }
-    console.warn("Firestore write notice:", err?.message || String(err));
+    console.warn('Firestore write notice:', err?.message || String(err));
     return false;
   }
 }
@@ -130,17 +146,17 @@ export async function safeDeleteDoc<T = any>(
   forceAttempt: boolean = false
 ): Promise<boolean> {
   if (isFirestoreQuotaExceeded() && !forceAttempt) {
-    console.warn("Firestore delete skipped: Daily quota reached. Data updated locally.");
     return false;
   }
 
   try {
     const delPromise = deleteDoc(reference);
-    const timeoutPromise = new Promise<'timeout'>((resolve) => setTimeout(() => resolve('timeout'), timeoutMs));
+    const timeoutPromise = new Promise<'timeout'>((resolve) =>
+      setTimeout(() => resolve('timeout'), timeoutMs)
+    );
 
     const result = await Promise.race([delPromise, timeoutPromise]);
     if (result === 'timeout') {
-      console.warn("Firestore delete timed out. Safely continuing.");
       return false;
     }
     if (isFirestoreQuotaExceeded()) {
@@ -150,11 +166,8 @@ export async function safeDeleteDoc<T = any>(
   } catch (err: any) {
     if (isQuotaError(err)) {
       setFirestoreQuotaExceeded(true);
-      console.warn("Firestore daily write/delete quota reached. Continuing in local-offline mode.");
       return false;
     }
-    console.warn("Firestore delete notice:", err?.message || String(err));
     return false;
   }
 }
-

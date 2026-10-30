@@ -81,7 +81,516 @@ export const isAiStudioLectureItem = (raw: any): boolean => {
   return false;
 };
 
-export const defaultLiveClasses: LiveClass[] = [];
+export const defaultLiveClasses: LiveClass[] = [
+  {
+    id: 'live_1793016860379',
+    title: 'Class 10th Math Trick — Mantu Sir',
+    subjectName: 'गणित',
+    teacherName: 'Mantu sir',
+    youtubeUrl: 'https://www.youtube.com/watch?v=JPtTC3EbBdU',
+    playbackUrl: 'https://www.youtube.com/watch?v=JPtTC3EbBdU',
+    scheduledAt: 'अभी लाइव',
+    createdAt: '2026-10-26T12:14:20.379Z',
+    publishedAt: '2026-10-26T12:14:20.379Z',
+    isLive: false,
+    isVip: false,
+    publicationStatus: 'published',
+    streamStatus: 'ended',
+    category: 'Classes',
+    libraryCategory: 'Chapter-wise Lectures',
+    contentType: 'recorded',
+    publishType: 'instant',
+    isUploaded: true,
+    viewsCount: 1248,
+    likesCount: 251,
+    description: ''
+  },
+  {
+    id: 'live_1792310611683',
+    title: '11th & 12th Special Science Class',
+    subjectName: 'विज्ञान',
+    teacherName: 'Yt',
+    youtubeUrl: 'https://www.youtube.com/watch?v=pc4mqZturjQ',
+    playbackUrl: 'https://www.youtube.com/watch?v=pc4mqZturjQ',
+    scheduledAt: 'अभी लाइव',
+    createdAt: '2026-10-18T08:03:31.683Z',
+    publishedAt: '2026-10-18T08:03:31.683Z',
+    isLive: false,
+    isVip: false,
+    publicationStatus: 'published',
+    streamStatus: 'ended',
+    category: 'Classes',
+    libraryCategory: 'Chapter-wise Lectures',
+    contentType: 'recorded',
+    publishType: 'instant',
+    isUploaded: true,
+    viewsCount: 1240,
+    description: ''
+  },
+  {
+    id: 'live_1792289302753',
+    title: 'रामबाण सामाजिक विज्ञान (VVI मैराथन क्लास)',
+    subjectName: 'सामाजिक विज्ञान',
+    teacherName: 'राज सर',
+    youtubeUrl: 'https://www.youtube.com/watch?v=Y7PXDFvXNwc',
+    playbackUrl: 'https://www.youtube.com/watch?v=Y7PXDFvXNwc',
+    scheduledAt: 'आज शाम 7:00 बजे',
+    createdAt: '2026-10-18T02:08:22.754Z',
+    publishedAt: '2026-10-18T02:08:22.754Z',
+    isLive: true,
+    isVip: false,
+    publicationStatus: 'published',
+    streamStatus: 'live',
+    category: 'Live',
+    libraryCategory: 'Revision Classes',
+    contentType: 'live',
+    publishType: 'instant',
+    isUploaded: true,
+    viewsCount: 1520,
+    description: ''
+  },
+  {
+    id: 'live_1791932770220',
+    title: 'हिंदी में निबंध लिखने का ट्रिक VVI',
+    subjectName: 'हिन्दी',
+    teacherName: 'Sourse - yt',
+    youtubeUrl: 'https://www.youtube.com/watch?v=EPk3WVjaGcs',
+    playbackUrl: 'https://www.youtube.com/watch?v=EPk3WVjaGcs',
+    scheduledAt: 'रिकॉर्डेड क्लास',
+    createdAt: '2026-10-13T23:06:10.220Z',
+    publishedAt: '2026-10-13T23:06:10.220Z',
+    isLive: false,
+    isVip: false,
+    publicationStatus: 'published',
+    streamStatus: 'ended',
+    category: 'Classes',
+    libraryCategory: 'Exam Preparation',
+    contentType: 'recorded',
+    publishType: 'instant',
+    isUploaded: true,
+    viewsCount: 1241,
+    description: ''
+  },
+  {
+    id: 'live_1791330521128',
+    title: 'Class 9th Physics Chapter 4',
+    subjectName: 'विज्ञान',
+    teacherName: 'Pw',
+    youtubeUrl: 'https://www.youtube.com/watch?v=BKVp4U1rjHo',
+    playbackUrl: 'https://www.youtube.com/watch?v=BKVp4U1rjHo',
+    scheduledAt: 'अभी लाइव',
+    createdAt: '2026-10-06T23:48:41.128Z',
+    publishedAt: '2026-10-06T23:48:41.128Z',
+    isLive: false,
+    isVip: false,
+    publicationStatus: 'published',
+    streamStatus: 'ended',
+    category: 'Classes',
+    libraryCategory: 'Chapter-wise Lectures',
+    contentType: 'recorded',
+    publishType: 'instant',
+    isUploaded: true,
+    viewsCount: 1241,
+    description: ''
+  },
+  {
+    id: 'live_1791245687910',
+    title: 'क्लास 9th गुरुत्वाकर्षण (Gravitation)',
+    subjectName: 'विज्ञान',
+    teacherName: 'Sourse pw',
+    youtubeUrl: 'https://www.youtube.com/watch?v=BKVp4U1rjHo',
+    playbackUrl: 'https://www.youtube.com/watch?v=BKVp4U1rjHo',
+    scheduledAt: 'अभी लाइव',
+    createdAt: '2026-10-06T00:14:47.910Z',
+    publishedAt: '2026-10-06T00:14:47.910Z',
+    isLive: true,
+    isVip: false,
+    publicationStatus: 'published',
+    streamStatus: 'live',
+    category: 'Live',
+    libraryCategory: 'Chapter-wise Lectures',
+    contentType: 'live',
+    publishType: 'instant',
+    isUploaded: true,
+    viewsCount: 1310,
+    description: ''
+  },
+  {
+    id: 'live_1790944466376',
+    title: 'Class 10th History Chapter 2 One Shot',
+    subjectName: 'सामाजिक विज्ञान',
+    teacherName: 'राज सर',
+    youtubeUrl: 'https://www.youtube.com/watch?v=I-hWjcDqa-Q',
+    playbackUrl: 'https://www.youtube.com/watch?v=I-hWjcDqa-Q',
+    scheduledAt: 'अभी लाइव',
+    createdAt: '2026-10-02T12:34:26.376Z',
+    publishedAt: '2026-10-02T12:34:26.376Z',
+    isLive: true,
+    isVip: false,
+    publicationStatus: 'published',
+    streamStatus: 'live',
+    category: 'Live',
+    libraryCategory: 'Chapter-wise Lectures',
+    contentType: 'live',
+    publishType: 'instant',
+    isUploaded: true,
+    viewsCount: 1420,
+    description: ''
+  },
+  {
+    id: 'live_1790935174614',
+    title: 'गोधूलि अध्याय 1 श्रम विभाजन और जाति प्रथा',
+    subjectName: 'हिन्दी',
+    teacherName: 'Raj sir',
+    youtubeUrl: 'https://www.youtube.com/watch?v=MOTqFrrrxLA',
+    playbackUrl: 'https://www.youtube.com/watch?v=MOTqFrrrxLA',
+    scheduledAt: 'आज',
+    createdAt: '2026-10-02T09:59:34.614Z',
+    publishedAt: '2026-10-02T09:59:34.614Z',
+    isLive: true,
+    isVip: false,
+    publicationStatus: 'published',
+    streamStatus: 'live',
+    category: 'Live',
+    libraryCategory: 'Chapter-wise Lectures',
+    contentType: 'live',
+    publishType: 'instant',
+    isUploaded: true,
+    viewsCount: 1380,
+    description: ''
+  },
+  {
+    id: 'live_1790912909542',
+    title: 'Class 9th प्रश्नावली 2.4',
+    subjectName: 'गणित',
+    teacherName: 'राज सर',
+    youtubeUrl: 'https://www.youtube.com/watch?v=pvRMqRMgS1I',
+    playbackUrl: 'https://www.youtube.com/watch?v=pvRMqRMgS1I',
+    scheduledAt: 'आज',
+    createdAt: '2026-10-02T03:48:29.542Z',
+    publishedAt: '2026-10-02T03:48:29.542Z',
+    isLive: false,
+    isVip: false,
+    publicationStatus: 'published',
+    streamStatus: 'ended',
+    category: 'Classes',
+    libraryCategory: 'Chapter-wise Lectures',
+    contentType: 'recorded',
+    publishType: 'instant',
+    isUploaded: true,
+    viewsCount: 1243,
+    description: ''
+  },
+  {
+    id: 'live_1790912882392',
+    title: 'Class 10th प्रश्नावली 2.3',
+    subjectName: 'गणित',
+    teacherName: 'राज सर',
+    youtubeUrl: 'https://www.youtube.com/watch?v=Q8q8USbzU4s',
+    playbackUrl: 'https://www.youtube.com/watch?v=Q8q8USbzU4s',
+    scheduledAt: 'आज',
+    createdAt: '2026-10-02T03:48:02.392Z',
+    publishedAt: '2026-10-02T03:48:02.392Z',
+    isLive: false,
+    isVip: false,
+    publicationStatus: 'published',
+    streamStatus: 'ended',
+    category: 'Classes',
+    libraryCategory: 'Chapter-wise Lectures',
+    contentType: 'recorded',
+    publishType: 'instant',
+    isUploaded: true,
+    viewsCount: 1241,
+    description: ''
+  },
+  {
+    id: 'live_1790912760988',
+    title: 'Class 9th प्रश्नावली 2.2',
+    subjectName: 'गणित',
+    teacherName: 'Pankaj sir',
+    youtubeUrl: 'https://www.youtube.com/watch?v=EVi7yTmJZm4',
+    playbackUrl: 'https://www.youtube.com/watch?v=EVi7yTmJZm4',
+    scheduledAt: 'आज',
+    createdAt: '2026-10-02T03:46:00.990Z',
+    publishedAt: '2026-10-02T03:46:00.990Z',
+    isLive: false,
+    isVip: false,
+    publicationStatus: 'published',
+    streamStatus: 'ended',
+    category: 'Classes',
+    libraryCategory: 'Chapter-wise Lectures',
+    contentType: 'recorded',
+    publishType: 'instant',
+    isUploaded: true,
+    viewsCount: 1240,
+    description: ''
+  },
+  {
+    id: 'live_1790910550641',
+    title: 'Class 10th प्रश्नावली 2.1',
+    subjectName: 'गणित',
+    teacherName: 'Pankaj sir',
+    youtubeUrl: 'https://www.youtube.com/watch?v=CyWQdTAREYM',
+    playbackUrl: 'https://www.youtube.com/watch?v=CyWQdTAREYM',
+    scheduledAt: 'आज',
+    createdAt: '2026-10-02T03:09:10.645Z',
+    publishedAt: '2026-10-02T03:09:10.645Z',
+    isLive: false,
+    isVip: false,
+    publicationStatus: 'published',
+    streamStatus: 'ended',
+    category: 'Classes',
+    libraryCategory: 'Chapter-wise Lectures',
+    contentType: 'recorded',
+    publishType: 'instant',
+    isUploaded: true,
+    viewsCount: 1240,
+    description: ''
+  },
+  {
+    id: 'live_1790904661152',
+    title: 'Class 9th प्रश्नावली 1.5',
+    subjectName: 'गणित',
+    teacherName: 'Pankaj sir',
+    youtubeUrl: 'https://www.youtube.com/watch?v=3EOPTO71C6s',
+    playbackUrl: 'https://www.youtube.com/watch?v=3EOPTO71C6s',
+    scheduledAt: 'आज',
+    createdAt: '2026-10-02T01:31:01.153Z',
+    publishedAt: '2026-10-02T01:31:01.153Z',
+    isLive: false,
+    isVip: false,
+    publicationStatus: 'published',
+    streamStatus: 'ended',
+    category: 'Classes',
+    libraryCategory: 'Chapter-wise Lectures',
+    contentType: 'recorded',
+    publishType: 'instant',
+    isUploaded: true,
+    viewsCount: 1240,
+    description: ''
+  },
+  {
+    id: 'live_1790904441318',
+    title: 'Class 9th प्रश्नावली 1.4',
+    subjectName: 'गणित',
+    teacherName: 'Pankaj sir',
+    youtubeUrl: 'https://www.youtube.com/watch?v=yAv3TYIPkUk',
+    playbackUrl: 'https://www.youtube.com/watch?v=yAv3TYIPkUk',
+    scheduledAt: 'आज शाम 6:00 बजे',
+    createdAt: '2026-10-02T01:27:21.322Z',
+    publishedAt: '2026-10-02T01:27:21.322Z',
+    isLive: false,
+    isVip: false,
+    publicationStatus: 'published',
+    streamStatus: 'ended',
+    category: 'Classes',
+    libraryCategory: 'Chapter-wise Lectures',
+    contentType: 'recorded',
+    publishType: 'instant',
+    isUploaded: true,
+    viewsCount: 1240,
+    description: ''
+  },
+  {
+    id: 'live_1790904318374',
+    title: 'Class 9th प्रश्नावली 1.3',
+    subjectName: 'गणित',
+    teacherName: 'Pankaj sir',
+    youtubeUrl: 'https://www.youtube.com/watch?v=glCYl5PXnbA',
+    playbackUrl: 'https://www.youtube.com/watch?v=glCYl5PXnbA',
+    scheduledAt: 'आज',
+    createdAt: '2026-10-02T01:25:18.374Z',
+    publishedAt: '2026-10-02T01:25:18.374Z',
+    isLive: false,
+    isVip: false,
+    publicationStatus: 'published',
+    streamStatus: 'ended',
+    category: 'Classes',
+    libraryCategory: 'Chapter-wise Lectures',
+    contentType: 'recorded',
+    publishType: 'instant',
+    isUploaded: true,
+    viewsCount: 1240,
+    description: ''
+  },
+  {
+    id: 'live_1790084830099',
+    title: 'संस्कृत व्याकरण - परीक्षा में अनुच्छेद (7 वाक्य) लिखने की ट्रिक',
+    subjectName: 'संस्कृत',
+    teacherName: 'राज सर • BSEB GURU',
+    youtubeUrl: 'https://www.youtube.com/watch?v=iXxCoEvsxks',
+    playbackUrl: 'https://www.youtube.com/watch?v=iXxCoEvsxks',
+    scheduledAt: 'रिकॉर्डेड क्लास',
+    createdAt: '2026-09-22T13:47:10.099Z',
+    publishedAt: '2026-09-22T13:47:10.099Z',
+    isLive: false,
+    isVip: false,
+    publicationStatus: 'published',
+    streamStatus: 'ended',
+    category: 'Classes',
+    libraryCategory: 'Exam Preparation',
+    contentType: 'recorded',
+    description: 'बिहार बोर्ड 10वीं संस्कृत परीक्षा में 7 अंकों का अनुच्छेद लेखन आसानी से कैसे करें।'
+  },
+  {
+    id: 'live_1790081975511',
+    title: 'हिंदी के संपूर्ण अध्याय के लेखक के नाम याद करने की ट्रिक',
+    subjectName: 'हिन्दी',
+    teacherName: 'राज सर • BSEB GURU',
+    youtubeUrl: 'https://www.youtube.com/watch?v=1Aj6-w1RgPU',
+    playbackUrl: 'https://www.youtube.com/watch?v=1Aj6-w1RgPU',
+    scheduledAt: 'रिकॉर्डेड क्लास',
+    createdAt: '2026-09-22T12:59:35.516Z',
+    publishedAt: '2026-09-22T12:59:35.516Z',
+    isLive: false,
+    isVip: false,
+    publicationStatus: 'published',
+    streamStatus: 'ended',
+    category: 'Classes',
+    libraryCategory: 'Revision Classes',
+    contentType: 'recorded',
+    description: 'कक्षा 10वीं हिंदी गोधूलि के सभी पाठ और उनके लेखकों के नाम याद करने की शानदार ट्रिक।'
+  },
+  {
+    id: 'live_1790075722375',
+    title: 'BSEB Class 10 Topper Motivation & Comeback Strategy',
+    subjectName: 'सामान्य',
+    teacherName: 'राज सर',
+    youtubeUrl: 'https://www.youtube.com/watch?v=ruqhIhB3vl0',
+    playbackUrl: 'https://www.youtube.com/watch?v=ruqhIhB3vl0',
+    scheduledAt: 'रिकॉर्डेड क्लास',
+    createdAt: '2026-09-22T11:15:22.375Z',
+    publishedAt: '2026-09-22T11:15:22.375Z',
+    isLive: false,
+    isVip: false,
+    publicationStatus: 'published',
+    streamStatus: 'ended',
+    category: 'Classes',
+    libraryCategory: 'Exam Preparation',
+    contentType: 'recorded',
+    description: 'बोर्ड परीक्षा में 450+ अंक लाने के लिए विशेष मोटिवेशन और टाइम-टेबल रणनीति।'
+  },
+  {
+    id: 'live_1790066678880',
+    title: 'वर्णिका पाठ 5 - धरती कब तक घूमेगी (संपूर्ण हल)',
+    subjectName: 'हिन्दी',
+    chapterName: 'वर्णिका पाठ 5: धरती कब तक घूमेगी',
+    teacherName: 'राज सर',
+    youtubeUrl: 'https://www.youtube.com/watch?v=8ofwkGs2nYE',
+    playbackUrl: 'https://www.youtube.com/watch?v=8ofwkGs2nYE',
+    scheduledAt: 'रिकॉर्डेड क्लास',
+    createdAt: '2026-09-22T08:44:38.880Z',
+    publishedAt: '2026-09-22T08:44:38.880Z',
+    isLive: false,
+    isVip: false,
+    publicationStatus: 'published',
+    streamStatus: 'ended',
+    category: 'Classes',
+    libraryCategory: 'Chapter-wise Lectures',
+    contentType: 'recorded',
+    description: 'बिहार बोर्ड 10वीं हिंदी वर्णिका पाठ 5 धरती कब तक घूमेगी का संपूर्ण सारांश और प्रश्न-उत्तर।'
+  },
+  {
+    id: 'live_1790046453396',
+    title: 'वर्णिका पाठ 4 - नगर (संपूर्ण व्याख्या एवं प्रश्नोत्तर)',
+    subjectName: 'हिन्दी',
+    chapterName: 'वर्णिका पाठ 4: नगर',
+    teacherName: 'राज सर',
+    youtubeUrl: 'https://www.youtube.com/watch?v=rRLL5Tw1gV8',
+    playbackUrl: 'https://www.youtube.com/watch?v=rRLL5Tw1gV8',
+    scheduledAt: 'रिकॉर्डेड क्लास',
+    createdAt: '2026-09-22T03:07:33.399Z',
+    publishedAt: '2026-09-22T03:07:33.399Z',
+    isLive: false,
+    isVip: false,
+    publicationStatus: 'published',
+    streamStatus: 'ended',
+    category: 'Classes',
+    libraryCategory: 'Chapter-wise Lectures',
+    contentType: 'recorded',
+    description: 'बिहार बोर्ड कक्षा 10वीं हिंदी वर्णिका पाठ 4 नगर (सुजाता) संपूर्ण क्लास।'
+  },
+  {
+    id: 'live_1790033137415',
+    title: 'वर्णिका पाठ 3 - माँ (संपूर्ण व्याख्या व VVI प्रश्न)',
+    subjectName: 'हिन्दी',
+    chapterName: 'वर्णिका पाठ 3: माँ',
+    teacherName: 'राज सर',
+    youtubeUrl: 'https://www.youtube.com/watch?v=MD6tiYOtGAg',
+    playbackUrl: 'https://www.youtube.com/watch?v=MD6tiYOtGAg',
+    scheduledAt: 'रिकॉर्डेड क्लास',
+    createdAt: '2026-09-21T23:25:37.415Z',
+    publishedAt: '2026-09-21T23:25:37.415Z',
+    isLive: false,
+    isVip: false,
+    publicationStatus: 'published',
+    streamStatus: 'ended',
+    category: 'Classes',
+    libraryCategory: 'Chapter-wise Lectures',
+    contentType: 'recorded',
+    description: 'बिहार बोर्ड कक्षा 10वीं वर्णिका भाग-2 पाठ 3 माँ कहानी का संपूर्ण सारांश।'
+  },
+  {
+    id: 'live_1790004170075',
+    title: 'वर्णिका पाठ 2 - ढहते विश्वास (संपूर्ण सारांश एवं प्रश्नोत्तर)',
+    subjectName: 'हिन्दी',
+    chapterName: 'वर्णिका पाठ 2: ढहते विश्वास',
+    teacherName: 'राज सर',
+    youtubeUrl: 'https://www.youtube.com/watch?v=l209nWSzih4',
+    playbackUrl: 'https://www.youtube.com/watch?v=l209nWSzih4',
+    scheduledAt: 'रिकॉर्डेड क्लास',
+    createdAt: '2026-09-21T15:22:50.075Z',
+    publishedAt: '2026-09-21T15:22:50.075Z',
+    isLive: false,
+    isVip: false,
+    publicationStatus: 'published',
+    streamStatus: 'ended',
+    category: 'Classes',
+    libraryCategory: 'Chapter-wise Lectures',
+    contentType: 'recorded',
+    description: 'कक्षा 10वीं हिंदी वर्णिका अध्याय 2 ढहते विश्वास की संपूर्ण व्याख्या और VVI प्रश्न।'
+  },
+  {
+    id: 'live_1789997398467',
+    title: 'वर्णिका पाठ 1 - दही वाली मंगम्मा (संपूर्ण क्लास)',
+    subjectName: 'हिन्दी',
+    chapterName: 'वर्णिका पाठ 1: दही वाली मंगम्मा',
+    teacherName: 'राज सर',
+    youtubeUrl: 'https://www.youtube.com/watch?v=0qJWe4D-96A',
+    playbackUrl: 'https://www.youtube.com/watch?v=0qJWe4D-96A',
+    scheduledAt: 'रिकॉर्डेड क्लास',
+    createdAt: '2026-09-21T13:29:58.468Z',
+    publishedAt: '2026-09-21T13:29:58.468Z',
+    isLive: false,
+    isVip: false,
+    publicationStatus: 'published',
+    streamStatus: 'ended',
+    category: 'Classes',
+    libraryCategory: 'Chapter-wise Lectures',
+    contentType: 'recorded',
+    description: 'बिहार बोर्ड कक्षा 10वीं हिंदी (वर्णिका भाग-2) पाठ 1 दही वाली मंगम्मा की संपूर्ण कहानी और प्रश्न-उत्तर।'
+  },
+  {
+    id: 'live_1789907372340',
+    title: 'संस्कृत अध्याय 1 - मङ्गलम् (संपूर्ण व्याख्या व प्रश्नोत्तर)',
+    subjectName: 'संस्कृत',
+    chapterName: 'पाठ 1: मङ्गलम्',
+    teacherName: 'राज सर',
+    youtubeUrl: 'https://www.youtube.com/watch?v=xY8iG5H9qM4',
+    playbackUrl: 'https://www.youtube.com/watch?v=xY8iG5H9qM4',
+    scheduledAt: 'रिकॉर्डेड क्लास',
+    createdAt: '2026-09-20T12:29:32.343Z',
+    publishedAt: '2026-09-20T12:29:32.343Z',
+    isLive: false,
+    isVip: false,
+    publicationStatus: 'published',
+    streamStatus: 'ended',
+    category: 'Classes',
+    libraryCategory: 'Chapter-wise Lectures',
+    contentType: 'recorded',
+    description: 'बिहार बोर्ड कक्षा 10वीं संस्कृत (पीयूषम् भाग-2) अध्याय 1 मङ्गलम् के सभी 5 मंत्रों का हिंदी अर्थ और महत्वपूर्ण बोर्ड प्रश्नोत्तर।'
+  }
+];
 
 export const defaultDailyQuizzes: DailyQuizItem[] = [
   {
@@ -326,8 +835,21 @@ const getMergedSubjects = (baseSubjects: Record<string, Subject>) => {
 
 const normalizeLiveClassItem = (raw: any): LiveClass => {
   const id = String(raw?.id || 'live_' + Math.random().toString(36).substring(2, 9));
+  const clean: Record<string, any> = {};
+  if (raw && typeof raw === 'object') {
+    for (const [k, v] of Object.entries(raw)) {
+      if (v !== undefined) clean[k] = v;
+    }
+  }
+  const createdIso = String(
+    raw?.createdAt ||
+      raw?.publishedAt ||
+      (id.startsWith('live_') && !isNaN(Number(id.slice(5)))
+        ? new Date(Number(id.slice(5))).toISOString()
+        : new Date().toISOString())
+  );
   return {
-    ...raw,
+    ...clean,
     id,
     title: String(raw?.title || 'बिहार बोर्ड कक्षा 10वीं विशेष क्लास'),
     youtubeUrl: String(raw?.youtubeUrl || raw?.playbackUrl || ''),
@@ -335,8 +857,22 @@ const normalizeLiveClassItem = (raw: any): LiveClass => {
     subjectName: String(raw?.subjectName || raw?.subject || 'सामान्य'),
     teacherName: String(raw?.teacherName || raw?.teacher || 'राज सर'),
     scheduledAt: String(raw?.scheduledAt || 'रिकॉर्डेड क्लास'),
+    publicationStatus: raw?.publicationStatus || 'published',
+    createdAt: createdIso,
+    publishedAt: String(raw?.publishedAt || createdIso),
     isLive: Boolean(raw?.isLive)
   };
+};
+
+const getDeletedLiveIdsSet = (): Set<string> => {
+  try {
+    const raw = localStorage.getItem('bseb_deleted_live_ids');
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed)) return new Set(parsed);
+    }
+  } catch {}
+  return new Set();
 };
 
 export const DataProvider = ({ children }: any) => {
@@ -603,103 +1139,234 @@ export const DataProvider = ({ children }: any) => {
   };
 
   const [liveClasses, setLiveClasses] = useState<LiveClass[]>(() => {
+    const deletedSet = getDeletedLiveIdsSet();
+    const map = new Map<string, LiveClass>();
+    defaultLiveClasses.forEach((c) => {
+      if (c && c.id && !deletedSet.has(c.id) && !isAiStudioLectureItem(c)) {
+        map.set(c.id, normalizeLiveClassItem(c));
+      }
+    });
     try {
       const cached = localStorage.getItem('bseb_live_classes_cache');
       if (cached) {
         const parsed = JSON.parse(cached);
         if (Array.isArray(parsed)) {
-          const map = new Map<string, LiveClass>();
-          parsed.forEach(c => {
-            if (c && c.id && !isAiStudioLectureItem(c)) {
+          parsed.forEach((c) => {
+            if (c && c.id && !deletedSet.has(c.id) && !isAiStudioLectureItem(c)) {
               map.set(c.id, normalizeLiveClassItem(c));
             }
           });
-          const cleaned = Array.from(map.values()).sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
-          localStorage.setItem('bseb_live_classes_cache', JSON.stringify(cleaned));
-          return cleaned;
         }
       }
     } catch {}
-    return [];
+    const cleaned = Array.from(map.values()).sort(
+      (a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime()
+    );
+    try {
+      localStorage.setItem('bseb_live_classes_cache', JSON.stringify(cleaned));
+    } catch {}
+    return cleaned;
   });
 
-  // Real-time listener for live_classes
-  useEffect(() => {
+  // Bidirectional sync between browser localStorage cache, Server (/api/sync-live-classes & /api/live-classes), and Firestore
+  const syncLiveClassesWithServer = React.useCallback(async () => {
     try {
-      const unsub = onSnapshot(collection(db, 'live_classes'), (snapshot) => {
-        const classesFromDb: LiveClass[] = [];
-        snapshot.forEach((docSnap) => {
-          const rawItem = { id: docSnap.id, ...(docSnap.data() as any) };
-          if (isAiStudioLectureItem(rawItem)) {
-            // Automatically purge any legacy AI Tech Video Studio document from Firestore
-            safeDeleteDoc(doc(db, 'live_classes', docSnap.id)).catch(() => {});
-          } else {
-            classesFromDb.push(normalizeLiveClassItem(rawItem));
+      const deletedSet = getDeletedLiveIdsSet();
+      const deletedIds = Array.from(deletedSet);
+
+      let localCached: LiveClass[] = [];
+      try {
+        const rawCache = localStorage.getItem('bseb_live_classes_cache');
+        if (rawCache) {
+          const parsed = JSON.parse(rawCache);
+          if (Array.isArray(parsed)) {
+            localCached = parsed
+              .filter((c) => c && c.id && !deletedSet.has(c.id) && !isAiStudioLectureItem(c))
+              .map((c) => normalizeLiveClassItem(c));
           }
-        });
-        
+        }
+      } catch {}
+
+      // Push any locally cached classes (including yesterday/today Admin uploads) to server & receive merged list
+      const res = await fetch('/api/sync-live-classes', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          classes: localCached,
+          deletedIds
+        })
+      });
+
+      if (res.ok) {
+        const payload = await res.json();
+        const serverClasses: LiveClass[] = Array.isArray(payload.live_classes)
+          ? payload.live_classes
+          : [];
+
         setLiveClasses((prev) => {
           const map = new Map<string, LiveClass>();
-          prev.forEach(c => {
-            if (c && c.id && !isAiStudioLectureItem(c)) map.set(c.id, normalizeLiveClassItem(c));
+          defaultLiveClasses.forEach((c) => {
+            if (c && c.id && !deletedSet.has(c.id) && !isAiStudioLectureItem(c)) {
+              map.set(c.id, normalizeLiveClassItem(c));
+            }
           });
-          classesFromDb.forEach(c => {
-            if (c && c.id && !isAiStudioLectureItem(c)) map.set(c.id, normalizeLiveClassItem(c));
+          prev.forEach((c) => {
+            if (c && c.id && !deletedSet.has(c.id) && !isAiStudioLectureItem(c)) {
+              map.set(c.id, normalizeLiveClassItem(c));
+            }
           });
-          const combined = Array.from(map.values()).sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
+          localCached.forEach((c) => {
+            if (c && c.id && !deletedSet.has(c.id) && !isAiStudioLectureItem(c)) {
+              map.set(c.id, normalizeLiveClassItem(c));
+            }
+          });
+          serverClasses.forEach((c) => {
+            if (c && c.id && !deletedSet.has(c.id) && !isAiStudioLectureItem(c)) {
+              map.set(c.id, normalizeLiveClassItem(c));
+            }
+          });
+          const merged = Array.from(map.values()).sort(
+            (a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime()
+          );
           try {
-            localStorage.setItem('bseb_live_classes_cache', JSON.stringify(combined));
+            localStorage.setItem('bseb_live_classes_cache', JSON.stringify(merged));
           } catch {}
-          return combined;
+          return merged;
         });
-      }, (err) => {
-        console.warn("Live classes snapshot warning:", err?.message || String(err));
-      });
+
+        // Also ensure any recently added classes in localCached are backed up to Firestore (without undefined fields)
+        const recentCutoff = Date.now() - 7 * 24 * 60 * 60 * 1000;
+        for (const item of localCached) {
+          const ts = new Date(item.createdAt || 0).getTime();
+          if (ts >= recentCutoff) {
+            safeSetDoc(doc(db, 'live_classes', item.id), normalizeLiveClassItem(item), { merge: true }).catch(() => {});
+          }
+        }
+      }
+    } catch {}
+  }, []);
+
+  // Run server sync on mount, every 12 seconds, and on custom update event
+  useEffect(() => {
+    syncLiveClassesWithServer();
+    const pollTimer = setInterval(() => {
+      syncLiveClassesWithServer();
+    }, 12000);
+    const onCustomSync = () => {
+      syncLiveClassesWithServer();
+    };
+    window.addEventListener('bseb-live-classes-updated', onCustomSync);
+    return () => {
+      clearInterval(pollTimer);
+      window.removeEventListener('bseb-live-classes-updated', onCustomSync);
+    };
+  }, [syncLiveClassesWithServer]);
+
+  // Real-time listener for live_classes (when Firestore quota is available)
+  useEffect(() => {
+    try {
+      const unsub = onSnapshot(
+        collection(db, 'live_classes'),
+        (snapshot) => {
+          const deletedSet = getDeletedLiveIdsSet();
+          const classesFromDb: LiveClass[] = [];
+          snapshot.forEach((docSnap) => {
+            const rawItem = { id: docSnap.id, ...(docSnap.data() as any) };
+            if (isAiStudioLectureItem(rawItem)) {
+              safeDeleteDoc(doc(db, 'live_classes', docSnap.id)).catch(() => {});
+            } else if (!deletedSet.has(docSnap.id)) {
+              classesFromDb.push(normalizeLiveClassItem(rawItem));
+            }
+          });
+
+          setLiveClasses((prev) => {
+            const map = new Map<string, LiveClass>();
+            defaultLiveClasses.forEach((c) => {
+              if (c && c.id && !deletedSet.has(c.id) && !isAiStudioLectureItem(c)) {
+                map.set(c.id, normalizeLiveClassItem(c));
+              }
+            });
+            prev.forEach((c) => {
+              if (c && c.id && !deletedSet.has(c.id) && !isAiStudioLectureItem(c)) {
+                map.set(c.id, normalizeLiveClassItem(c));
+              }
+            });
+            classesFromDb.forEach((c) => {
+              if (c && c.id && !deletedSet.has(c.id) && !isAiStudioLectureItem(c)) {
+                map.set(c.id, normalizeLiveClassItem(c));
+              }
+            });
+            const combined = Array.from(map.values()).sort(
+              (a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime()
+            );
+            try {
+              localStorage.setItem('bseb_live_classes_cache', JSON.stringify(combined));
+            } catch {}
+            return combined;
+          });
+        },
+        (err) => {
+          console.warn('Live classes snapshot warning:', err?.message || String(err));
+        }
+      );
       return () => unsub();
     } catch (err: any) {
-      console.warn("Live classes listener error:", err?.message || String(err));
+      console.warn('Live classes listener error:', err?.message || String(err));
     }
   }, []);
 
   const addLiveClass = async (classData: Omit<LiveClass, 'id'>): Promise<string> => {
     const id = 'live_' + Date.now();
-    const newClass: LiveClass = {
-      id,
+    const nowIso = new Date().toISOString();
+    const newClass: LiveClass = normalizeLiveClassItem({
       ...classData,
-      createdAt: classData.createdAt || new Date().toISOString()
-    };
+      id,
+      publicationStatus: classData.publicationStatus || 'published',
+      createdAt: classData.createdAt || nowIso,
+      publishedAt: classData.publishedAt || nowIso,
+      isUploaded: true
+    });
 
     setLiveClasses((prev) => {
-      const updated = [newClass, ...prev];
+      const filteredPrev = prev.filter((c) => c.id !== id);
+      const updated = [newClass, ...filteredPrev].sort(
+        (a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime()
+      );
       try {
         localStorage.setItem('bseb_live_classes_cache', JSON.stringify(updated));
       } catch {}
       return updated;
     });
 
-    // Save to server app_data.json permanently so it never disappears across sessions
+    // Save to server app_data.json permanently so it appears immediately for all students and never disappears
     try {
-      fetch('/api/save-live-class', {
+      await fetch('/api/save-live-class', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(newClass)
-      }).catch(() => {});
+      });
     } catch {}
 
-    try {
-      await safeSetDoc(doc(db, 'live_classes', id), newClass);
-    } catch (e: any) {
-      console.warn("Firestore live class save notice:", e?.message || String(e));
+    // Save to Firestore (non-blocking if quota exceeded, forceAttempt = true)
+    safeSetDoc(doc(db, 'live_classes', id), newClass, undefined, 4000, true).catch(() => {});
+
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('bseb-live-classes-updated'));
     }
     return id;
   };
 
   const updateLiveClass = async (id: string, updates: Partial<LiveClass>): Promise<void> => {
     let mergedItem: LiveClass | null = null;
+    const cleanUpdates: Record<string, any> = {};
+    for (const [k, v] of Object.entries(updates)) {
+      if (v !== undefined) cleanUpdates[k] = v;
+    }
+
     setLiveClasses((prev) => {
       const updated = prev.map((c) => {
         if (c.id === id) {
-          mergedItem = { ...c, ...updates };
+          mergedItem = normalizeLiveClassItem({ ...c, ...cleanUpdates });
           return mergedItem;
         }
         return c;
@@ -712,19 +1379,17 @@ export const DataProvider = ({ children }: any) => {
 
     if (mergedItem) {
       try {
-        fetch('/api/save-live-class', {
+        await fetch('/api/save-live-class', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(mergedItem)
-        }).catch(() => {});
+        });
       } catch {}
     }
 
-    try {
-      await safeSetDoc(doc(db, 'live_classes', id), updates, { merge: true }, 5000, true);
-    } catch (e: any) {
-      console.warn("Firestore live class update notice:", e?.message || String(e));
-    }
+    safeSetDoc(doc(db, 'live_classes', id), cleanUpdates, { merge: true }, 4000, true).catch(
+      () => {}
+    );
   };
 
   const deleteLiveClass = async (id: string): Promise<void> => {
@@ -746,18 +1411,14 @@ export const DataProvider = ({ children }: any) => {
     });
 
     try {
-      fetch('/api/delete-live-class', {
+      await fetch('/api/delete-live-class', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ id })
-      }).catch(() => {});
+      });
     } catch {}
 
-    try {
-      await safeDeleteDoc(doc(db, 'live_classes', id));
-    } catch (e: any) {
-      console.warn("Firestore live class delete notice:", e?.message || String(e));
-    }
+    safeDeleteDoc(doc(db, 'live_classes', id), 3500, true).catch(() => {});
   };
 
   const [dailyQuizzes, setDailyQuizzes] = useState<DailyQuizItem[]>(defaultDailyQuizzes);

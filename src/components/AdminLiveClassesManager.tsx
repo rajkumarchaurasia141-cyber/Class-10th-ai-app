@@ -434,8 +434,8 @@ export function AdminLiveClassesManager() {
         category,
         libraryCategory,
         subjectName,
-        chapterName: chapterName.trim() || undefined,
-        youtubePlaylistId: ytPlaylistId || undefined,
+        ...(chapterName.trim() ? { chapterName: chapterName.trim() } : {}),
+        ...(ytPlaylistId ? { youtubePlaylistId: ytPlaylistId } : {}),
         isPlaylist: Boolean(ytPlaylistId),
         teacherName: teacherName.trim() || 'राज सर',
         duration: duration.trim() || '45:00',
@@ -452,7 +452,8 @@ export function AdminLiveClassesManager() {
         description: description.trim(),
         publishType,
         scheduledDateTime: finalScheduledDateTime,
-        publishedAt: publicationStatus === 'published' ? new Date().toISOString() : undefined,
+        createdAt: new Date().toISOString(),
+        publishedAt: new Date().toISOString(),
         isUploaded: true
       };
 
@@ -598,10 +599,7 @@ export function AdminLiveClassesManager() {
     .sort((a, b) => {
       if (a.featured && !b.featured) return -1;
       if (!a.featured && b.featured) return 1;
-      const orderA = typeof a.displayOrder === 'number' ? a.displayOrder : 999;
-      const orderB = typeof b.displayOrder === 'number' ? b.displayOrder : 999;
-      if (orderA !== orderB) return orderA - orderB;
-      return new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime();
+      return new Date(b.createdAt || b.publishedAt || 0).getTime() - new Date(a.createdAt || a.publishedAt || 0).getTime();
     });
 
   // Summary metrics

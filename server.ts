@@ -309,22 +309,118 @@ Guidelines for Bihar Guru:
     if (typeof url !== 'string') return '';
     const trimmed = url.trim();
     if (!trimmed) return '';
-    if (trimmed === 'ai_studio_lecture' || trimmed.startsWith('/uploads/') || trimmed.startsWith('data:image/') || trimmed.startsWith('data:video/')) {
+    if (trimmed === 'ai_studio_lecture' || trimmed.includes('ai_studio')) {
+      return '';
+    }
+    if (
+      trimmed.startsWith('/uploads/') ||
+      trimmed.startsWith('data:image/') ||
+      trimmed.startsWith('data:video/')
+    ) {
       return trimmed;
     }
+    // Extract embedded http(s) URL if mobile share text was passed
+    const matchUrl = trimmed.match(/https?:\/\/[^\s"'<>]+/i);
+    const candidate = matchUrl && matchUrl[0] ? matchUrl[0].trim() : trimmed;
     try {
-      const parsed = new URL(trimmed);
+      const parsed = new URL(candidate.startsWith('http') ? candidate : `https://${candidate}`);
       if (parsed.protocol === 'http:' || parsed.protocol === 'https:') {
-        return trimmed;
+        return parsed.toString();
       }
     } catch {
-      // Allow bare 11-char YouTube IDs if passed
-      if (/^[a-zA-Z0-9_-]{11}$/.test(trimmed)) {
-        return `https://www.youtube.com/watch?v=${trimmed}`;
+      if (/^[a-zA-Z0-9_-]{11}$/.test(candidate)) {
+        return `https://www.youtube.com/watch?v=${candidate}`;
       }
     }
-    return '';
+    return candidate;
   }
+
+  // GET /api/live-classes — Returns all live classes from app_data.json (works 24/7 even when Firestore quota is exhausted)
+  app.get('/api/live-classes', (_req: Request, res: Response) => {
+    try {
+      res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+      const filePath = path.join(process.cwd(), 'public', 'app_data.json');
+      if (!fs.existsSync(filePath)) {
+        return res.json({ live_classes: [] });
+      }
+      const raw = fs.readFileSync(filePath, 'utf-8');
+      const data = JSON.parse(raw);
+      const list = Array.isArray(data.live_classes) ? data.live_classes : [];
+      const cleaned = list
+        .filter((c: any) => c && c.id && c.youtubeUrl !== 'ai_studio_lecture' && !String(c.youtubeUrl || '').includes('ai_studio'))
+        .sort((a: any, b: any) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
+      res.json({ live_classes: cleaned });
+    } catch (err: any) {
+      res.json({ live_classes: [] });
+    }
+  });
+
+  // POST /api/sync-live-classes — Merges client cached live classes (e.g. yesterday/today Admin uploads from localStorage) into app_data.json
+  app.post('/api/sync-live-classes', (req: Request, res: Response) => {
+    try {
+      const { classes = [], deletedIds = [] } = req.body || {};
+      const deletedSet = new Set<string>(Array.isArray(deletedIds) ? deletedIds : []);
+
+      const paths = [
+        path.join(process.cwd(), 'public', 'app_data.json'),
+        path.join(process.cwd(), 'dist', 'app_data.json')
+      ];
+
+      let finalMerged: any[] = [];
+
+      for (const filePath of paths) {
+        if (fs.existsSync(filePath)) {
+          try {
+            const raw = fs.readFileSync(filePath, 'utf-8');
+            const data = JSON.parse(raw);
+            const currentList: any[] = Array.isArray(data.live_classes) ? data.live_classes : [];
+            const map = new Map<string, any>();
+
+            for (const item of currentList) {
+              if (item && item.id && !deletedSet.has(item.id)) {
+                map.set(item.id, item);
+              }
+            }
+
+            if (Array.isArray(classes)) {
+              for (const rawItem of classes) {
+                if (!rawItem || !rawItem.id || !rawItem.title || deletedSet.has(rawItem.id)) continue;
+                const ytUrl = sanitizeMediaUrl(rawItem.youtubeUrl) || sanitizeMediaUrl(rawItem.playbackUrl);
+                if (!ytUrl) continue;
+                const cleanItem: Record<string, any> = {};
+                for (const [k, v] of Object.entries(rawItem)) {
+                  if (v !== undefined && k !== 'streamIngestKey' && k !== 'streamSecret') {
+                    cleanItem[k] = v;
+                  }
+                }
+                cleanItem.id = String(rawItem.id).trim();
+                cleanItem.title = String(rawItem.title).trim();
+                cleanItem.youtubeUrl = ytUrl;
+                cleanItem.playbackUrl = sanitizeMediaUrl(rawItem.playbackUrl) || ytUrl;
+                cleanItem.publicationStatus = rawItem.publicationStatus || 'published';
+                cleanItem.createdAt = rawItem.createdAt || new Date().toISOString();
+
+                const existing = map.get(cleanItem.id) || {};
+                map.set(cleanItem.id, { ...existing, ...cleanItem });
+              }
+            }
+
+            finalMerged = Array.from(map.values()).sort(
+              (a: any, b: any) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime()
+            );
+            data.live_classes = finalMerged;
+            fs.writeFileSync(filePath, JSON.stringify(data, null, 2), 'utf-8');
+          } catch (e) {
+            console.error('Failed to sync live_classes in file:', filePath, e);
+          }
+        }
+      }
+
+      res.json({ success: true, live_classes: finalMerged });
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
+  });
 
   // Endpoint to permanently save/upsert Live Class to app_data.json
   app.post('/api/save-live-class', (req: Request, res: Response) => {
@@ -334,18 +430,26 @@ Guidelines for Bihar Guru:
         return res.status(400).json({ error: 'Invalid live class data: id and title are required' });
       }
 
-      // Strip any sensitive stream ingest credentials so they are never stored in public feed JSON
+      // Strip any sensitive stream ingest credentials and undefined fields
       const { streamIngestKey, streamSecret, ...safeClass } = rawClass;
+      const cleanObj: Record<string, any> = {};
+      for (const [k, v] of Object.entries(safeClass)) {
+        if (v !== undefined) cleanObj[k] = v;
+      }
+
+      const cleanYtUrl = sanitizeMediaUrl(safeClass.youtubeUrl) || sanitizeMediaUrl(safeClass.playbackUrl);
       const sanitizedClass = {
-        ...safeClass,
+        ...cleanObj,
         id: String(safeClass.id).trim(),
         title: String(safeClass.title).trim(),
-        youtubeUrl: sanitizeMediaUrl(safeClass.youtubeUrl) || sanitizeMediaUrl(safeClass.playbackUrl) || 'ai_studio_lecture',
-        playbackUrl: sanitizeMediaUrl(safeClass.playbackUrl) || sanitizeMediaUrl(safeClass.youtubeUrl) || '',
+        youtubeUrl: cleanYtUrl,
+        playbackUrl: sanitizeMediaUrl(safeClass.playbackUrl) || cleanYtUrl,
         thumbnailUrl: sanitizeMediaUrl(safeClass.thumbnailUrl) || '',
         captionsUrl: sanitizeMediaUrl(safeClass.captionsUrl) || '',
         publicationStatus: safeClass.publicationStatus || 'published',
-        streamStatus: safeClass.streamStatus || (safeClass.isLive ? 'live' : 'ended')
+        streamStatus: safeClass.streamStatus || (safeClass.isLive ? 'live' : 'ended'),
+        createdAt: safeClass.createdAt || new Date().toISOString(),
+        publishedAt: safeClass.publishedAt || safeClass.createdAt || new Date().toISOString()
       };
 
       const paths = [
@@ -370,6 +474,9 @@ Guidelines for Bihar Guru:
             } else {
               data.live_classes.unshift(sanitizedClass);
             }
+            data.live_classes.sort(
+              (a: any, b: any) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime()
+            );
             fs.writeFileSync(filePath, JSON.stringify(data, null, 2), 'utf-8');
           } catch (e) {
             console.error('Failed to write to file:', filePath, e);

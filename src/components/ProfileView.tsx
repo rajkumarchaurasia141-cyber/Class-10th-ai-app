@@ -20,6 +20,7 @@ import {
 import { useAuth } from '../context/AuthContext';
 import { useData } from '../context/DataContext';
 import { AppLogo } from './AppLogo';
+import { triggerAd } from '../utils/adManager';
 
 interface ProfileViewProps {
   onOpenVip: () => void;
@@ -225,7 +226,10 @@ export function ProfileView({
       {/* Menu Options */}
       <div className="bg-white rounded-3xl border border-slate-200 divide-y divide-slate-100 overflow-hidden shadow-xs">
         <button
-          onClick={onOpenCourse}
+          onClick={() => {
+            triggerAd('profile_courses');
+            onOpenCourse();
+          }}
           className="w-full p-4 flex items-center justify-between hover:bg-slate-50 transition-colors cursor-pointer text-left"
         >
           <div className="flex items-center gap-3">
@@ -241,7 +245,10 @@ export function ProfileView({
         </button>
 
         <button
-          onClick={onOpenRoutine}
+          onClick={() => {
+            triggerAd('profile_routine');
+            onOpenRoutine();
+          }}
           className="w-full p-4 flex items-center justify-between hover:bg-slate-50 transition-colors cursor-pointer text-left"
         >
           <div className="flex items-center gap-3">
@@ -257,7 +264,10 @@ export function ProfileView({
         </button>
 
         <button
-          onClick={onOpenSocial}
+          onClick={() => {
+            triggerAd('profile_social');
+            onOpenSocial();
+          }}
           className="w-full p-4 flex items-center justify-between hover:bg-slate-50 transition-colors cursor-pointer text-left"
         >
           <div className="flex items-center gap-3">
@@ -274,7 +284,10 @@ export function ProfileView({
 
         {isAdmin && (
           <button
-            onClick={onOpenAdmin}
+            onClick={() => {
+              triggerAd('profile_admin');
+              onOpenAdmin();
+            }}
             className="w-full p-4 flex items-center justify-between bg-stone-900 text-white hover:bg-black transition-colors cursor-pointer text-left"
           >
             <div className="flex items-center gap-3">

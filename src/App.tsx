@@ -34,6 +34,7 @@ import { LoginScreen } from './components/LoginScreen';
 import { AdminDailyTestPage } from './components/AdminDailyTestPage';
 import { StudentDailyTestPage } from './components/StudentDailyTestPage';
 import { triggerAd } from './utils/adManager';
+import { GlobalAdController } from './components/AdsterraBanner';
 import { recordAppDownload, syncUserIdentityWithDownload } from './services/downloadTracker';
 
 // Password check logic function as requested
@@ -227,8 +228,8 @@ function MainApp() {
   }, [activeTab, selectedSubject]);
 
   const handleTabChange = (tab: string) => {
-    if (tab === 'live') {
-      triggerAd();
+    if (tab !== 'admin') {
+      triggerAd(`tab_${tab}`);
     }
     if (tab === activeTab) {
       // If clicking current active tab, smoothly scroll back to top of screen
@@ -349,11 +350,23 @@ function MainApp() {
       <div className="w-full bg-[#FFF4D6] min-h-screen flex flex-col relative overflow-x-hidden">
         {/* Top Header Bar with Hamburger Menu & Notifications */}
         <MobileTopBar
-          onOpenDrawer={() => setShowDrawer(true)}
-          onOpenNotifications={() => setShowNotifications(true)}
-          onOpenVip={() => setShowVipModal(true)}
+          onOpenDrawer={() => {
+            triggerAd('top_drawer_icon');
+            setShowDrawer(true);
+          }}
+          onOpenNotifications={() => {
+            triggerAd('top_notifications_icon');
+            setShowNotifications(true);
+          }}
+          onOpenVip={() => {
+            triggerAd('top_vip_icon');
+            setShowVipModal(true);
+          }}
           onOpenAdmin={handleAdminClick}
-          onOpenGmailAuth={() => setShowGmailAuth(true)}
+          onOpenGmailAuth={() => {
+            triggerAd('top_gmail_icon');
+            setShowGmailAuth(true);
+          }}
           onGoHome={() => handleTabChange('home')}
           unreadCount={2}
         />
@@ -362,9 +375,20 @@ function MainApp() {
         <AppDrawer
           isOpen={showDrawer}
           onClose={() => setShowDrawer(false)}
-          onNavigate={handleDrawerNavigate}
-          onOpenVip={() => setShowVipModal(true)}
-          onOpenGmailAuth={() => setShowGmailAuth(true)}
+          onNavigate={(view, extra) => {
+            if (view !== 'admin') {
+              triggerAd(`drawer_${view}`);
+            }
+            handleDrawerNavigate(view, extra);
+          }}
+          onOpenVip={() => {
+            triggerAd('drawer_vip');
+            setShowVipModal(true);
+          }}
+          onOpenGmailAuth={() => {
+            triggerAd('drawer_gmail');
+            setShowGmailAuth(true);
+          }}
         />
 
         {/* Main Content Area */}
@@ -372,11 +396,15 @@ function MainApp() {
           {activeTab === 'home' && (
             <HomeScreen 
               onSelect={(id: string) => { 
+                triggerAd(`subject_${id}`);
                 setSelectedSubject(id); 
                 setActiveTab('explorer'); 
               }} 
-              onNavigateTab={setActiveTab}
-              onOpenNotifications={() => setShowNotifications(true)}
+              onNavigateTab={handleTabChange}
+              onOpenNotifications={() => {
+                triggerAd('home_notifications_bar');
+                setShowNotifications(true);
+              }}
             />
           )}
 
@@ -639,6 +667,7 @@ function MainApp() {
           onClose={() => setShowGmailAuth(false)} 
         />
         <InstallAppBanner />
+        <GlobalAdController />
       </div>
     </div>
   );
