@@ -35,7 +35,6 @@ import { AdminDailyTestPage } from './components/AdminDailyTestPage';
 import { StudentDailyTestPage } from './components/StudentDailyTestPage';
 import { triggerAd } from './utils/adManager';
 import { recordAppDownload, syncUserIdentityWithDownload } from './services/downloadTracker';
-import { ContentProtectionGuard } from './components/ContentProtectionGuard';
 
 // Password check logic function as requested
 function checkAdminSecret(enteredPass: string): boolean {
@@ -115,11 +114,24 @@ function MainApp() {
     if (isContactQuery) return 'contact';
     if (isPrivacyQuery) return 'privacy';
     if (isAdminQuery) return 'admin';
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      const tabParam = params.get('tab');
+      if (tabParam) return tabParam;
+    }
     return 'home';
   };
 
+  const getInitialSubject = () => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      return params.get('subject') || null;
+    }
+    return null;
+  };
+
   const [activeTab, setActiveTab] = useState(getInitialTab());
-  const [selectedSubject, setSelectedSubject] = useState<string | null>(null);
+  const [selectedSubject, setSelectedSubject] = useState<string | null>(getInitialSubject());
 
   // Modals
   const [showVipModal, setShowVipModal] = useState(false);
@@ -138,6 +150,73 @@ function MainApp() {
   const isEffectiveAdmin = Boolean(isAdmin || adminVerified);
 
   const mainScrollRef = React.useRef<HTMLElement>(null);
+
+  // Deep-link navigation handler for Push Notification clicks & URL parameters
+  const handleNavigateDeepLink = React.useCallback((rawUrl: string) => {
+    if (!rawUrl || typeof window === 'undefined') return;
+    try {
+      const parsed = new URL(rawUrl, window.location.origin);
+      const path = parsed.pathname;
+      const params = parsed.searchParams;
+      const tab = params.get('tab');
+      const subject = params.get('subject');
+
+      window.history.pushState({}, '', parsed.pathname + parsed.search);
+
+      if (path === '/daily-test' || path.endsWith('/daily-test') || tab === 'daily_test') {
+        setSelectedSubject(null);
+        setActiveTab('daily_test');
+      } else if (path === '/admin/daily-test' || tab === 'admin_daily_test') {
+        setSelectedSubject(null);
+        setActiveTab('admin_daily_test');
+      } else if (tab === 'explorer' && subject) {
+        setSelectedSubject(subject);
+        setActiveTab('explorer');
+      } else if (tab === 'downloads') {
+        if (subject) setSelectedSubject(subject);
+        setActiveTab('downloads');
+      } else if (tab === 'live') {
+        setSelectedSubject(null);
+        setActiveTab('live');
+      } else if (tab === 'daily_quiz') {
+        setSelectedSubject(null);
+        setActiveTab('daily_quiz');
+      } else if (tab === 'crash_course') {
+        setSelectedSubject(null);
+        setActiveTab('crash_course');
+      } else if (tab === 'my_courses') {
+        setSelectedSubject(null);
+        setActiveTab('my_courses');
+      } else if (tab === 'leaderboard') {
+        setSelectedSubject(null);
+        setActiveTab('leaderboard');
+      } else if (tab === 'chat') {
+        setSelectedSubject(null);
+        setActiveTab('chat');
+      } else if (subject) {
+        setSelectedSubject(subject);
+        setActiveTab('explorer');
+      } else {
+        setSelectedSubject(null);
+        setActiveTab('home');
+      }
+    } catch (e) {
+      console.warn('Deep link navigation error:', e);
+    }
+  }, []);
+
+  // Listen to Service Worker push notification click messages
+  React.useEffect(() => {
+    if (typeof window === 'undefined' || !('serviceWorker' in navigator)) return;
+    const onSwMessage = (event: MessageEvent) => {
+      if (event.data && event.data.type === 'BSEB_NOTIFICATION_CLICK' && event.data.url) {
+        setShowNotifications(false);
+        handleNavigateDeepLink(event.data.url);
+      }
+    };
+    navigator.serviceWorker.addEventListener('message', onSwMessage);
+    return () => navigator.serviceWorker.removeEventListener('message', onSwMessage);
+  }, [handleNavigateDeepLink]);
 
   // Auto-scroll to top when active tab or subject changes so user NEVER has to scroll up!
   React.useEffect(() => {
@@ -181,43 +260,35 @@ function MainApp() {
   if (!user) {
     if (activeTab === 'daily_test' || isDailyTestQuery) {
       return (
-        <ContentProtectionGuard isAdmin={false}>
-          <StudentDailyTestPage 
-            onBack={() => {
-              try { window.history.pushState({}, '', '/'); } catch (e) {}
-              setActiveTab('home');
-            }}
-            onNavigateToAdmin={() => {
-              try { window.history.pushState({}, '', '/admin/daily-test'); } catch (e) {}
-              setActiveTab('admin_daily_test');
-            }}
-          />
-        </ContentProtectionGuard>
+        <StudentDailyTestPage 
+          onBack={() => {
+            try { window.history.pushState({}, '', '/'); } catch (e) {}
+            setActiveTab('home');
+          }}
+          onNavigateToAdmin={() => {
+            try { window.history.pushState({}, '', '/admin/daily-test'); } catch (e) {}
+            setActiveTab('admin_daily_test');
+          }}
+        />
       );
     }
 
     if (activeTab === 'admin_daily_test' || isAdminDailyTestQuery) {
       return (
-        <ContentProtectionGuard isAdmin={false}>
-          <AdminDailyTestPage 
-            onBack={() => {
-              try { window.history.pushState({}, '', '/'); } catch (e) {}
-              setActiveTab('home');
-            }}
-            onNavigateToStudent={() => {
-              try { window.history.pushState({}, '', '/daily-test'); } catch (e) {}
-              setActiveTab('daily_test');
-            }}
-          />
-        </ContentProtectionGuard>
+        <AdminDailyTestPage 
+          onBack={() => {
+            try { window.history.pushState({}, '', '/'); } catch (e) {}
+            setActiveTab('home');
+          }}
+          onNavigateToStudent={() => {
+            try { window.history.pushState({}, '', '/daily-test'); } catch (e) {}
+            setActiveTab('daily_test');
+          }}
+        />
       );
     }
 
-    return (
-      <ContentProtectionGuard isAdmin={false}>
-        <LoginScreen />
-      </ContentProtectionGuard>
-    );
+    return <LoginScreen />;
   }
 
   const handleDrawerNavigate = (view: string, extra?: any) => {
@@ -273,8 +344,7 @@ function MainApp() {
   };
 
   return (
-    <ContentProtectionGuard isAdmin={isEffectiveAdmin}>
-      <div className="min-h-screen w-full bg-[#FFF4D6] flex flex-col selection:bg-[#D8B45A]/30 overflow-x-hidden text-[#222222]">
+    <div className="min-h-screen w-full bg-[#FFF4D6] flex flex-col selection:bg-[#D8B45A]/30 overflow-x-hidden text-[#222222]">
       {/* Edge-to-Edge Full-Width Responsive App Container */}
       <div className="w-full bg-[#FFF4D6] min-h-screen flex flex-col relative overflow-x-hidden">
         {/* Top Header Bar with Hamburger Menu & Notifications */}
@@ -306,6 +376,7 @@ function MainApp() {
                 setActiveTab('explorer'); 
               }} 
               onNavigateTab={setActiveTab}
+              onOpenNotifications={() => setShowNotifications(true)}
             />
           )}
 
@@ -546,6 +617,10 @@ function MainApp() {
               setActiveTab('my_courses');
               setSelectedSubject(null);
             }}
+            onNavigateDeepLink={(url: string) => {
+              setShowNotifications(false);
+              handleNavigateDeepLink(url);
+            }}
           />
         )}
         {showRoutine && <ClassRoutineModal onClose={() => setShowRoutine(false)} />}
@@ -566,7 +641,6 @@ function MainApp() {
         <InstallAppBanner />
       </div>
     </div>
-    </ContentProtectionGuard>
   );
 }
 

@@ -56,6 +56,7 @@ import {
   getYouTubeThumbnailUrl,
   getYouTubeSearchShortcutUrl
 } from '../utils/youtubeHelper';
+import { triggerAutoContentNotification } from '../services/pushNotificationService';
 
 interface StreamProviderConfig {
   provider: string;
@@ -464,6 +465,15 @@ export function AdminLiveClassesManager() {
           viewsCount: 1,
           likesCount: 0
         });
+        if (publicationStatus === 'published') {
+          triggerAutoContentNotification({
+            contentType: 'video',
+            contentId: `vid_${ytId || ytPlaylistId || title.trim()}`,
+            subjectName,
+            title: title.trim(),
+            url: `/?tab=live`
+          }).catch(() => {});
+        }
         setSuccessMsg(
           publicationStatus === 'published'
             ? 'वीडियो/प्लेलिस्ट सफलतापूर्वक पब्लिश हो गई है और छात्रों के बिहार बोर्ड वीडियो लाइब्रेरी में दिख रही है!'

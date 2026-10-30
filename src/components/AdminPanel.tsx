@@ -33,6 +33,7 @@ import { AdminLiveClassesManager } from './AdminLiveClassesManager';
 import { AdminDailyQuizManager } from './AdminDailyQuizManager';
 import { AdminRoutineManager } from './AdminRoutineManager';
 import { AdminQuotesManager } from './AdminQuotesManager';
+import { triggerAutoContentNotification } from '../services/pushNotificationService';
 import { AdminNotificationsManager } from './AdminNotificationsManager';
 import { AdminSettingsManager } from './AdminSettingsManager';
 import { AdminBannersManager } from './AdminBannersManager';
@@ -386,6 +387,16 @@ export function AdminPanel({ onBack }: any) {
       } else {
         setCMsg(`सूचना: आज की दैनिक Firestore कोटा लिमिट पूरी होने के कारण यह अध्याय स्थानीय रूप से सुरक्षित है।`);
       }
+
+      // Automatically trigger Smart Push Notification for new Chapter publish
+      triggerAutoContentNotification({
+        contentType: 'chapter',
+        contentId: `chapter_${subId}_ch${chNo}`,
+        subjectName: subjectNameHindi || subjectName || subId,
+        title: `अध्याय ${chNo}: ${chapterNameHindi || chapterNameEng || 'नया पाठ'}`,
+        url: `/?tab=explorer&subject=${encodeURIComponent(subId)}&chapter=${chNo}`
+      }).catch(() => {});
+
       await refreshData();
     } catch (e: any) {
       if (isQuotaError(e)) {

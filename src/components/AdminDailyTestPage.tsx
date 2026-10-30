@@ -20,6 +20,7 @@ import {
 } from 'lucide-react';
 import { db } from '../lib/firebase';
 import { doc, setDoc, deleteDoc, onSnapshot, getDoc } from 'firebase/firestore';
+import { triggerAutoContentNotification } from '../services/pushNotificationService';
 
 export interface DailyTestQuestion {
   q: string;
@@ -584,6 +585,16 @@ export function AdminDailyTestPage({ onBack, onNavigateToStudent }: AdminDailyTe
       setPublishedCount(parsedPreview.length);
       setLastPublishedTime(new Date().toLocaleTimeString('hi-IN'));
       setCloudSynced(true);
+
+      // Automatically trigger Smart Push Notification for new Daily Test publish
+      triggerAutoContentNotification({
+        contentType: 'daily_test',
+        contentId: `${todayKey}_q${parsedPreview.length}`,
+        subjectName: 'सभी विषय (All Subjects)',
+        title: `आज का डेली टेस्ट (${parsedPreview.length} महत्वपूर्ण प्रश्न)`,
+        url: '/daily-test'
+      }).catch(() => {});
+
       setSuccessMsg(`🎉 बधाई हो! कुल ${parsedPreview.length} प्रश्न लाइव सर्वर (Cloud Firestore) पर सफलतापूर्वक पब्लिश हो गए हैं। अब सभी छात्र अपने मोबाइल पर तुरंत यह टेस्ट दे सकेंगे!`);
       
       setTimeout(() => setSuccessMsg(''), 8000);

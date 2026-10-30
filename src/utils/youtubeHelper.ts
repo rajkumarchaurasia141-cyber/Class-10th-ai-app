@@ -162,11 +162,6 @@ export function getYouTubeEmbedUrl(
     iv_load_policy: '3'
   });
 
-  if (typeof window !== 'undefined' && window.location?.origin) {
-    params.set('origin', window.location.origin);
-    params.set('widget_referrer', window.location.origin);
-  }
-
   if (options?.startSeconds && options.startSeconds > 10) {
     params.set('start', String(Math.floor(options.startSeconds)));
   }

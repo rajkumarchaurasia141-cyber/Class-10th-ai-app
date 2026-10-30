@@ -17,6 +17,7 @@ import { useData } from '../context/DataContext';
 import { PaidPdfNote } from '../types';
 import { PdfViewerModal } from './PdfViewerModal';
 import { defaultPaidPdfNotes } from '../data/defaultPdfNotes';
+import { triggerAutoContentNotification } from '../services/pushNotificationService';
 
 const SUBJECT_OPTIONS = [
   { id: 'sanskrit', name: 'संस्कृत (पीयूषम्)' },
@@ -102,9 +103,10 @@ export function AdminPdfNotesManager() {
     setLoading(true);
     try {
       const selectedSub = SUBJECT_OPTIONS.find((s) => s.id === subjectId);
+      const subjectLabel = selectedSub?.name || subjectId;
       await addPaidNote({
         subjectId,
-        subjectName: selectedSub?.name || subjectId,
+        subjectName: subjectLabel,
         chapterNo: Number(chapterNo) || 1,
         chapterName: chapterName.trim() || undefined,
         title: title.trim(),
@@ -115,6 +117,15 @@ export function AdminPdfNotesManager() {
         isPaid: true,
         isGuessPaper: isGuessPaper
       });
+
+      // Automatically trigger Smart Push Notification for new PDF Notes publish
+      triggerAutoContentNotification({
+        contentType: 'notes',
+        contentId: `note_${subjectId}_${chapterNo}_${title.trim()}`,
+        subjectName: subjectLabel,
+        title: title.trim(),
+        url: `/?tab=downloads&subject=${encodeURIComponent(subjectId)}`
+      }).catch(() => {});
 
       setSuccessMsg(`"${title}" को सफलतापूर्वक ${isGuessPaper ? 'स्पेशल गेस पेपर' : 'पेड नोट्स लाइब्रेरी'} में जोड़ दिया गया है!`);
       // Reset form fields

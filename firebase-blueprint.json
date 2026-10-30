@@ -172,6 +172,12 @@
     },
     "/video_interactions/{interactionId}": {
       "description": "User video likes, saved bookmarks, and resume playback progress"
+    },
+    "/push_subscriptions/{subId}": {
+      "description": "Web Push VAPID device subscriptions for students and admin"
+    },
+    "/push_notification_logs/{logId}": {
+      "description": "Sent push notification delivery history and error logs"
     }
   }
 }

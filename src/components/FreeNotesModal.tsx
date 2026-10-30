@@ -58,10 +58,6 @@ export function FreeNotesModal({ onClose, onOpenVip, onOpenSubject }: FreeNotesM
   ];
 
   const handleCopy = (text: string, id: string) => {
-    if (!isAdmin) {
-      alert('⚠️ सामग्री कॉपी करना केवल एडमिन के लिए अनुमत है।');
-      return;
-    }
     navigator.clipboard?.writeText(text);
     setCopiedId(id);
     setTimeout(() => setCopiedId(null), 2000);

@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useData } from '../context/DataContext';
 import { CheckCircle2, Plus, Trash2, Calendar, BookOpen, Link as LinkIcon } from 'lucide-react';
 import { extractYouTubeVideoId } from '../utils/youtubeHelper';
+import { triggerAutoContentNotification } from '../services/pushNotificationService';
 
 export function AdminDailyQuizManager() {
   const { dailyQuizzes, addDailyQuiz, deleteDailyQuiz } = useData();
@@ -35,6 +36,16 @@ export function AdminDailyQuizManager() {
         youtubeUrl: cleanUrl,
         createdAt: new Date().toISOString()
       });
+
+      // Automatically trigger Smart Push Notification for new Test/Quiz publish
+      triggerAutoContentNotification({
+        contentType: 'test',
+        contentId: `quiz_${subjectName.trim()}_${title.trim()}`,
+        subjectName: subjectName.trim(),
+        title: title.trim(),
+        url: '/?tab=daily_quiz'
+      }).catch(() => {});
+
       alert('✅ नया डेली क्विज़/टेस्ट सफलतापर्वूक जोड़ दिया गया है!');
       setTitle('');
       setYoutubeUrl('');

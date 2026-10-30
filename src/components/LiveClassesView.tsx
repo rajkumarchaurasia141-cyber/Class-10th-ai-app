@@ -637,7 +637,7 @@ export function LiveClassesView({ onOpenVip }: LiveClassesViewProps) {
   // Attendance State
   const [activeAttendanceRecords, setActiveAttendanceRecords] = useState<LiveWatchRecord[]>([]);
   const [showAttendanceModal, setShowAttendanceModal] = useState<boolean>(false);
-  const [useNoCookie, setUseNoCookie] = useState<boolean>(true);
+  const [useNoCookie, setUseNoCookie] = useState<boolean>(false);
   const [countdownDoneIds, setCountdownDoneIds] = useState<Record<string, boolean>>({});
 
   const isClassScheduledFuture = useCallback(
@@ -799,7 +799,7 @@ export function LiveClassesView({ onOpenVip }: LiveClassesViewProps) {
   const handleShareVideo = async (cls: LiveClass, e?: React.MouseEvent) => {
     if (e) e.stopPropagation();
     const shareUrl = window.location.origin + '/?tab=live&video=' + encodeURIComponent(cls.id);
-    const shareTitle = `${cls.title} | पढ़ेगा बिहार Live`;
+    const shareTitle = `${cls.title} | BSEB GURU Live`;
     try {
       if (navigator.share) {
         await navigator.share({
@@ -926,14 +926,30 @@ export function LiveClassesView({ onOpenVip }: LiveClassesViewProps) {
     });
   }, [publishedClasses, interactions]);
 
+  // Auto-open video if URL has ?video=<id>
+  useEffect(() => {
+    if (typeof window === 'undefined' || publishedClasses.length === 0) return;
+    try {
+      const params = new URLSearchParams(window.location.search);
+      const vidId = params.get('video');
+      if (vidId && (!selectedClass || selectedClass.id !== vidId)) {
+        const target = publishedClasses.find((c) => c.id === vidId);
+        if (target && userCanAccess(target)) {
+          setSelectedClass(target);
+        }
+      }
+    } catch {}
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [publishedClasses]);
+
   // Filtered Feed based on Category Chip, Subject, and Debounced Search Query
   const filteredFeed = useMemo(() => {
     const q = debouncedSearchQuery;
     let list = publishedClasses.filter((cls) => {
       if (q) {
         const hay = `${cls.title || ''} ${cls.description || ''} ${cls.subjectName || ''} ${
-          cls.teacherName || ''
-        } ${cls.category || ''}`.toLowerCase();
+          cls.chapterName || ''
+        } ${cls.teacherName || ''} ${cls.category || ''} ${cls.libraryCategory || ''}`.toLowerCase();
         if (!hay.includes(q)) return false;
       }
 
@@ -941,16 +957,18 @@ export function LiveClassesView({ onOpenVip }: LiveClassesViewProps) {
         return false;
       }
 
+      const isCurrentlyLiveOrScheduled = Boolean(
+        cls.isLive || cls.streamStatus === 'live' || cls.streamStatus === 'scheduled'
+      );
+
       if (activeCategory === 'Live') {
-        return Boolean(
-          cls.isLive ||
-            cls.streamStatus === 'live' ||
-            cls.category === 'Live' ||
-            cls.contentType === 'live'
-        );
+        return isCurrentlyLiveOrScheduled || cls.category === 'Live' || cls.contentType === 'live';
       }
       if (activeCategory === 'Classes') {
-        return (cls.category || 'Classes') === 'Classes' || cls.contentType === 'recorded';
+        return (
+          (!isCurrentlyLiveOrScheduled && (cls.category || 'Classes') === 'Classes') ||
+          cls.contentType === 'recorded'
+        );
       }
       if (activeCategory === 'Crash Course') {
         return cls.category === 'Crash Course' || cls.contentType === 'crash_course';
@@ -1165,7 +1183,7 @@ export function LiveClassesView({ onOpenVip }: LiveClassesViewProps) {
               <div className="leading-none">
                 <div className="flex items-center gap-1">
                   <span className="font-black text-base sm:text-lg tracking-tight">
-                    पढ़ेगा बिहार
+                    BSEB GURU
                   </span>
                   <span className="bg-red-600 text-white text-[9px] font-black px-1.5 py-0.5 rounded uppercase">
                     LIVE
@@ -1176,7 +1194,7 @@ export function LiveClassesView({ onOpenVip }: LiveClassesViewProps) {
                     darkMode ? 'text-stone-400' : 'text-slate-500'
                   }`}
                 >
-                  Bihar Board 10th Video Hub
+                  Bihar Board 10th Video Library
                 </span>
               </div>
             </div>
@@ -1683,7 +1701,7 @@ export function LiveClassesView({ onOpenVip }: LiveClassesViewProps) {
                         darkMode ? 'text-stone-400' : 'text-slate-500'
                       }`}
                     >
-                      पढ़ेगा बिहार (Official BSEB Class 10 Faculty)
+                      BSEB GURU (Official Bihar Board Class 10 Faculty)
                     </div>
                   </div>
                 </div>

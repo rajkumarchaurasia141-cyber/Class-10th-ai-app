@@ -18,22 +18,25 @@ import {
   Landmark,
   Compass,
   Scale,
-  TrendingUp
+  TrendingUp,
+  Bell
 } from 'lucide-react';
 import { ClassRoutineModal } from './ClassRoutineModal';
 import { NcertBooksModal } from './NcertBooksModal';
 import { SocialMediaModal } from './SocialMediaModal';
 import { AdsterraBanner } from './AdsterraBanner';
 import { triggerAd } from '../utils/adManager';
+import { getDevicePushState } from '../services/pushNotificationService';
 
 interface HomeScreenProps {
   onSelect?: (subjectId: string) => void;
   onOpenSubject?: (subjectId: string) => void;
   onNavigateTab?: (tab: string) => void;
   onOpenVip?: () => void;
+  onOpenNotifications?: () => void;
 }
 
-export function HomeScreen({ onSelect, onOpenSubject, onNavigateTab }: HomeScreenProps) {
+export function HomeScreen({ onSelect, onOpenSubject, onNavigateTab, onOpenNotifications }: HomeScreenProps) {
   const { subjects, paidNotes, motivationalQuotes, appConfig } = useData();
   const { isAdmin, user } = useAuth();
   const handleSelectSubject = onSelect || onOpenSubject || (() => {});
@@ -41,6 +44,7 @@ export function HomeScreen({ onSelect, onOpenSubject, onNavigateTab }: HomeScree
   const [showRoutine, setShowRoutine] = useState(false);
   const [showNcert, setShowNcert] = useState(false);
   const [showSocial, setShowSocial] = useState(false);
+  const pushState = getDevicePushState();
 
   const handleFeatureNavigate = (id: string) => {
     triggerAd();
@@ -250,6 +254,38 @@ export function HomeScreen({ onSelect, onOpenSubject, onNavigateTab }: HomeScree
           <p className="text-[11px] font-bold text-[#222222] truncate">
             "{motivationalQuotes.filter(q => q.isActive)[0]?.quote}"
           </p>
+        </div>
+      )}
+
+      {/* Student Smart Push Notification Opt-In Bar */}
+      {onOpenNotifications && (!pushState.subscribed || pushState.permission !== 'granted') && (
+        <div
+          onClick={onOpenNotifications}
+          className="bg-white border border-amber-300/90 rounded-2xl px-3 py-2.5 flex items-center justify-between gap-2 shadow-xs hover:shadow-sm transition cursor-pointer"
+        >
+          <div className="flex items-center gap-2.5 min-w-0">
+            <div className="w-8 h-8 rounded-xl bg-red-50 text-red-600 border border-red-200 flex items-center justify-center shrink-0">
+              <Bell className="w-4 h-4 animate-bounce" />
+            </div>
+            <div className="min-w-0">
+              <p className="text-xs font-extrabold text-stone-900 truncate">
+                नए नोट्स, डेली टेस्ट और लाइव क्लास का तुरंत अलर्ट पाएं
+              </p>
+              <p className="text-[10px] font-bold text-stone-500 truncate">
+                BSEB GURU स्मार्ट स्टडी रिमाइंडर • 100% मुफ़्त
+              </p>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              onOpenNotifications();
+            }}
+            className="px-3 py-1.5 bg-red-700 hover:bg-red-800 text-white font-black text-[11px] rounded-xl shadow-xs shrink-0 cursor-pointer"
+          >
+            🔔 Notifications चालू करें
+          </button>
         </div>
       )}
 

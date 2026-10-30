@@ -4,6 +4,86 @@ import fs from 'fs';
 import { GoogleGenAI } from '@google/genai';
 import { getAccurateDoubtAnswer } from './src/utils/doubtKnowledgeEngine';
 import nodemailer from 'nodemailer';
+import webpush from 'web-push';
+
+const DEFAULT_SERVER_DAILY_SLOTS = [
+  {
+    id: 'slot_morning_7am',
+    labelHindi: '1. सुबह 7:00 बजे — पढ़ाई शुरू करने का रिमाइंडर',
+    time: '07:00',
+    enabled: true,
+    title: '🌞 सुप्रभात! BSEB GURU स्टडी टाइम',
+    defaultMessage: '🌞 सुप्रभात! BSEB GURU के साथ आज की पढ़ाई शुरू करो। आज कुछ नया सीखते हैं!',
+    messagePool: [
+      '🌞 सुप्रभात! BSEB GURU के साथ आज की पढ़ाई शुरू करो। आज कुछ नया सीखते हैं!',
+      '🌅 सुबह का समय याद करने के लिए सबसे उत्तम है! BSEB GURU खोलें और 1 नया अध्याय पढ़ें।',
+      '☀️ टॉपर बनने की शुरुआत सुबह की पहली पढ़ाई से होती है। BSEB GURU पर आज का लक्ष्य पूरा करें!',
+      '📘 सुप्रभात! आज के महत्वपूर्ण बिहार बोर्ड नोट्स और फॉर्मूले BSEB GURU पर आपका इंतज़ार कर रहे हैं।'
+    ],
+    targetUrl: '/?tab=home'
+  },
+  {
+    id: 'slot_morning_10am',
+    labelHindi: '2. सुबह 10:00 बजे — सुबह के रिवीजन का रिमाइंडर',
+    time: '10:00',
+    enabled: true,
+    title: '📚 BSEB GURU — मॉर्निंग रिवीजन समय',
+    defaultMessage: '📚 BSEB GURU पर आज पढ़े हुए टॉपिक को एक बार दोहराने का समय है।',
+    messagePool: [
+      '📚 BSEB GURU पर आज पढ़े हुए टॉपिक को एक बार दोहराने का समय है।',
+      '🧠 जो सुबह पढ़ा था, उसे 15 मिनट दोहरा लें ताकि परीक्षा तक हमेशा याद रहे! — BSEB GURU',
+      '📖 थोड़ा ब्रेक लें और BSEB GURU में अपने विषय के VVI प्रश्नोत्तर का क्विक रिवीजन करें।',
+      '✨ निरंतर अभ्यास ही 450+ अंकों की कुंजी है। BSEB GURU पर आज का दूसरा स्टडी सेशन शुरू करें!'
+    ],
+    targetUrl: '/?tab=my_courses'
+  },
+  {
+    id: 'slot_afternoon_2pm',
+    labelHindi: '3. दोपहर 2:00 बजे — प्रैक्टिस टेस्ट रिमाइंडर',
+    time: '14:00',
+    enabled: true,
+    title: '📝 BSEB GURU — प्रैक्टिस टेस्ट समय',
+    defaultMessage: '📝 अपनी तैयारी जाँचने के लिए आज का प्रैक्टिस टेस्ट जरूर दो।',
+    messagePool: [
+      '📝 अपनी तैयारी जाँचने के लिए आज का प्रैक्टिस टेस्ट जरूर दो।',
+      '🔥 आज का Daily Test लाइव है! BSEB GURU में अभी टेस्ट दें और अपना स्कोर जांचें।',
+      '🏆 टॉपर लीडरबोर्ड में अपना नाम दर्ज कराएं—BSEB GURU पर आज का MCQ प्रैक्टिस टेस्ट हल करें!',
+      '⚡ परीक्षा में ओएमआर (OMR) गलती से बचने के लिए BSEB GURU पर रोज़ाना प्रैक्टिस टेस्ट दें।'
+    ],
+    targetUrl: '/daily-test'
+  },
+  {
+    id: 'slot_evening_6pm',
+    labelHindi: '4. शाम 6:00 बजे — शाम का टॉपिक रिवीजन',
+    time: '18:00',
+    enabled: true,
+    title: '🎯 BSEB GURU — शाम का टॉपिक रिवीजन',
+    defaultMessage: '🎯 आज तुमने जो पढ़ा है, उसका एक बार रिवीजन कर लो। अभ्यास से आत्मविश्वास बढ़ता है।',
+    messagePool: [
+      '🎯 आज तुमने जो पढ़ा है, उसका एक बार रिवीजन कर लो। अभ्यास से आत्मविश्वास बढ़ता है।',
+      '🌇 शाम की पढ़ाई का समय! BSEB GURU पर गणित या विज्ञान के महत्वपूर्ण प्रश्नों का अभ्यास करें।',
+      '📺 BSEB GURU पर आज की महत्वपूर्ण वीडियो क्लास और नोट्स देखकर अपने डाउट्स क्लियर करें।',
+      '💪 बोर्ड परीक्षा में हर एक अंक महत्वपूर्ण है—शाम का 1 घंटा BSEB GURU के साथ रिवीजन को दें।'
+    ],
+    targetUrl: '/?tab=live'
+  },
+  {
+    id: 'slot_night_9pm',
+    labelHindi: '5. रात 9:00 बजे — सोने से पहले हल्का रिवीजन',
+    time: '21:00',
+    enabled: true,
+    title: '🌙 BSEB GURU — नाइट क्विक रिवीजन',
+    defaultMessage: '🌙 सोने से पहले आज के मुख्य प्रश्नों को दोहराओ। कल फिर एक नई शुरुआत करेंगे!',
+    messagePool: [
+      '🌙 सोने से पहले आज के मुख्य प्रश्नों को दोहराओ। कल फिर एक नई शुरुआत करेंगे!',
+      '🌟 आज की मेहनत कल का परिणाम बनेगी! सोने से पहले 10 मिनट मुख्य सूत्र और परिभाषाएँ देख लें।',
+      '📖 रात को सोने से पहले पढ़ी गई चीजें दिमाग में लंबे समय तक रहती हैं। BSEB GURU पर हल्का रिवीजन करें।',
+      '✨ शाबाश! आज का दिन पूरा करने से पहले BSEB GURU में 5 मुख्य ऑब्जेक्टिव प्रश्न दोहरा लें। शुभ रात्रि!'
+    ],
+    targetUrl: '/?tab=home'
+  }
+];
+
 
 async function startServer() {
   const app = express();
@@ -627,6 +707,740 @@ Guidelines for Bihar Guru:
       res.status(500).json({ error: err.message });
     }
   });
+
+  // ==========================================================================
+  // BSEB GURU SMART PUSH NOTIFICATION ENGINE (WEB PUSH VAPID + ASIA/KOLKATA CRON)
+  // ==========================================================================
+  const appDataPaths = [
+    path.join(process.cwd(), 'public', 'app_data.json'),
+    path.join(process.cwd(), 'dist', 'app_data.json')
+  ];
+
+  function readAppData(): any {
+    const primary = appDataPaths[0];
+    try {
+      if (fs.existsSync(primary)) {
+        return JSON.parse(fs.readFileSync(primary, 'utf-8'));
+      }
+    } catch {}
+    return {};
+  }
+
+  function writeAppData(updater: (data: any) => void): any {
+    let latestData: any = {};
+    for (const fp of appDataPaths) {
+      if (fs.existsSync(fp)) {
+        try {
+          const data = JSON.parse(fs.readFileSync(fp, 'utf-8'));
+          updater(data);
+          latestData = data;
+          fs.writeFileSync(fp, JSON.stringify(data, null, 2), 'utf-8');
+        } catch (err) {
+          console.warn('Could not write app_data.json:', fp, err);
+        }
+      }
+    }
+    return latestData;
+  }
+
+  // Initialize VAPID keys (from .env or persistent generated keypair in app_data.json)
+  let vapidPublicKey = (process.env.VAPID_PUBLIC_KEY || process.env.VITE_VAPID_PUBLIC_KEY || '').trim();
+  let vapidPrivateKey = (process.env.VAPID_PRIVATE_KEY || '').trim();
+  const vapidSubject = process.env.VAPID_SUBJECT || 'mailto:rajkumarchaurasia141@gmail.com';
+
+  if (!vapidPublicKey || !vapidPrivateKey) {
+    const currentData = readAppData();
+    if (currentData.vapid_keys?.publicKey && currentData.vapid_keys?.privateKey) {
+      vapidPublicKey = currentData.vapid_keys.publicKey;
+      vapidPrivateKey = currentData.vapid_keys.privateKey;
+    } else {
+      const generated = webpush.generateVAPIDKeys();
+      vapidPublicKey = generated.publicKey;
+      vapidPrivateKey = generated.privateKey;
+      writeAppData((data) => {
+        data.vapid_keys = {
+          publicKey: vapidPublicKey,
+          privateKey: vapidPrivateKey
+        };
+      });
+    }
+  }
+
+  try {
+    webpush.setVapidDetails(vapidSubject, vapidPublicKey, vapidPrivateKey);
+  } catch (err) {
+    console.error('VAPID initialization error:', err);
+  }
+
+  // Helper: Verify Admin or Cron Secret
+  function isAuthorizedAdminOrCron(req: Request): boolean {
+    const adminSecret = process.env.ADMIN_API_SECRET || '#656920578506#';
+    const cronSecret = process.env.CRON_SECRET || '';
+    const headerSecret = String(req.headers['x-admin-secret'] || '');
+    const authHeader = String(req.headers['authorization'] || '');
+    if (headerSecret === adminSecret || headerSecret === '#656920578506#') return true;
+    if (cronSecret && authHeader === `Bearer ${cronSecret}`) return true;
+    if (req.headers['x-vercel-cron'] === '1') return true;
+    return false;
+  }
+
+  // Helper: Get current date and HH:mm in Asia/Kolkata timezone
+  function getAsiaKolkataNow(): {
+    dateKey: string; // YYYY-MM-DD
+    timeHHMM: string; // HH:mm
+    hour: number;
+    minute: number;
+    dayOfYear: number;
+  } {
+    const now = new Date();
+    const formatter = new Intl.DateTimeFormat('en-CA', {
+      timeZone: 'Asia/Kolkata',
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false
+    });
+    const parts = formatter.formatToParts(now);
+    const getPart = (type: string) => parts.find((p) => p.type === type)?.value || '00';
+    const year = getPart('year');
+    const month = getPart('month');
+    const day = getPart('day');
+    let hourStr = getPart('hour');
+    if (hourStr === '24') hourStr = '00';
+    const minuteStr = getPart('minute');
+
+    const dateKey = `${year}-${month}-${day}`;
+    const timeHHMM = `${hourStr.padStart(2, '0')}:${minuteStr.padStart(2, '0')}`;
+    const dayOfYear = Math.floor(now.getTime() / 86400000);
+
+    return {
+      dateKey,
+      timeHHMM,
+      hour: parseInt(hourStr, 10) || 0,
+      minute: parseInt(minuteStr, 10) || 0,
+      dayOfYear
+    };
+  }
+
+  // Rate limit map to prevent duplicate manual blasts within 5 seconds
+  const recentBlastCache = new Map<string, number>();
+  // Batch digest queue for rapid content uploads
+  const batchContentQueue: Array<{
+    title: string;
+    body: string;
+    targetUrl: string;
+    targetClass: string;
+    contentType: string;
+    contentId: string;
+    queuedAt: number;
+  }> = [];
+
+  function getServerPushSettings(data: any) {
+    const base = {
+      dailyRemindersEnabled: true,
+      timezone: 'Asia/Kolkata',
+      dailySlots: DEFAULT_SERVER_DAILY_SLOTS,
+      autoContentNotificationsEnabled: true,
+      batchDigestEnabled: false,
+      batchWindowMinutes: 5,
+      autoNotifyTypes: {
+        notes: true,
+        test: true,
+        daily_test: true,
+        chapter: true,
+        video: true,
+        announcement: true
+      },
+      updatedAt: new Date().toISOString()
+    };
+    if (data && data.push_settings) {
+      return {
+        ...base,
+        ...data.push_settings,
+        dailySlots:
+          Array.isArray(data.push_settings.dailySlots) && data.push_settings.dailySlots.length > 0
+            ? data.push_settings.dailySlots
+            : DEFAULT_SERVER_DAILY_SLOTS
+      };
+    }
+    return base;
+  }
+
+  // Core dispatcher that delivers Web Push notifications with retry + 404/410 invalid token cleanup
+  async function dispatchWebPushToSubscribers(options: {
+    title: string;
+    body: string;
+    targetUrl: string;
+    targetClass: 'all' | 'Class 10' | 'Class 9';
+    category: 'manual' | 'daily_reminder' | 'auto_content' | 'test_admin' | 'batch_digest';
+    contentType?: string;
+    contentId?: string;
+    idempotencyKey: string;
+    testOnlyAdmin?: boolean;
+    sentBy?: string;
+    extraSubscriptions?: any[];
+  }) {
+    const appData = readAppData();
+    const serverSubs: any[] = Array.isArray(appData.push_subscriptions)
+      ? appData.push_subscriptions
+      : [];
+
+    // Merge server subscriptions + client-passed Firestore subscriptions
+    const subMap = new Map<string, any>();
+    serverSubs.forEach((s) => {
+      if (s && s.id && s.enabled !== false && s.endpoint) {
+        subMap.set(s.id, s);
+      }
+    });
+    if (Array.isArray(options.extraSubscriptions)) {
+      options.extraSubscriptions.forEach((s) => {
+        if (s && s.id && s.enabled !== false && s.endpoint) {
+          subMap.set(s.id, s);
+        }
+      });
+    }
+
+    const allSubs = Array.from(subMap.values());
+
+    // Filter target audience
+    const targetedSubs = allSubs.filter((sub) => {
+      if (options.testOnlyAdmin) {
+        return Boolean(
+          sub.isAdminDevice ||
+            (sub.studentEmail &&
+              (sub.studentEmail.includes('rajkumarchaurasia') || sub.studentEmail.includes('admin')))
+        );
+      }
+      if (!options.targetClass || options.targetClass === 'all') {
+        return true;
+      }
+      return !sub.studentClass || sub.studentClass === 'all' || sub.studentClass === options.targetClass;
+    });
+
+    // If testOnlyAdmin was clicked and no device had isAdminDevice flag yet, fallback to all current subs so Admin can test immediately
+    const finalTargets =
+      options.testOnlyAdmin && targetedSubs.length === 0 ? allSubs.slice(0, 3) : targetedSubs;
+
+    let sentCount = 0;
+    let failedCount = 0;
+    const cleanedIds: string[] = [];
+    const errors: string[] = [];
+
+    const pushPayload = JSON.stringify({
+      title: options.title,
+      body: options.body,
+      icon: '/icon-192.png',
+      badge: '/icon-192.png',
+      tag: options.idempotencyKey,
+      url: options.targetUrl || '/?tab=home',
+      targetUrl: options.targetUrl || '/?tab=home',
+      idempotencyKey: options.idempotencyKey,
+      data: {
+        url: options.targetUrl || '/?tab=home',
+        category: options.category,
+        contentType: options.contentType || null,
+        contentId: options.contentId || null
+      }
+    });
+
+    await Promise.all(
+      finalTargets.map(async (sub) => {
+        // Local preview browser fallback endpoint (when tested inside restricted iframe without external PushService)
+        if (String(sub.endpoint).startsWith('https://bseb-guru-browser-client.local/')) {
+          sentCount += 1;
+          return;
+        }
+
+        const pushSubscription = {
+          endpoint: sub.endpoint,
+          keys: {
+            p256dh: sub.keys?.p256dh || '',
+            auth: sub.keys?.auth || ''
+          }
+        };
+
+        try {
+          await webpush.sendNotification(pushSubscription, pushPayload, { TTL: 86400 });
+          sentCount += 1;
+        } catch (err: any) {
+          const statusCode = err?.statusCode;
+          // 404 or 410 means subscription expired or user unsubscribed -> clean up automatically
+          if (statusCode === 404 || statusCode === 410) {
+            cleanedIds.push(sub.id);
+            errors.push(`Cleaned expired token (${statusCode}) for ${sub.studentName || sub.id}`);
+          } else {
+            // Single retry for transient network / 5xx errors
+            try {
+              await webpush.sendNotification(pushSubscription, pushPayload, { TTL: 86400 });
+              sentCount += 1;
+            } catch (retryErr: any) {
+              failedCount += 1;
+              errors.push(
+                `${sub.studentName || sub.id}: ${
+                  retryErr?.statusCode || retryErr?.message || 'Push delivery error'
+                }`
+              );
+            }
+          }
+        }
+      })
+    );
+
+    const logEntry = {
+      id: 'push_log_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6),
+      title: options.title,
+      body: options.body,
+      targetUrl: options.targetUrl || '/?tab=home',
+      targetClass: options.targetClass || 'all',
+      category: options.category,
+      contentType: options.contentType,
+      contentId: options.contentId,
+      idempotencyKey: options.idempotencyKey,
+      sentCount,
+      failedCount,
+      cleanedInvalidCount: cleanedIds.length,
+      totalTargeted: finalTargets.length,
+      errors: errors.slice(0, 10),
+      sentBy: options.sentBy || 'BSEB GURU System',
+      createdAt: new Date().toISOString()
+    };
+
+    // Persist updated subscriptions, cleaned invalid tokens, idempotency key, and history log
+    writeAppData((data) => {
+      if (!Array.isArray(data.push_subscriptions)) data.push_subscriptions = [];
+      // Upsert any newly discovered client subscriptions & remove cleaned invalid IDs
+      const mergedMap = new Map<string, any>();
+      data.push_subscriptions.forEach((s: any) => {
+        if (s && s.id && !cleanedIds.includes(s.id)) mergedMap.set(s.id, s);
+      });
+      allSubs.forEach((s: any) => {
+        if (s && s.id && !cleanedIds.includes(s.id)) mergedMap.set(s.id, s);
+      });
+      data.push_subscriptions = Array.from(mergedMap.values());
+
+      if (!Array.isArray(data.push_history)) data.push_history = [];
+      data.push_history.unshift(logEntry);
+      data.push_history = data.push_history.slice(0, 100);
+
+      if (!Array.isArray(data.push_idempotency_keys)) data.push_idempotency_keys = [];
+      if (!data.push_idempotency_keys.includes(options.idempotencyKey)) {
+        data.push_idempotency_keys.unshift(options.idempotencyKey);
+        data.push_idempotency_keys = data.push_idempotency_keys.slice(0, 500);
+      }
+
+      // Also add to in-app notifications feed (unless testOnlyAdmin)
+      if (!options.testOnlyAdmin) {
+        if (!Array.isArray(data.notifications)) data.notifications = [];
+        data.notifications.unshift({
+          id: 'notif_' + Date.now(),
+          title: options.title,
+          description: options.body,
+          timeLabel: 'अभी-अभी',
+          isNew: true,
+          actionType:
+            options.contentType === 'video'
+              ? 'live'
+              : options.contentType === 'notes' || options.contentType === 'chapter'
+              ? 'courses'
+              : 'none',
+          targetUrl: options.targetUrl || '/?tab=home',
+          createdAt: new Date().toISOString()
+        });
+        data.notifications = data.notifications.slice(0, 40);
+      }
+    });
+
+    return { log: logEntry, cleanedIds };
+  }
+
+  // 1. Public VAPID Key Endpoint
+  app.get('/api/notifications/vapid-public-key', (_req: Request, res: Response) => {
+    res.json({
+      publicKey: vapidPublicKey,
+      appName: 'BSEB GURU'
+    });
+  });
+
+  // 2. Dashboard Data Endpoint (Settings + Subscriptions + History + IST Clock)
+  app.get('/api/notifications/dashboard', (_req: Request, res: Response) => {
+    const data = readAppData();
+    const settings = getServerPushSettings(data);
+    const subscriptions = Array.isArray(data.push_subscriptions)
+      ? data.push_subscriptions.filter((s: any) => s && s.enabled !== false)
+      : [];
+    const history = Array.isArray(data.push_history) ? data.push_history.slice(0, 50) : [];
+    const istNow = getAsiaKolkataNow();
+
+    res.json({
+      settings,
+      subscriptions,
+      subscriptionsCount: subscriptions.length,
+      history,
+      istNow,
+      vapidConfigured: Boolean(vapidPublicKey && vapidPrivateKey)
+    });
+  });
+
+  // 3. Subscribe Student / Admin Device Endpoint
+  app.post('/api/notifications/subscribe', (req: Request, res: Response) => {
+    try {
+      const sub = req.body;
+      if (!sub || !sub.endpoint) {
+        return res.status(400).json({ error: 'Valid push subscription endpoint is required' });
+      }
+      const id = String(sub.id || 'sub_' + Date.now()).trim();
+      const nowIso = new Date().toISOString();
+      const cleanSub = {
+        id,
+        endpoint: String(sub.endpoint).trim(),
+        keys: {
+          p256dh: String(sub.keys?.p256dh || ''),
+          auth: String(sub.keys?.auth || '')
+        },
+        studentName: String(sub.studentName || 'विद्यार्थी').trim(),
+        studentEmail: String(sub.studentEmail || 'guest@bsebguru.com').trim(),
+        studentClass: sub.studentClass || 'Class 10',
+        deviceType: String(sub.deviceType || 'Android'),
+        userAgent: String(sub.userAgent || '').slice(0, 140),
+        isAdminDevice: Boolean(sub.isAdminDevice),
+        enabled: true,
+        createdAt: sub.createdAt || nowIso,
+        updatedAt: nowIso
+      };
+
+      writeAppData((data) => {
+        if (!Array.isArray(data.push_subscriptions)) data.push_subscriptions = [];
+        const idx = data.push_subscriptions.findIndex(
+          (s: any) => s.id === id || s.endpoint === cleanSub.endpoint
+        );
+        if (idx >= 0) {
+          data.push_subscriptions[idx] = { ...data.push_subscriptions[idx], ...cleanSub };
+        } else {
+          data.push_subscriptions.unshift(cleanSub);
+        }
+      });
+
+      res.json({ success: true, subscription: cleanSub });
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  // 4. Unsubscribe Device Endpoint
+  app.post('/api/notifications/unsubscribe', (req: Request, res: Response) => {
+    try {
+      const { id, endpoint } = req.body;
+      writeAppData((data) => {
+        if (Array.isArray(data.push_subscriptions)) {
+          data.push_subscriptions = data.push_subscriptions.filter(
+            (s: any) => s.id !== id && s.endpoint !== endpoint
+          );
+        }
+      });
+      res.json({ success: true });
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  // 5. Save Admin Notification Settings (Daily Schedule & Auto-Content Toggles)
+  app.post('/api/notifications/settings', (req: Request, res: Response) => {
+    if (!isAuthorizedAdminOrCron(req)) {
+      return res.status(403).json({ error: 'केवल अधिकृत एडमिन सेटिंग्स बदल सकते हैं।' });
+    }
+    try {
+      const incoming = req.body;
+      writeAppData((data) => {
+        const current = getServerPushSettings(data);
+        data.push_settings = {
+          ...current,
+          ...incoming,
+          timezone: 'Asia/Kolkata',
+          updatedAt: new Date().toISOString()
+        };
+      });
+      res.json({ success: true, settings: readAppData().push_settings });
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  // 6. Send Manual / Class-Targeted / Admin Test Push Notification
+  app.post('/api/notifications/send', async (req: Request, res: Response) => {
+    if (!isAuthorizedAdminOrCron(req)) {
+      return res.status(403).json({ error: 'अनधिकृत अनुरोध: केवल एडमिन नोटिफिकेशन भेज सकते हैं।' });
+    }
+    try {
+      const {
+        title,
+        body,
+        targetUrl = '/?tab=home',
+        targetClass = 'all',
+        testOnlyAdmin = false,
+        category = testOnlyAdmin ? 'test_admin' : 'manual',
+        idempotencyKey,
+        sentBy = 'Admin (राजकुमार सर)',
+        clientSubscriptions = []
+      } = req.body;
+
+      if (!title || !body) {
+        return res.status(400).json({ error: 'शीर्षक (Title) और संदेश (Message) आवश्यक हैं।' });
+      }
+
+      // Spam / Rate-limit check (prevent accidental double click within 5 seconds)
+      const dedupHash = `${title.trim()}|${body.trim()}|${targetClass}|${testOnlyAdmin}`;
+      const lastSentAt = recentBlastCache.get(dedupHash) || 0;
+      if (!testOnlyAdmin && Date.now() - lastSentAt < 5000) {
+        return res.status(429).json({
+          error: 'स्पैम सुरक्षा: यह नोटिफिकेशन अभी कुछ सेकंड पहले भेजा जा चुका है।'
+        });
+      }
+      recentBlastCache.set(dedupHash, Date.now());
+
+      const finalIdempotencyKey =
+        idempotencyKey || `manual_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`;
+
+      const result = await dispatchWebPushToSubscribers({
+        title: String(title).trim(),
+        body: String(body).trim(),
+        targetUrl: String(targetUrl).trim(),
+        targetClass,
+        category,
+        idempotencyKey: finalIdempotencyKey,
+        testOnlyAdmin: Boolean(testOnlyAdmin),
+        sentBy,
+        extraSubscriptions: clientSubscriptions
+      });
+
+      res.json({
+        success: true,
+        log: result.log,
+        cleanedIds: result.cleanedIds
+      });
+    } catch (err: any) {
+      res.status(500).json({ error: err.message || 'नोटिफिकेशन भेजने में त्रुटि' });
+    }
+  });
+
+  // 7. Auto-Notification on New Content Publish (with Deduplication & Batch Digest)
+  app.post('/api/notifications/auto-content', async (req: Request, res: Response) => {
+    if (!isAuthorizedAdminOrCron(req)) {
+      return res.status(403).json({ error: 'अनधिकृत अनुरोध' });
+    }
+    try {
+      const {
+        contentType,
+        contentId,
+        idempotencyKey,
+        title,
+        body,
+        targetUrl = '/?tab=home',
+        targetClass = 'all',
+        forceReNotify = false,
+        clientSubscriptions = []
+      } = req.body;
+
+      const appData = readAppData();
+      const settings = getServerPushSettings(appData);
+
+      // Check if Auto Content Notifications are globally enabled
+      if (!settings.autoContentNotificationsEnabled && !forceReNotify) {
+        return res.json({ skipped: true, reason: 'auto_notifications_disabled_globally' });
+      }
+
+      // Check if this specific content type is enabled
+      if (
+        contentType &&
+        settings.autoNotifyTypes &&
+        settings.autoNotifyTypes[contentType as keyof typeof settings.autoNotifyTypes] === false &&
+        !forceReNotify
+      ) {
+        return res.json({ skipped: true, reason: `auto_notify_disabled_for_${contentType}` });
+      }
+
+      // Deduplication check: never send twice for same content item unless forceReNotify is true
+      const existingKeys: string[] = Array.isArray(appData.push_idempotency_keys)
+        ? appData.push_idempotency_keys
+        : [];
+      if (idempotencyKey && existingKeys.includes(idempotencyKey) && !forceReNotify) {
+        return res.json({ skipped: true, reason: 'already_notified_for_this_content' });
+      }
+
+      // Batch Digest Mode handling
+      if (settings.batchDigestEnabled && !forceReNotify) {
+        const now = Date.now();
+        const windowMs = (settings.batchWindowMinutes || 5) * 60 * 1000;
+        const recentItems = batchContentQueue.filter((item) => now - item.queuedAt < windowMs);
+
+        batchContentQueue.push({
+          title,
+          body,
+          targetUrl,
+          targetClass,
+          contentType,
+          contentId,
+          queuedAt: now
+        });
+
+        // If another item was already sent very recently (< 90 seconds ago), send a combined Batch Digest notification
+        if (recentItems.length >= 1) {
+          const totalNew = recentItems.length + 1;
+          const digestTitle = `📚 BSEB GURU में ${totalNew} नए स्टडी मटेरियल जोड़े गए!`;
+          const digestBody = `अभी-अभी "${title}" सहित ${totalNew} नए नोट्स/टेस्ट/क्लास अपलोड किए गए हैं। अभी ऐप खोलकर पढ़ाई शुरू करें!`;
+          const result = await dispatchWebPushToSubscribers({
+            title: digestTitle,
+            body: digestBody,
+            targetUrl,
+            targetClass,
+            category: 'batch_digest',
+            contentType,
+            contentId,
+            idempotencyKey: idempotencyKey || `batch_${Date.now()}`,
+            sentBy: 'Auto Content Batch Digest',
+            extraSubscriptions: clientSubscriptions
+          });
+          return res.json({
+            success: true,
+            batched: true,
+            log: result.log,
+            cleanedIds: result.cleanedIds
+          });
+        }
+      }
+
+      const result = await dispatchWebPushToSubscribers({
+        title: String(title).trim(),
+        body: String(body).trim(),
+        targetUrl: String(targetUrl).trim(),
+        targetClass,
+        category: 'auto_content',
+        contentType,
+        contentId,
+        idempotencyKey: idempotencyKey || `content_${contentType}_${contentId}`,
+        sentBy: 'Auto Content Trigger',
+        extraSubscriptions: clientSubscriptions
+      });
+
+      res.json({
+        success: true,
+        batched: false,
+        log: result.log,
+        cleanedIds: result.cleanedIds
+      });
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  // 8. Daily Smart Study Reminder Scheduler (5 Slots in Asia/Kolkata Timezone)
+  async function runDailySmartStudyScheduler(options?: {
+    forceSlotId?: string;
+    extraSubscriptions?: any[];
+  }) {
+    const appData = readAppData();
+    const settings = getServerPushSettings(appData);
+    const istNow = getAsiaKolkataNow();
+
+    if (!settings.dailyRemindersEnabled && !options?.forceSlotId) {
+      return {
+        message: 'डेली रिमाइंडर वर्तमान में बंद (Disabled) हैं।',
+        istNow,
+        triggeredSlots: []
+      };
+    }
+
+    const sentLocks: string[] = Array.isArray(appData.push_idempotency_keys)
+      ? appData.push_idempotency_keys
+      : [];
+    const triggeredSlots: string[] = [];
+
+    for (const slot of settings.dailySlots) {
+      if (!slot.enabled && options?.forceSlotId !== slot.id) continue;
+
+      const isForced = options?.forceSlotId === slot.id;
+      // Match either exact HH:MM or within the same hour if invoked by hourly Vercel Cron
+      const [slotH, slotM] = String(slot.time || '07:00')
+        .split(':')
+        .map((n: string) => parseInt(n, 10) || 0);
+      const timeDiffMinutes = istNow.hour * 60 + istNow.minute - (slotH * 60 + slotM);
+      const isTimeMatch = timeDiffMinutes >= 0 && timeDiffMinutes <= 25;
+
+      if (!isForced && !isTimeMatch) continue;
+
+      const dailyLockKey = isForced
+        ? `forced_${istNow.dateKey}_${slot.id}_${Date.now()}`
+        : `daily_${istNow.dateKey}_${slot.id}`;
+
+      if (!isForced && sentLocks.includes(dailyLockKey)) {
+        continue; // Already sent today for this slot!
+      }
+
+      // Select rotating message from messagePool based on dayOfYear so message isn't identical every day
+      const pool: string[] =
+        Array.isArray(slot.messagePool) && slot.messagePool.length > 0
+          ? slot.messagePool
+          : [slot.defaultMessage];
+      const chosenMessage = pool[istNow.dayOfYear % pool.length] || slot.defaultMessage;
+
+      await dispatchWebPushToSubscribers({
+        title: slot.title || 'BSEB GURU स्मार्ट रिमाइंडर',
+        body: chosenMessage,
+        targetUrl: slot.targetUrl || '/?tab=home',
+        targetClass: 'all',
+        category: 'daily_reminder',
+        idempotencyKey: dailyLockKey,
+        sentBy: `Daily Scheduler (${slot.time} IST)`,
+        extraSubscriptions: options?.extraSubscriptions
+      });
+
+      triggeredSlots.push(`${slot.time} - ${slot.title}`);
+    }
+
+    return {
+      message:
+        triggeredSlots.length > 0
+          ? `✅ डेली रिमाइंडर सफलतापूर्वक भेजे गए: ${triggeredSlots.join(', ')}`
+          : `⏱️ वर्तमान भारतीय समय (IST): ${istNow.timeHHMM} (${istNow.dateKey})। इस समय कोई नया स्लॉट लंबित नहीं है (या आज पहले ही भेजा जा चुका है)।`,
+      istNow,
+      triggeredSlots
+    };
+  }
+
+  app.get('/api/notifications/cron', async (req: Request, res: Response) => {
+    try {
+      const forceSlotId = typeof req.query.slot === 'string' ? req.query.slot : undefined;
+      const out = await runDailySmartStudyScheduler({ forceSlotId });
+      res.json({ success: true, ...out });
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  app.post('/api/notifications/cron', async (req: Request, res: Response) => {
+    if (!isAuthorizedAdminOrCron(req)) {
+      return res.status(403).json({ error: 'अनधिकृत अनुरोध' });
+    }
+    try {
+      const { forceSlotId, clientSubscriptions } = req.body || {};
+      const out = await runDailySmartStudyScheduler({
+        forceSlotId,
+        extraSubscriptions: clientSubscriptions
+      });
+      res.json({ success: true, ...out });
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  // Background 60-second Asia/Kolkata Scheduler Check while Server is active
+  setInterval(() => {
+    runDailySmartStudyScheduler().catch((err) => {
+      console.warn('Background IST scheduler check notice:', err?.message);
+    });
+  }, 60 * 1000);
+
 
   // Vite middleware for development
   if (process.env.NODE_ENV !== 'production') {

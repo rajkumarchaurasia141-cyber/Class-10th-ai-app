@@ -728,11 +728,22 @@ export const DataProvider = ({ children }: any) => {
   };
 
   const deleteLiveClass = async (id: string): Promise<void> => {
-    setLiveClasses((prev) => prev.filter((c) => c.id !== id));
     try {
-      const updated = liveClasses.filter((c) => c.id !== id);
-      localStorage.setItem('bseb_live_classes_cache', JSON.stringify(updated));
+      const rawDel = localStorage.getItem('bseb_deleted_live_ids');
+      const parsedDel: string[] = rawDel ? JSON.parse(rawDel) : [];
+      if (!parsedDel.includes(id)) {
+        parsedDel.push(id);
+        localStorage.setItem('bseb_deleted_live_ids', JSON.stringify(parsedDel));
+      }
     } catch {}
+
+    setLiveClasses((prev) => {
+      const updated = prev.filter((c) => c.id !== id);
+      try {
+        localStorage.setItem('bseb_live_classes_cache', JSON.stringify(updated));
+      } catch {}
+      return updated;
+    });
 
     try {
       fetch('/api/delete-live-class', {

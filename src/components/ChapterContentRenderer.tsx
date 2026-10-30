@@ -104,10 +104,6 @@ export const ChapterContentRenderer: React.FC<ChapterContentRendererProps> = ({
   };
 
   const handleCopyQA = (text: string, idx: number) => {
-    if (!isAdmin) {
-      alert('⚠️ सामग्री कॉपी करना केवल एडमिन के लिए अनुमत है।');
-      return;
-    }
     navigator.clipboard?.writeText(text);
     setCopiedIndex(idx);
     setTimeout(() => setCopiedIndex(null), 2000);
